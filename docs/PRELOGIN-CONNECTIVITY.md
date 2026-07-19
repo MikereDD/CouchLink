@@ -1,55 +1,62 @@
 # Pre-Login Connectivity
 
-CouchLink v0.1-dev.12 adds real pre-login pointer and keyboard control on top of
-the status-only broker, gated behind the signed Virtual HID driver.
+CouchLink provides real pointer and keyboard control on the Windows lock and sign-in screens through a signed Virtual HID path. The feature respects the Winlogon security boundary rather than attempting to bypass it.
 
-The Boot Service broadcasts the stable host identity on UDP 45820 and accepts
-trusted status sessions on TCP 45822. The desktop host continues to use TCP
-45821 after login. The Android client recognizes the endpoint transition and
-reconnects automatically.
+## Endpoint transition
 
-Trusted-device tokens are mirrored from the signed-in user's local CouchLink
-store to `%ProgramData%\CouchLink\trusted-devices.json`. The service only
-authenticates devices already paired from the desktop host. Pairing and
-credential storage remain unavailable before login.
+| Windows state | Endpoint | Android behavior |
+|---|---:|---|
+| Signed-in desktop | TCP `45821` | Persistent desktop Session Host connection |
+| Locked / sign-in required | TCP `45822` | Persistent Boot Service connection |
+| Desktop becomes available | `45822` → `45821` | Clean handoff and automatic reconnect |
 
-## How pre-login input now works
+Both endpoints advertise the same stable host identity. Android keys a session to that identity, not to a temporary port number.
 
-`CouchLink.BootService` runs as LocalSystem in Session 0, and User32 input
-(`SendInput`, `mouse_event`, `SetCursorPos`) still cannot reach the Winlogon
-secure desktop from there — that OS boundary is unchanged. Instead, the Boot
-Service opens the **CouchLink Virtual HID driver** and submits small fixed-size
-HID reports. Because those reports enter through the real HID stack, Windows
-treats them as genuine mouse and keyboard input and they are honored on the
-desktop, the lock screen, and the sign-in screen.
+## Trust model
 
-Input is enabled only when **both** conditions hold:
+Trusted-device tokens are mirrored from the signed-in user's CouchLink store to:
 
-1. `%ProgramData%\CouchLink\machine-permissions.json` has `RemoteInputEnabled`
-   **and** `PreLoginControlEnabled` set true (mirrored from the signed-in user's
-   authorization), and
-2. the Virtual HID driver is installed and running.
+```text
+%ProgramData%\CouchLink\trusted-devices.json
+```
 
-When either is missing, the broker advertises `remoteInputEnabled: false`, the
-Android client stays on the status panel, and any input message is answered with
-`prelogin_input_unavailable`. This is a strict superset of the old status-only
-behavior, so nothing regresses when the driver is absent.
+The Boot Service authenticates only devices already approved through the desktop host. New pairing is unavailable before login.
 
-Advertised pre-login capabilities become
-`prelogin_status, machine_state, wake_on_lan, prelogin_input, mouse, keyboard`
-once input is ready.
+## Input path
 
-## What is still deliberately out of scope
+```text
+Android command
+  → trusted TCP 45822 session
+  → Boot Service validation
+  → VirtualHidBridge
+  → fixed-size IOCTL payload
+  → KMDF/VHF driver
+  → Windows HID stack
+  → lock or sign-in desktop
+```
 
-This is **not** a Windows Credential Provider. It does not store or auto-fill
-passwords; it lets you drive the real pointer and keyboard so you can type your
-own PIN/password on the secure desktop. A future audited Credential Provider
-milestone can add true credential submission if wanted.
+User32 mechanisms such as `SendInput`, `mouse_event`, and `SetCursorPos` cannot cross from Session 0 to the Winlogon secure desktop. Virtual HID works because input enters through the operating system's real HID path.
 
-## Hard boundary (unchanged)
+## Permission gates
 
-Session 0 User32 injection to the secure desktop remains impossible. The Virtual
-HID driver is the supported path around it, and it must be signed. Until a
-signed build exists (test-signed in a VM for development, production/attestation
-signed for the real host), keep pre-login input confined to the test VM. See
-`src/windows/CouchLink.VirtualHid/BUILD-SIGN-TEST.md`.
+Pre-login input is accepted only when both of these machine permissions are true:
+
+- `RemoteInputEnabled`
+- `PreLoginControlEnabled`
+
+The Virtual HID driver must also be installed, running, and reachable. When any requirement is missing, the broker advertises remote input as unavailable and rejects control messages without terminating the trusted status session.
+
+## Authentication boundary
+
+CouchLink never knows the Windows PIN or password. It can type the same keystrokes as a physical keyboard; Windows alone decides whether those credentials are valid.
+
+## Verified handoff behavior
+
+The accepted baseline performs this sequence without a reconnect storm:
+
+1. Desktop session on `45821`.
+2. Lock transition to `45822` with `SignInRequired`.
+3. PIN entry through Virtual HID.
+4. `desktop_session_available` handoff signal.
+5. Probe of `45822` reporting `DesktopAvailable`.
+6. Persistent reconnection to `45821` with `DesktopReady`.

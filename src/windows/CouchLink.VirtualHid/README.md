@@ -1,29 +1,33 @@
-# CouchLink.VirtualHid
+# CouchLink Virtual HID
 
-Signed KMDF **Virtual HID source driver** for CouchLink. It exposes one virtual
-device with a relative mouse and a boot-compatible keyboard, and injects input
-that reaches the interactive **and secure (login/lock) desktop** through the real
-HID stack — the thing User32 `SendInput` from Session 0 can never do.
+> **Kernel-mode component. Build, sign, install, and test deliberately.**
 
-## Files
+CouchLink Virtual HID is a KMDF driver built on Microsoft Virtual HID Framework (VHF). It exposes a relative mouse and boot-compatible keyboard so trusted CouchLink input can reach the interactive desktop, lock screen, and Windows sign-in screen through the real HID stack.
 
-- `CouchLinkHidProtocol.h` — the entire user↔kernel contract: one IOCTL, one
-  fixed 12-byte struct, report IDs, the device-interface GUID. Shared verbatim
-  with the managed bridge.
-- `Driver.h` / `Driver.c` — the KMDF + Microsoft VHF driver. HID report
-  descriptor (mouse report ID 1, keyboard report ID 2), VHF create/start, and a
-  single validated IOCTL that forwards fixed-size reports via `VhfReadReportSubmit`.
-- `CouchLinkVhid.inf` — root-enumerated install for a software-only HID device.
-- `CouchLink.VirtualHid.vcxproj` — WDK/KMDF project (built from Visual Studio on
-  the VM, not by `dotnet build`).
-- `BUILD-SIGN-TEST.md` — **read this.** Build, test-sign, install, and validate,
-  strictly inside a disposable VM first.
+## Why it exists
 
-## Safety
+A Windows service running as LocalSystem in Session 0 cannot use User32 input APIs to control the Winlogon secure desktop. CouchLink therefore submits validated, fixed-size HID reports to a dedicated virtual device. Windows processes those reports like physical keyboard and mouse input while continuing to enforce normal authentication.
 
-This archive still ships **no** compiled `.sys` or `.cat`. A kernel driver that
-controls the secure desktop must be built against the WDK and signed; that step
-is yours, in a VM, per `BUILD-SIGN-TEST.md`. Do not load an unsigned build on
-your real host.
+## Source map
 
-See `docs/VIRTUAL-HID-FOUNDATION.md`.
+| File | Purpose |
+|---|---|
+| `CouchLinkHidProtocol.h` | Shared user/kernel contract, report IDs, IOCTL, and device-interface GUID |
+| `Driver.h` / `Driver.c` | KMDF + VHF implementation and report validation |
+| `CouchLinkVhid.inf` | Root-enumerated software HID installation metadata |
+| `CouchLink.VirtualHid.vcxproj` | Visual Studio / WDK driver project |
+| `BUILD-SIGN-TEST.md` | Required build, signing, installation, and validation procedure |
+
+## Safety model
+
+- The repository does not ship a production-signed driver package.
+- Every submission is checked for protocol version, report kind, reserved fields, and payload length.
+- The Boot Service opens the device only when pre-login control is enabled.
+- CouchLink never stores or validates the user's Windows PIN or password.
+- Initial driver changes should be validated in a disposable VM before real-hardware installation.
+
+## Build
+
+Do **not** use `dotnet build` for this project. Install Visual Studio with the Desktop C++ workload and Windows Driver Kit, then follow [BUILD-SIGN-TEST.md](BUILD-SIGN-TEST.md) exactly.
+
+See also [Virtual HID Foundation](../../../docs/VIRTUAL-HID-FOUNDATION.md) and [Pre-Login Connectivity](../../../docs/PRELOGIN-CONNECTIVITY.md).

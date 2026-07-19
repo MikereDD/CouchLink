@@ -8,7 +8,7 @@ namespace CouchLink.BootService;
 public sealed class BootWorker : BackgroundService
 {
     public const string ServiceName = "CouchLinkBootService";
-    public const string Version = "0.1-dev.12.1";
+    public const string Version = "0.1-dev.13";
 
     private const uint NoConsoleSession = 0xFFFFFFFF;
     private const int WtsSessionStateLock = 0;

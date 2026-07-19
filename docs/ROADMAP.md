@@ -1,70 +1,44 @@
-# Roadmap
+# CouchLink Roadmap
 
-## v0.1-dev.1 — First Link
+## Completed foundation
 
-- Repository and solution scaffold
-- Shared protocol contracts
-- Windows host service boundary
-- Android project bootstrap instructions
-- Host discovery design
-- TCP frame codec design
+- [x] Windows WPF host and Android Compose client
+- [x] LAN discovery and explicit pairing
+- [x] Persistent trusted sessions and automatic reconnect
+- [x] Touchpad, scrolling, keyboard, and Command Deck
+- [x] Premium launcher layout and authentic launcher identities
+- [x] Launch-or-focus behavior with Android result feedback
+- [x] Tray operation and startup support
+- [x] Boot Service and Session Host split
+- [x] Signed Virtual HID input path
+- [x] Lock-screen / sign-in control
+- [x] Automatic pre-login-to-desktop handoff
+- [x] About and diagnostics views on Android and Windows
 
-## v0.1-dev.2 — Discovery
+## Current milestone — v0.1-dev.13
 
-- Windows discovery advertiser ✅
-- Android discovery listener ✅
-- Host identity display ✅
-- Framed hello/ack exchange ✅
-- Manual hostname/IP fallback — next
+- [x] Synchronize product versions across Android and Windows
+- [x] Refresh repository documentation and changelog
+- [x] Document the verified launcher and pre-login baselines
+- [ ] Suppress or downgrade expected transient probe warnings without hiding real failures
+- [ ] Complete a dedicated release-validation checklist
 
-## v0.1-dev.3 — Session
+## Near term
 
-- Framed connection
-- Hello/ack exchange
-- Ping/pong health checks
-- Reconnect diagnostics
+- [ ] Launcher running/installed indicators in the Android grid
+- [ ] Optional long-press launcher actions
+- [ ] Host-side launcher customization and executable overrides
+- [ ] Better connected-device activity reporting
+- [ ] Named diagnostics export file
+- [ ] Installer and upgrade path for host, service, and driver
+- [ ] Production certificate and driver-signing strategy
 
-## v0.1-dev.4 — First Input
+## Later
 
-- Pointer movement
-- Left/right click
-- Scrolling
-- Basic keyboard text
-- Emergency input-disable switch
-
-## v0.2 — Trust
-
-- Pairing approval
-- Persistent device identity
-- Encrypted authenticated sessions
-- Trusted-device revocation
-
-## v0.3 — Premium Control
-
-- Touchpad gesture system
-- Full keyboard and modifiers
-- Command Deck
-- Media controls
-- Portrait, landscape, and tablet layouts
-
-## v0.4 — Steam
-
-- Steam detection
-- Primary Steam tile
-- Big Picture action
-- Launch-or-focus behavior
-- Steam profile and quick actions
-
-## v0.5 — Launchers
-
-- GOG Galaxy
-- EA app
-- Ubisoft Connect
-- Rockstar Games Launcher
-- Amazon Games
-- Epic Games Launcher
-- Custom launcher entries
-
-## v1.0 quality gate
-
-Stable v1.0 requires natural input, dependable typing, secure pairing, resilient reconnect behavior, excellent launcher control, strong accessibility, and fully polished Windows and Android interfaces.
+- [ ] Custom Command Deck layouts
+- [ ] Media library and playback integrations
+- [ ] Multiple Windows host profiles
+- [ ] Tablet-optimized layouts
+- [ ] Accessibility and text-size controls
+- [ ] Encrypted transport suitable for less-trusted networks
+- [ ] Public release packaging and onboarding

@@ -1,46 +1,59 @@
-# Architecture
+# CouchLink Architecture
 
-## Windows
+## System overview
 
-### CouchLink.Protocol
+```text
+Android Remote
+  ├─ UDP 45820 → discovery
+  ├─ TCP 45821 → desktop Session Host
+  └─ TCP 45822 → Boot Service / pre-login broker
+                         │
+                         └─ Virtual HID → Windows HID stack
+```
 
-Shared wire-contract types. This project must remain free of Windows UI and input-injection dependencies.
+## Android remote
 
-### CouchLink.Host.Core
+The Kotlin/Jetpack Compose client owns discovery, pairing, trusted identity, connection orchestration, touch and keyboard gestures, launcher commands, status feedback, and user-facing diagnostics. It treats the desktop and pre-login endpoints as two execution contexts belonging to one stable host identity.
 
-Long-running host behavior:
+## Windows components
 
-- discovery
-- authenticated sessions
-- launcher detection
-- command routing
-- clipboard bridge
-- media and system actions
-- diagnostics
+### `CouchLink.Protocol`
 
-### CouchLink.Host.Wpf
+Shared transport envelopes and message contracts. It remains independent of WPF, services, and input implementation details.
 
-Premium Windows dashboard and tray application. It configures and observes the core host but does not own protocol logic.
+### `CouchLink.Host.Core`
 
-## Android
+The signed-in desktop runtime: discovery, pairing, trusted sessions, standard input routing, launcher launch-or-focus behavior, command handling, and diagnostics.
 
-The Android application will use Kotlin and Jetpack Compose. Its first screens will be:
+### `CouchLink.SessionHost`
 
-1. Host discovery
-2. Pairing
-3. Connection status
-4. Development touch surface
+Coordinates the user-session host and reports combined desktop/Boot Service state to the dashboard.
 
-## Transport plan
+### `CouchLink.Host.Wpf`
 
-### Discovery
+The premium dashboard and tray application. It configures and observes the host but does not define protocol contracts.
 
-UDP broadcast/multicast advertises a minimal host descriptor on the local network.
+### `CouchLink.BootService`
 
-### Session transport
+An automatically started LocalSystem service responsible for machine state, the pre-login trusted-session endpoint, permission mirroring, and the Virtual HID bridge.
 
-The first prototype uses a framed TCP stream to validate ordering, acknowledgements, reconnect behavior, and diagnostics. The protocol layer must allow a later low-latency transport without rewriting the UI.
+### `CouchLink.VirtualHid`
 
-### Security
+A signed KMDF/VHF virtual mouse and boot keyboard. It is the only CouchLink input path intended to reach the Winlogon secure desktop.
 
-The first public-capable build must use encrypted authenticated sessions and persistent per-device identity. Unauthenticated input injection is prohibited.
+## Connection lifecycle
+
+1. Android discovers a stable host identity on UDP `45820`.
+2. While Windows is signed in, Android maintains a persistent trusted session on TCP `45821`.
+3. When Windows locks or reaches sign-in, Android reconnects to TCP `45822`.
+4. After successful login, the Boot Service signals that the desktop session is available.
+5. Android leaves `45822`, probes the desktop endpoint, and resumes on `45821`.
+
+## Security invariants
+
+- Unpaired devices cannot control the host.
+- Pairing is never offered on the pre-login endpoint.
+- Windows credentials are neither stored nor interpreted by CouchLink.
+- Machine-level permission gates can disable all remote input or pre-login control.
+- Protocol messages are versioned, framed, and validated before command execution.
+- Kernel input accepts only the fixed HID contract defined by the shared header.
