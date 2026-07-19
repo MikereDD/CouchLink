@@ -1,5 +1,7 @@
 package dev.typezero.couchlink.remote
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -308,6 +310,8 @@ private fun CouchLinkApp() {
                         )
                         AppScreen.Settings -> SettingsScreen(
                             host = discovered,
+                            connected = connected,
+                            remoteInputEnabled = remoteInputEnabled,
                             hapticsEnabled = hapticsEnabled,
                             onHapticsChanged = { hapticsEnabled = it; appPrefs.edit().putBoolean("haptics", it).apply() },
                             naturalScrolling = naturalScrolling,
@@ -343,6 +347,8 @@ private fun CouchLinkApp() {
                         )
                         AppScreen.Settings -> SettingsScreen(
                             host = discovered,
+                            connected = connected,
+                            remoteInputEnabled = remoteInputEnabled,
                             hapticsEnabled = hapticsEnabled,
                             onHapticsChanged = { hapticsEnabled = it; appPrefs.edit().putBoolean("haptics", it).apply() },
                             naturalScrolling = naturalScrolling,
@@ -825,39 +831,280 @@ private fun BottomNav(current: AppScreen, onSelect: (AppScreen) -> Unit) {
 @Composable
 private fun SettingsScreen(
     host: DiscoveredHost,
+    connected: Boolean,
+    remoteInputEnabled: Boolean,
     hapticsEnabled: Boolean,
     onHapticsChanged: (Boolean) -> Unit,
     naturalScrolling: Boolean,
     onNaturalScrollingChanged: (Boolean) -> Unit,
     onWake: () -> Unit,
 ) {
-    Text("Living-room settings", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+    val context = LocalContext.current
+    var diagnosticsCopied by remember { mutableStateOf(false) }
+
+    val buildChannel =
+        if (BuildConfig.DEBUG) {
+            "Debug"
+        } else {
+            "Release"
+        }
+
+    val diagnostics = remember(
+        host,
+        connected,
+        remoteInputEnabled,
+        buildChannel,
+    ) {
+        buildString {
+            appendLine("CouchLink Remote")
+            appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            appendLine("Build channel: $buildChannel")
+            appendLine("Protocol version: 1")
+            appendLine("Host: ${host.hostName}")
+            appendLine("Host version: ${host.hostVersion.ifBlank { "Unknown" }}")
+            appendLine("Host state: ${host.hostState}")
+            appendLine("Endpoint: ${host.address}:${host.sessionPort}")
+            appendLine("Connected: $connected")
+            appendLine("Remote input enabled: $remoteInputEnabled")
+            appendLine("Trusted host ID: ${host.hostId}")
+            append("MAC advertised: ${host.macAddress.ifBlank { "Unavailable" }}")
+        }
+    }
+
+    Text(
+        "Living-room settings",
+        fontSize = 24.sp,
+        fontWeight = FontWeight.SemiBold,
+    )
+
     PremiumPanel {
-        Text("Wake-on-LAN", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-        Text("Wake ${host.hostName} from sleep or soft-off, then reconnect automatically.", color = Muted)
+        Text(
+            "Wake-on-LAN",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            "Wake ${host.hostName} from sleep or soft-off, then reconnect automatically.",
+            color = Muted,
+        )
         Button(
             onClick = onWake,
             enabled = host.macAddress.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Accent)
-        ) { Text("WAKE PC", color = Color.Black, fontWeight = FontWeight.Bold) }
-        Text(if (host.macAddress.isBlank()) "No compatible network adapter was advertised." else "Adapter ready · ${host.macAddress.chunked(2).joinToString(":")}", color = Muted, fontSize = 11.sp)
-    }
-    PremiumPanel {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("Premium haptics", fontWeight = FontWeight.SemiBold); Text("Tactile confirmation for controls.", color = Muted, fontSize = 12.sp) }
-            Switch(checked = hapticsEnabled, onCheckedChange = onHapticsChanged)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Accent,
+            ),
+        ) {
+            Text(
+                "WAKE PC",
+                color = Color.Black,
+                fontWeight = FontWeight.Bold,
+            )
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("Natural scrolling", fontWeight = FontWeight.SemiBold); Text("Match modern touchpad direction.", color = Muted, fontSize = 12.sp) }
-            Switch(checked = naturalScrolling, onCheckedChange = onNaturalScrollingChanged)
+        Text(
+            if (host.macAddress.isBlank()) {
+                "No compatible network adapter was advertised."
+            } else {
+                "Adapter ready · ${host.macAddress.chunked(2).joinToString(":")}"
+            },
+            color = Muted,
+            fontSize = 11.sp,
+        )
+    }
+
+    PremiumPanel {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Premium haptics",
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Tactile confirmation for controls.",
+                    color = Muted,
+                    fontSize = 12.sp,
+                )
+            }
+            Switch(
+                checked = hapticsEnabled,
+                onCheckedChange = onHapticsChanged,
+            )
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Natural scrolling",
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "Match modern touchpad direction.",
+                    color = Muted,
+                    fontSize = 12.sp,
+                )
+            }
+            Switch(
+                checked = naturalScrolling,
+                onCheckedChange = onNaturalScrollingChanged,
+            )
         }
     }
+
     PremiumPanel {
-        Text("Host", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text(host.hostName, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-        Text("${host.address}:${host.sessionPort}", color = Muted)
-        Text("CouchLink Remote v0.1-dev.10.1", color = Accent, fontSize = 12.sp)
+        Text(
+            "CONNECTED HOST",
+            color = Muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            host.hostName,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            "${host.address}:${host.sessionPort}",
+            color = Muted,
+        )
+        Text(
+            host.hostVersion.ifBlank { "Host version unavailable" },
+            color = Accent,
+            fontSize = 12.sp,
+        )
+    }
+
+    PremiumPanel {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.couchlink_logo),
+                contentDescription = "CouchLink",
+                modifier = Modifier.size(58.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Row {
+                    Text(
+                        "Couch",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "Link",
+                        color = Accent,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Text(
+                    "Remote ${BuildConfig.VERSION_NAME}",
+                    color = Muted,
+                    fontSize = 12.sp,
+                )
+            }
+        }
+
+        Text(
+            "ABOUT",
+            color = Muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            "A local-first Android remote for CouchLink on Windows, built for reliable living-room control without a mandatory cloud account.",
+            color = Text,
+            fontSize = 14.sp,
+        )
+
+        HorizontalDivider(
+            color = Raised2,
+        )
+
+        AboutDetailRow(
+            label = "Build",
+            value = "$buildChannel · ${BuildConfig.VERSION_CODE}",
+        )
+        AboutDetailRow(
+            label = "Protocol",
+            value = "1",
+        )
+        AboutDetailRow(
+            label = "Host",
+            value = host.hostVersion.ifBlank { "Unknown" },
+        )
+        AboutDetailRow(
+            label = "Privacy",
+            value = "Local network only",
+        )
+
+        Button(
+            onClick = {
+                val clipboard =
+                    context.getSystemService(ClipboardManager::class.java)
+
+                clipboard?.setPrimaryClip(
+                    ClipData.newPlainText(
+                        "CouchLink diagnostics",
+                        diagnostics,
+                    ),
+                )
+
+                diagnosticsCopied = true
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Raised2,
+                contentColor = Text,
+            ),
+        ) {
+            Text(
+                if (diagnosticsCopied) {
+                    "DIAGNOSTICS COPIED"
+                } else {
+                    "COPY DIAGNOSTICS"
+                },
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Text(
+            "CouchLink keeps control traffic on your local network. Pairing credentials remain in the app's private storage.",
+            color = Muted,
+            fontSize = 11.sp,
+        )
+    }
+}
+
+@Composable
+private fun AboutDetailRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            color = Muted,
+            fontSize = 12.sp,
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            value,
+            color = Text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End,
+        )
     }
 }
 

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using CouchLink.Host.Core;
@@ -39,6 +40,43 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
     public string DiscoveryEndpoint => $"UDP {_snapshot.DiscoveryPort}";
     public string SessionEndpoint => $"{_snapshot.PrimaryAddress}:{_snapshot.SessionPort}";
     public string ServiceStatus => _snapshot.IsRunning ? "Listening" : "Stopped";
+    public string VersionBadge => $"{HostVersion} — Local-first Windows host";
+    public string ProtocolVersion => "1";
+    public string BuildChannel => HostVersion.Contains("dev", StringComparison.OrdinalIgnoreCase)
+        ? "Development"
+        : "Release";
+    public string PrivacySummary =>
+        "Local-first control. Pairing and remote input traffic stay on the local network; no mandatory cloud account is required.";
+    public string BootServiceStatusPath => BootServiceStatusReader.StatusPath;
+    public string DiagnosticsText
+    {
+        get
+        {
+            StringBuilder text = new();
+            text.AppendLine("CouchLink Host diagnostics");
+            text.AppendLine($"Host version: {HostVersion}");
+            text.AppendLine($"Build channel: {BuildChannel}");
+            text.AppendLine($"Protocol version: {ProtocolVersion}");
+            text.AppendLine($"Host name: {HostName}");
+            text.AppendLine($"Host ID: {HostId}");
+            text.AppendLine($"Host state: {HostState}");
+            text.AppendLine($"Discovery endpoint: {DiscoveryEndpoint}");
+            text.AppendLine($"Session endpoint: {SessionEndpoint}");
+            text.AppendLine($"Session Host: {SessionHostStatus}");
+            text.AppendLine($"Host listener: {ServiceStatus}");
+            text.AppendLine($"Boot Service: {BootServiceStatus}");
+            text.AppendLine($"Boot Service version: {BootServiceVersion}");
+            text.AppendLine($"Boot machine state: {BootMachineState}");
+            text.AppendLine($"Boot detail: {BootServiceDetail}");
+            text.AppendLine($"Remote input: {RemoteInputStatus}");
+            text.AppendLine($"Connected clients: {ConnectedClients}");
+            text.AppendLine($"Connected device: {ConnectedDevice}");
+            text.AppendLine($"Trusted devices: {TrustedDevices}");
+            text.AppendLine($"Boot status file: {BootServiceStatusPath}");
+            text.Append($"Last host event: {LastEvent}");
+            return text.ToString();
+        }
+    }
 
     public string BootServiceStatus => _sessionSnapshot.BootService.IsReachable
         ? $"{_sessionSnapshot.BootService.ServiceState} · heartbeat live"

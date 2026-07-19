@@ -3,6 +3,8 @@ package dev.typezero.couchlink.remote.network
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import dev.typezero.couchlink.remote.BuildConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -379,7 +381,7 @@ class DiscoveryClient(context: Context) {
                     Socket().use { socket ->
                         activeSocket = socket
 
-                        Log.i(
+                        logSessionInfo(
                             SESSION_LOG_TAG,
                             "Attempting ${host.address}:$port",
                         )
@@ -405,7 +407,7 @@ class DiscoveryClient(context: Context) {
                             readEnvelope(socket),
                         )
 
-                        Log.i(
+                        logSessionInfo(
                             SESSION_LOG_TAG,
                             "Hello from port $port: " +
                                 "state=${hello.hostState}, " +
@@ -425,7 +427,7 @@ class DiscoveryClient(context: Context) {
                             port == PRELOGIN_PORT &&
                             hello.hostState != "SignInRequired"
                         ) {
-                            Log.i(
+                            logSessionInfo(
                                 SESSION_LOG_TAG,
                                 "Desktop available; leaving " +
                                     "pre-login port $port",
@@ -461,7 +463,7 @@ class DiscoveryClient(context: Context) {
                             inputEnabled,
                         )
 
-                        Log.i(
+                        logSessionInfo(
                             SESSION_LOG_TAG,
                             "Persistent session connected on port $port",
                         )
@@ -518,7 +520,7 @@ class DiscoveryClient(context: Context) {
                                         port == PRELOGIN_PORT &&
                                         code == "desktop_session_available"
                                     ) {
-                                        Log.i(
+                                        logSessionInfo(
                                             SESSION_LOG_TAG,
                                             "Desktop session became available; " +
                                                 "leaving pre-login port $port",
@@ -555,8 +557,14 @@ class DiscoveryClient(context: Context) {
                             )
                         }
                     }
+                } catch (error: CancellationException) {
+                    activeSocket?.let {
+                        invalidateActiveSocket(it)
+                    }
+
+                    throw error
                 } catch (error: Exception) {
-                    Log.w(
+                    logSessionWarning(
                         SESSION_LOG_TAG,
                         "Port $port failed",
                         error,
@@ -815,6 +823,25 @@ class DiscoveryClient(context: Context) {
         }
 
         return result
+    }
+
+    private fun logSessionInfo(
+        tag: String,
+        message: String,
+    ) {
+        if (BuildConfig.DEBUG) {
+            Log.i(tag, message)
+        }
+    }
+
+    private fun logSessionWarning(
+        tag: String,
+        message: String,
+        error: Throwable,
+    ) {
+        if (BuildConfig.DEBUG) {
+            Log.w(tag, message, error)
+        }
     }
 
     companion object {
