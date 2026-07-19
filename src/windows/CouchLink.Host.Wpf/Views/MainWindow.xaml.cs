@@ -35,6 +35,16 @@ public partial class MainWindow : Window
 
     private void Close_Click(object sender, RoutedEventArgs e) => _exitApplication();
 
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        AboutWindow about = new()
+        {
+            Owner = this,
+            DataContext = DataContext
+        };
+        about.ShowDialog();
+    }
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         if (!_allowClose)
