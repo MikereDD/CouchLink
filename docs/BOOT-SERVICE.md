@@ -1,35 +1,42 @@
-# CouchLink Boot Service Foundation
+# CouchLink Boot Service
 
-CouchLink v0.1-dev.11 introduces an explicit boundary between two Windows execution contexts.
+Introduced as a foundation in `v0.1-dev.11` and promoted to active pre-login control in `v0.1-dev.12`, `CouchLink.BootService` is the machine-level half of the Windows architecture.
 
-## CouchLink Boot Service
+## Responsibilities
 
-`CouchLink.BootService` is an automatically started Windows service. In this milestone it has deliberately narrow responsibilities:
+- Start automatically as LocalSystem before any user signs in.
+- Publish an atomic health heartbeat under `%ProgramData%\CouchLink`.
+- Determine whether Windows is locked, awaiting sign-in, or has a desktop available.
+- Advertise the stable CouchLink host identity on UDP `45820`.
+- Accept previously trusted clients on TCP `45822`.
+- Enforce mirrored machine permissions.
+- Submit approved pointer and keyboard reports through CouchLink Virtual HID.
+- Signal Android when a signed-in desktop session becomes available.
 
-- start independently of a signed-in user
-- publish a small health heartbeat under `%ProgramData%\CouchLink`
-- report whether an interactive Windows desktop appears to be available
-- provide the future home for boot-state, lock-state, and pre-login coordination
+## Explicit non-responsibilities
 
-It does not accept remote input, store Windows credentials, or bypass Windows authentication.
+The service does **not**:
 
-## CouchLink Session Host
+- pair new devices before login,
+- store or validate Windows credentials,
+- bypass Winlogon authentication,
+- run launcher or desktop-only actions,
+- expose unrestricted kernel input.
 
-`CouchLink.SessionHost` owns the current user-session runtime boundary. It wraps the existing networking and input runtime and exposes combined Session Host and Boot Service health to the WPF dashboard.
+## Session Host relationship
 
-The desktop-session side remains responsible for:
+The signed-in desktop path remains on TCP `45821` and owns pairing, launcher control, ordinary desktop input, tray behavior, and the WPF dashboard. `CouchLink.SessionHost` combines that runtime state with the Boot Service heartbeat for diagnostics.
 
-- discovery and trusted sessions
-- pairing
-- mouse and keyboard input
-- launcher control
-- tray integration
-- premium dashboard UI
+## State and permission files
 
-## Current communication model
+```text
+%ProgramData%\CouchLink\boot-service-status.json
+%ProgramData%\CouchLink\trusted-devices.json
+%ProgramData%\CouchLink\machine-permissions.json
+```
 
-The Boot Service writes an atomic JSON heartbeat file. The Session Host reads it every few seconds. This simple boundary is intentional for the foundation milestone. A later version can replace it with authenticated named-pipe IPC when commands must flow between the service and the signed-in session.
+Writes are atomic where state consistency matters. Trusted identities and permission values originate from the signed-in host and are mirrored to the machine scope; the service does not invent trust.
 
-## Security boundary
+## Current version
 
-The Boot Service is not a credential provider and is not a virtual input driver. Pre-login control remains a separate gated research project.
+All managed Windows components report `0.1-dev.13`. The wire protocol remains version `1`.

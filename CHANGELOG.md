@@ -1,3 +1,35 @@
+# Changelog
+
+All notable CouchLink development milestones are recorded here. Versions remain pre-release until the host, Android client, service, driver, packaging, and onboarding meet the stable `1.0` quality gate.
+
+## v0.1-dev.13 — Launcher Behavior & Product Polish
+
+**Released:** 2026-07-19
+
+### Added
+
+- Added Windows launch-or-focus behavior for Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, Epic Games Launcher, and Amazon Games.
+- Added structured `launcher_result` protocol responses and clear Android status feedback for launched, focused, and unavailable outcomes.
+- Added About and live diagnostics views to both Android and the Windows WPF host.
+- Added a Windows source overview README and refreshed every existing README with current architecture, build, security, and capability information.
+
+### Changed
+
+- Advanced Android to `0.1-dev.13` with `versionCode` `29`.
+- Synchronized Windows host, Boot Service, Session Host, Host Core, and Protocol assembly/file/informational version metadata to `0.1-dev.13`.
+- Updated Android protocol client metadata to report `0.1-dev.13`.
+- Reworked repository documentation into a consistent Forgejo/GitHub-friendly presentation.
+- Documented the accepted pre-login handoff sequence and the current launcher baseline.
+
+### Verified
+
+- All eight configured launchers launch when closed and focus when already running.
+- Remote mouse, keyboard, and Command Deck controls remain functional after launcher actions.
+- Lock transition connects to Boot Service on `45822`, PIN input succeeds through Virtual HID, and login hands the client back to desktop port `45821` without a reconnect storm.
+- The initial desktop probe may still log one non-fatal `45822` connection warning before falling back to `45821`; diagnostics cleanup is tracked separately.
+
+---
+
 ## v0.1-dev.12.1 — Virtual HID Safety Review
 
 - Restricted the virtual HID device object to LocalSystem and administrators with `SDDL_DEVOBJ_SYS_ALL_ADM_ALL`.
@@ -86,7 +118,6 @@
 - Added permission state to Boot Service heartbeat diagnostics.
 - Preserved safe rejection of secure-desktop input until the Credential Provider milestone.
 
-# CouchLink Changelog
 
 ## v0.1-dev.11.2.3 — Pre-Login Permission Sync
 
@@ -136,7 +167,6 @@
 - Preserved background discovery, trusted reconnect, and Steam Big Picture launch without a visible window.
 - Refined Android bottom navigation with icons and non-wrapping single-line labels.
 
-# CouchLink Changelog
 
 ## v0.1-dev.10 — Living-Room Readiness
 
@@ -162,7 +192,6 @@
 - Added Windows host handling for launching the Xbox app.
 - Preserved all pairing, trusted-device, tray, mouse, keyboard, and reconnect behavior.
 
-# CouchLink Changelog
 
 ## v0.1-dev.9.4 — Re-Pair & Exit Repair
 
@@ -172,7 +201,6 @@
 - Tray Exit uses an explicit graceful shutdown path.
 - Minimize continues to hide CouchLink to the tray while keeping the host active.
 
-# Changelog
 
 
 ## v0.1-dev.9.3 — Startup & Tray Compile Repair
@@ -239,7 +267,6 @@
 - Replaced the Android placeholder CL tile with the refined approved CouchLink monogram.
 - Preserved normal drag, double-click maximize, minimize, maximize/restore, close, and resize behavior.
 
-# Changelog
 
 ## 0.1-dev.7.1 — Mobile Layout Polish
 

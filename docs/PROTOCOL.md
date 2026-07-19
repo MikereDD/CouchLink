@@ -1,50 +1,41 @@
-# CouchLink Protocol v0.1
+# CouchLink Protocol
+
+## Transport
+
+CouchLink currently uses JSON messages in a framed TCP stream. UDP `45820` is reserved for local host discovery; TCP `45821` serves the signed-in desktop and TCP `45822` serves Boot Service/pre-login sessions.
 
 ## Envelope
-
-Every logical message is represented by a JSON envelope during early development:
 
 ```json
 {
   "protocolVersion": 1,
-  "messageId": "uuid",
-  "type": "hello",
-  "sentAtUtc": "2026-07-18T00:00:00Z",
+  "messageType": "hello",
+  "messageId": "unique-id",
   "payload": {}
 }
 ```
 
-## Initial message types
+Every message carries a protocol version, type, correlation identifier, and payload. Unsupported protocol versions receive an explicit error instead of being interpreted optimistically.
 
-- `hello`
-- `hello_ack`
-- `ping`
-- `pong`
-- `pair_request`
-- `pair_challenge`
-- `pair_confirm`
-- `pair_result`
-- `input_pointer_move`
-- `input_pointer_button`
-- `input_scroll`
-- `input_key`
-- `command`
-- `command_result`
-- `error`
+## Important message families
 
-## Framing
+| Family | Purpose |
+|---|---|
+| Discovery | Host identity, address, port, machine state, and pairing requirement |
+| Pairing | Approval-code exchange and trusted-device enrollment |
+| Session | `hello`, `hello_ack`, heartbeat, reconnect, and state transition |
+| Input | Pointer, button, scroll, text, key, and command actions |
+| Launcher | Launch-or-focus request and structured `launcher_result` response |
+| Error | Machine-readable code, human-readable detail, and correlation ID |
 
-For the first TCP prototype:
+## Compatibility rules
 
-1. Four-byte unsigned big-endian payload length
-2. UTF-8 JSON payload
+- Protocol version `1` is shared by Android, desktop host, and Boot Service.
+- Product version numbers may advance without changing the protocol version.
+- New optional fields should remain backward-compatible inside protocol `1`.
+- Any incompatible envelope or message-contract change requires a protocol-version increment.
+- Unknown or malformed commands must fail closed.
 
-The maximum accepted frame size must be bounded.
+## Security requirements
 
-## Rules
-
-- Unknown message types return an error rather than terminating the host.
-- Every command capable of changing host state carries a unique message ID.
-- Duplicate message IDs must not execute twice.
-- Input messages are rejected until pairing and authentication complete.
-- Protocol evolution is versioned independently from application versions.
+A trusted session is required before input or launcher commands are accepted. Pre-login sessions never offer pairing and authorize only identities previously mirrored from the signed-in host.

@@ -705,7 +705,7 @@ class DiscoveryClient(context: Context) {
         .put("clientId", clientId)
         .put("clientName", Build.MODEL)
         .put("clientPlatform", "Android")
-        .put("clientVersion", "0.1-dev.12.1")
+        .put("clientVersion", "0.1-dev.13")
         .put(
             "pairingToken",
             preferences.getString(
