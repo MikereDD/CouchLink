@@ -243,8 +243,34 @@ internal sealed class SessionServer : IAsyncDisposable
             case "launcher_action":
             {
                 if (!state.Authenticated) return;
-                LauncherActionMessage? launcher = envelope.Payload.Deserialize<LauncherActionMessage>(ProtocolJson.Options);
-                if (launcher is not null) _eventSink(_launcherController.Execute(launcher.Launcher, launcher.Action));
+                LauncherActionMessage? launcher =
+                    envelope.Payload.Deserialize<LauncherActionMessage>(
+                        ProtocolJson.Options);
+
+                if (launcher is null)
+                {
+                    await SendErrorAsync(
+                        stream,
+                        "invalid_launcher_action",
+                        "Launcher action payload is missing.",
+                        envelope.MessageId,
+                        cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+                LauncherResultMessage result =
+                    _launcherController.Execute(
+                        launcher.Launcher,
+                        launcher.Action);
+
+                _eventSink(result.Message);
+
+                await FrameCodec.WriteAsync(
+                    stream,
+                    ProtocolEnvelope.Create(
+                        "launcher_result",
+                        result),
+                    cancellationToken).ConfigureAwait(false);
                 return;
             }
 

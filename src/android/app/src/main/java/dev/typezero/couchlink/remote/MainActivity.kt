@@ -324,7 +324,20 @@ private fun CouchLinkApp() {
                 } else if (connected || screen == AppScreen.Settings) {
                     when (screen) {
                         AppScreen.Home -> HomeScreen(
-                            onLauncher = { launcher -> if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.LongPress); scope.launch { client.sendLauncherAction(launcher) } },
+                            onLauncher = { launcher ->
+                                if (hapticsEnabled) {
+                                    haptics.performHapticFeedback(
+                                        HapticFeedbackType.LongPress,
+                                    )
+                                }
+
+                                status =
+                                    "Opening ${launcherDisplayName(launcher)}…"
+
+                                scope.launch {
+                                    client.sendLauncherAction(launcher)
+                                }
+                            },
                             onShortcut = { shortcut -> if (hapticsEnabled) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); scope.launch { client.sendShortcut(shortcut) } },
                             inputEnabled = remoteInputEnabled
                         )
@@ -448,6 +461,20 @@ private fun PairingPanel(code: String, onCode: (String) -> Unit, busy: Boolean, 
             Text("TRUST THIS DEVICE", color = Color.Black, fontWeight = FontWeight.Bold)
         }
     }
+}
+
+private fun launcherDisplayName(
+    launcher: String,
+): String = when (launcher) {
+    "steam" -> "Steam"
+    "gog" -> "GOG Galaxy"
+    "xbox" -> "Xbox"
+    "ea" -> "EA app"
+    "ubisoft" -> "Ubisoft Connect"
+    "rockstar" -> "Rockstar Games Launcher"
+    "epic" -> "Epic Games Launcher"
+    "amazon" -> "Amazon Games"
+    else -> launcher
 }
 
 @Composable

@@ -491,64 +491,89 @@ class DiscoveryClient(context: Context) {
                                 )
                             }
 
-                            val response = readEnvelope(socket)
+                            var heartbeatComplete = false
 
-                            when (response.getString("type")) {
-                                "pong" -> {
-                                    inputEnabled = response
-                                        .getJSONObject("payload")
-                                        .optBoolean(
-                                            "remoteInputEnabled",
-                                            false,
+                            while (
+                                coroutineContext.isActive &&
+                                !socket.isClosed &&
+                                !heartbeatComplete
+                            ) {
+                                val response = readEnvelope(socket)
+
+                                when (response.getString("type")) {
+                                    "pong" -> {
+                                        inputEnabled = response
+                                            .getJSONObject("payload")
+                                            .optBoolean(
+                                                "remoteInputEnabled",
+                                                false,
+                                            )
+
+                                        onStatus(
+                                            "Connected to ${hello.hostName}:$port " +
+                                                "• heartbeat $sequence",
+                                            true,
+                                            inputEnabled,
                                         )
 
-                                    onStatus(
-                                        "Connected to ${hello.hostName}:$port " +
-                                            "• heartbeat $sequence",
-                                        true,
-                                        inputEnabled,
-                                    )
-                                }
-
-                                "error" -> {
-                                    val payload =
-                                        response.getJSONObject("payload")
-                                    val code =
-                                        payload.optString("code")
-
-                                    if (
-                                        port == PRELOGIN_PORT &&
-                                        code == "desktop_session_available"
-                                    ) {
-                                        logSessionInfo(
-                                            SESSION_LOG_TAG,
-                                            "Desktop session became available; " +
-                                                "leaving pre-login port $port",
-                                        )
-
-                                        invalidateActiveSocket(socket)
-                                        break
+                                        heartbeatComplete = true
                                     }
 
-                                    val message = payload.optString(
-                                        "message",
-                                        "CouchLink host returned an error.",
-                                    )
+                                    "launcher_result" -> {
+                                        val result =
+                                            response.getJSONObject("payload")
+                                        val message = result.optString(
+                                            "message",
+                                            "Launcher command completed.",
+                                        )
 
-                                    error(
-                                        if (code.isBlank()) {
-                                            message
-                                        } else {
-                                            "$code: $message"
-                                        },
-                                    )
-                                }
+                                        onStatus(
+                                            message,
+                                            true,
+                                            inputEnabled,
+                                        )
+                                    }
 
-                                else -> {
-                                    error(
-                                        "Unexpected heartbeat response: " +
-                                            response.getString("type"),
-                                    )
+                                    "error" -> {
+                                        val payload =
+                                            response.getJSONObject("payload")
+                                        val code =
+                                            payload.optString("code")
+
+                                        if (
+                                            port == PRELOGIN_PORT &&
+                                            code == "desktop_session_available"
+                                        ) {
+                                            logSessionInfo(
+                                                SESSION_LOG_TAG,
+                                                "Desktop session became available; " +
+                                                    "leaving pre-login port $port",
+                                            )
+
+                                            invalidateActiveSocket(socket)
+                                            break
+                                        }
+
+                                        val message = payload.optString(
+                                            "message",
+                                            "CouchLink host returned an error.",
+                                        )
+
+                                        error(
+                                            if (code.isBlank()) {
+                                                message
+                                            } else {
+                                                "$code: $message"
+                                            },
+                                        )
+                                    }
+
+                                    else -> {
+                                        error(
+                                            "Unexpected session response: " +
+                                                response.getString("type"),
+                                        )
+                                    }
                                 }
                             }
 

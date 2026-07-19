@@ -47,5 +47,11 @@ public sealed record KeyboardTextMessage(string Text);
 public sealed record KeyPressMessage(string Key);
 public sealed record ShortcutMessage(string Shortcut);
 public sealed record LauncherActionMessage(string Launcher, string Action);
+public sealed record LauncherResultMessage(
+    string Launcher,
+    string Action,
+    bool Success,
+    string State,
+    string Message);
 
 public sealed record ProtocolError(string Code, string Message, Guid? RelatedMessageId = null);
