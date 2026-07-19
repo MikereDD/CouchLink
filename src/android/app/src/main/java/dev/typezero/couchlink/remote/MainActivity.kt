@@ -1,12 +1,13 @@
 package dev.typezero.couchlink.remote
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -18,11 +19,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +34,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.layout.ContentScale
 import dev.typezero.couchlink.remote.network.DiscoveredHost
 import dev.typezero.couchlink.remote.network.DiscoveryClient
 import kotlinx.coroutines.Job
@@ -48,15 +50,26 @@ private val Muted = Color(0xFFA5ABB5)
 private val Accent = Color(0xFFFF881D)
 private val Success = Color(0xFF62D273)
 private val Danger = Color(0xFFFF6B6B)
-private val SteamBlue = Color(0xFF3E77A8)
 
-enum class AppScreen { Home, Touchpad, Keyboard, Settings }
+enum class AppScreen {
+    Home,
+    Touchpad,
+    Keyboard,
+    Settings,
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(background = SurfaceColor, surface = Panel, primary = Accent)) {
+            MaterialTheme(
+                colorScheme = darkColorScheme(
+                    background = SurfaceColor,
+                    surface = Panel,
+                    primary = Accent,
+                ),
+            ) {
                 CouchLinkApp()
             }
         }
@@ -65,12 +78,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun CouchLinkApp() {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val client = remember { DiscoveryClient(context) }
     val scope = rememberCoroutineScope()
-    var host by remember { mutableStateOf<DiscoveredHost?>(client.lastKnownHost()) }
-    var status by remember { mutableStateOf("Listening for CouchLink Host…") }
+
+    var host by remember {
+        mutableStateOf<DiscoveredHost?>(client.lastKnownHost())
+    }
+    var status by remember {
+        mutableStateOf("Listening for CouchLink Host…")
+    }
     var connected by remember { mutableStateOf(false) }
     var remoteInputEnabled by remember { mutableStateOf(false) }
     var pairingRequired by remember { mutableStateOf(false) }
@@ -82,69 +100,152 @@ private fun CouchLinkApp() {
     var dragLock by remember { mutableStateOf(false) }
     var keyboardText by remember { mutableStateOf("") }
     var sessionJob by remember { mutableStateOf<Job?>(null) }
-    var sessionEndpoint by remember { mutableStateOf<String?>(null) }
+    var sessionHostKey by remember { mutableStateOf<String?>(null) }
     var statusExpanded by remember { mutableStateOf(false) }
-    var pairingRequestedForHostId by remember { mutableStateOf<String?>(null) }
-    val appPrefs = remember { context.getSharedPreferences("couchlink_ui", android.content.Context.MODE_PRIVATE) }
-    var hapticsEnabled by remember { mutableStateOf(appPrefs.getBoolean("haptics", true)) }
-    var naturalScrolling by remember { mutableStateOf(appPrefs.getBoolean("natural_scrolling", true)) }
+    var pairingRequestedForHostId by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    val appPrefs = remember {
+        context.getSharedPreferences(
+            "couchlink_ui",
+            Context.MODE_PRIVATE,
+        )
+    }
+
+    var hapticsEnabled by remember {
+        mutableStateOf(
+            appPrefs.getBoolean("haptics", true),
+        )
+    }
+    var naturalScrolling by remember {
+        mutableStateOf(
+            appPrefs.getBoolean("natural_scrolling", true),
+        )
+    }
 
     fun releaseDrag() {
-        if (!dragLock) return
+        if (!dragLock) {
+            return
+        }
+
         dragLock = false
-        scope.launch { client.sendMouseButton("left", "up") }
+
+        scope.launch {
+            client.sendMouseButton("left", "up")
+        }
     }
 
     fun startSession(discovered: DiscoveredHost) {
-        val endpoint = "${discovered.address}:${discovered.sessionPort}"
-        if (sessionJob?.isActive == true && sessionEndpoint == endpoint) return
+        /*
+         * The desktop Session Host and Boot Service advertise different ports
+         * for the same Windows machine. Endpoint selection belongs inside
+         * DiscoveryClient, so a discovery-port change must not restart an
+         * otherwise healthy persistent session.
+         */
+        val hostKey = "${discovered.hostId}@${discovered.address}"
+
+        if (
+            sessionJob?.isActive == true &&
+            sessionHostKey == hostKey
+        ) {
+            return
+        }
+
         sessionJob?.cancel()
         client.disconnect()
-        sessionEndpoint = endpoint
+
+        sessionHostKey = hostKey
         paired = true
+
         sessionJob = scope.launch {
-            client.runPersistentSession(discovered) { message, isConnected, inputEnabled ->
+            client.runPersistentSession(discovered) {
+                    message,
+                    isConnected,
+                    inputEnabled,
+                ->
+
+                /*
+                 * DiscoveryClient invokes this callback from its IO context.
+                 * Move Compose state updates back onto the remembered UI scope.
+                 */
                 scope.launch {
                     status = message
                     connected = isConnected
                     remoteInputEnabled = inputEnabled
-                    if (!isConnected || !inputEnabled) releaseDrag()
+
+                    if (!isConnected || !inputEnabled) {
+                        releaseDrag()
+                    }
                 }
             }
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(client) {
         client.listen { discovered ->
-            host = discovered
-            if (client.hasTrustedToken(discovered)) {
-                paired = true
-                pairingRequired = false
-                startSession(discovered)
-            } else if (pairingRequestedForHostId != discovered.hostId) {
+            /*
+             * UDP discovery runs on Dispatchers.IO. Keep all Compose state and
+             * session lifecycle decisions on the UI scope.
+             */
+            scope.launch {
+                host = discovered
+
+                if (client.hasTrustedToken(discovered)) {
+                    paired = true
+                    pairingRequired = false
+                    pairingRequestedForHostId = null
+                    startSession(discovered)
+                    return@launch
+                }
+
+                if (
+                    pairingRequestedForHostId ==
+                    discovered.hostId
+                ) {
+                    return@launch
+                }
+
                 pairingRequestedForHostId = discovered.hostId
-                status = "Requesting a new pairing code from ${discovered.hostName}…"
-                scope.launch {
-                    runCatching { client.beginPairing(discovered) }
-                        .onSuccess { hello ->
-                            pairingRequired = hello.pairingRequired
-                            paired = hello.trusted
-                            status = if (hello.pairingRequired)
-                                "Enter the six-digit code shown on ${discovered.hostName}."
-                            else "Trusted link restored with ${discovered.hostName}."
-                            if (hello.trusted) startSession(discovered)
-                        }
-                        .onFailure { error ->
-                            pairingRequestedForHostId = null
-                            status = "Pairing request failed: ${error.message ?: "connection error"}"
-                        }
+                status =
+                    "Requesting a new pairing code from " +
+                    "${discovered.hostName}…"
+
+                runCatching {
+                    client.beginPairing(discovered)
+                }.onSuccess { hello ->
+                    pairingRequired = hello.pairingRequired
+                    paired = hello.trusted
+
+                    status = if (hello.pairingRequired) {
+                        "Enter the six-digit code shown on " +
+                            "${discovered.hostName}."
+                    } else {
+                        "Trusted link restored with " +
+                            "${discovered.hostName}."
+                    }
+
+                    if (hello.trusted) {
+                        pairingRequestedForHostId = null
+                        startSession(discovered)
+                    }
+                }.onFailure { error ->
+                    pairingRequestedForHostId = null
+                    status =
+                        "Pairing request failed: " +
+                        (error.message ?: "connection error")
                 }
             }
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose { client.disconnect(); sessionJob?.cancel() }
+    DisposableEffect(client) {
+        onDispose {
+            client.disconnect()
+            sessionJob?.cancel()
+            sessionJob = null
+            sessionHostKey = null
+        }
     }
 
     Surface(Modifier.fillMaxSize(), color = SurfaceColor) {
