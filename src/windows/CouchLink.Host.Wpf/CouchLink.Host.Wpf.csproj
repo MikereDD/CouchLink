@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>CouchLink.Host.Wpf</RootNamespace>
+    <AssemblyName>CouchLink.Host</AssemblyName>
+    <ApplicationIcon>Assets\couchlink.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CouchLink.Host.Core\CouchLink.Host.Core.csproj" />
+    <ProjectReference Include="..\CouchLink.SessionHost\CouchLink.SessionHost.csproj" />
+    <ProjectReference Include="..\CouchLink.Protocol\CouchLink.Protocol.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\couchlink.png" />
+    <Resource Include="Assets\couchlink.ico" />
+  </ItemGroup>
+</Project>

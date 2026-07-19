@@ -1,0 +1,73 @@
+;
+; CouchLinkVhid.inf — CouchLink Virtual HID source driver (root-enumerated, KMDF)
+;
+; Installs one software-only virtual HID device. Intended to be added with
+; devgen/devcon as a root device inside a test-signing VM. Do NOT install on
+; a production host without a proper signature.
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = HIDClass
+ClassGuid   = {745a17a0-74d3-11d0-b6fe-00a0c90f57da}
+Provider    = %ManufacturerName%
+CatalogFile = CouchLinkVhid.cat
+DriverVer   = ; set by stampinf / build
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 13   ; driver store package directory
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+CouchLinkVhid.sys = 1
+
+[Manufacturer]
+%ManufacturerName% = Standard,NT$ARCH$.10.0...16299
+
+;
+; Match the hardware ID produced when the device is created with:
+;   pnputil /add-driver CouchLinkVhid.inf /install
+;   devgen /add /instanceid CL01 /hardwareid "Root\CouchLinkVhid"
+;
+[Standard.NT$ARCH$.10.0...16299]
+%CouchLinkVhid.DeviceDesc% = CouchLinkVhid_Device, Root\CouchLinkVhid
+
+[CouchLinkVhid_Device.NT]
+CopyFiles = CouchLinkVhid_Device.CopyFiles
+
+[CouchLinkVhid_Device.NT.HW]
+AddReg = CouchLinkVhid_Device.NT.AddReg
+
+[CouchLinkVhid_Device.NT.AddReg]
+HKR,,"LowerFilters",0x00010000,"vhf"
+
+[CouchLinkVhid_Device.CopyFiles]
+CouchLinkVhid.sys
+
+[CouchLinkVhid_Device.NT.Services]
+AddService = CouchLinkVhid, 0x00000002, CouchLinkVhid_Service
+
+[CouchLinkVhid_Service]
+DisplayName   = %CouchLinkVhid.SvcDesc%
+ServiceType   = 1   ; SERVICE_KERNEL_DRIVER
+StartType     = 3   ; SERVICE_DEMAND_START
+ErrorControl  = 1   ; SERVICE_ERROR_NORMAL
+ServiceBinary = %13%\CouchLinkVhid.sys
+
+;
+; KMDF coinstaller / version binding
+;
+[CouchLinkVhid_Device.NT.Wdf]
+KmdfService = CouchLinkVhid, CouchLinkVhid_wdfsect
+
+[CouchLinkVhid_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+ManufacturerName          = "CouchLink"
+DiskName                  = "CouchLink Virtual HID Installation Disk"
+CouchLinkVhid.DeviceDesc  = "CouchLink Virtual HID"
+CouchLinkVhid.SvcDesc     = "CouchLink Virtual HID Service"

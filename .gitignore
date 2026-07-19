@@ -1,0 +1,44 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Android / Gradle
+.gradle/
+local.properties
+**/build/
+.idea/
+*.iml
+*.apk
+*.aab
+
+# Native / Windows driver build output
+**/Debug/
+**/Release/
+**/x64/
+**/x86/
+*.sys
+*.cat
+*.cer
+*.pdb
+*.ilk
+
+# Secrets and local state
+*.pfx
+*.key
+*.pem
+secrets/
+local-state/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+# Visual Studio upgrade reports
+**/UpgradeLog.htm
