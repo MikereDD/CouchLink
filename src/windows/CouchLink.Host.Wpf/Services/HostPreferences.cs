@@ -16,7 +16,6 @@ public sealed class HostPreferences
     public bool StartWithWindows { get; set; }
     public bool StartMinimized { get; set; }
     public bool CloseToTray { get; set; } = false;
-    public bool LaunchSteamBigPictureOnConnect { get; set; }
 
     public static HostPreferences Load()
     {
