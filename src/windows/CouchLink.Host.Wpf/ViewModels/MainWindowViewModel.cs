@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -16,8 +15,6 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
     private HostSnapshot _snapshot;
     private TrustedDeviceInfo? _selectedTrustedDevice;
     private readonly HostPreferences _preferences = HostPreferences.Load();
-    private int _previousConnectedClients;
-    private bool _steamAutoLaunchTriggered;
 
     public MainWindowViewModel()
     {
@@ -83,11 +80,6 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
         get => _preferences.StartMinimized;
         set { _preferences.StartMinimized = value; _preferences.Save(); OnPropertyChanged(); }
     }
-    public bool LaunchSteamBigPictureOnConnect
-    {
-        get => _preferences.LaunchSteamBigPictureOnConnect;
-        set { _preferences.LaunchSteamBigPictureOnConnect = value; _preferences.Save(); OnPropertyChanged(); }
-    }
     public void ToggleRemoteInput() => _runtime.ToggleRemoteInput();
 
     private void RevokeSelectedDevice()
@@ -121,26 +113,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
 
     private void OnSnapshotChanged(object? sender, SessionHostSnapshot sessionSnapshot)
     {
-        HostSnapshot snapshot = sessionSnapshot.Host;
-        bool shouldLaunchSteam = _preferences.LaunchSteamBigPictureOnConnect &&
-            !_steamAutoLaunchTriggered &&
-            _previousConnectedClients == 0 && snapshot.ConnectedClients > 0;
-        if (shouldLaunchSteam) _steamAutoLaunchTriggered = true;
-        _previousConnectedClients = snapshot.ConnectedClients;
-
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             _sessionSnapshot = sessionSnapshot;
-            _snapshot = snapshot;
+            _snapshot = sessionSnapshot.Host;
             OnPropertyChanged(string.Empty);
-            if (shouldLaunchSteam)
-            {
-                try
-                {
-                    Process.Start(new ProcessStartInfo("explorer.exe", "steam://open/bigpicture") { UseShellExecute = true });
-                }
-                catch { }
-            }
         });
     }
 
