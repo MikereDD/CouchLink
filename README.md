@@ -1,119 +1,53 @@
-# CouchLink
+# CouchLink Remote
 
-<p align="center">
-  <img src="docs/assets/couchlink-cl-mark-reference.png" alt="CouchLink logo" width="180">
-</p>
+CouchLink turns an Android phone into a persistent Bluetooth keyboard, mouse, and living-room launcher remote for Windows. It works at the Windows sign-in screen through the standard Windows Bluetooth HID stack and does not require a Windows companion app, custom driver, cloud account, or telemetry.
 
-<h3 align="center">Your Windows PC, from the couch.</h3>
+## Current build
 
-<p align="center">
-  <strong>Local-first Android remote control for a Windows living-room gaming PC.</strong><br>
-  Touchpad · Keyboard · Launcher deck · Secure pre-login control · No cloud account
-</p>
+- Version: `0.2-dev.12.1`
+- versionCode: `44`
+- Minimum Android: Android 9 / API 28
+- Target / compile SDK: 36
+- Java toolchain: JDK 17
 
-<p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1--dev.13-f97316">
-  <img alt="Protocol" src="https://img.shields.io/badge/protocol-1-64748b">
-  <img alt="Windows" src="https://img.shields.io/badge/host-Windows%2011-0078d4">
-  <img alt="Android" src="https://img.shields.io/badge/remote-Android-3ddc84">
-  <img alt="Privacy" src="https://img.shields.io/badge/privacy-local--first-22c55e">
-</p>
+## Features
 
----
+- Persistent Bluetooth HID connection with automatic reconnect
+- Windows sign-in keyboard and mouse input
+- Touchpad, mouse buttons, drag lock, and scrolling
+- Keyboard text, Windows keys, and command shortcuts
+- Steam Big Picture launch through `steam://open/bigpicture`
+- Direct EA desktop launcher command
+- Start Search launch fallback for other supported game launchers
+- Premium metallic living-room interface based on the approved CouchLink visual design
+- Modular Compose UI split into theme, shared components, and dedicated screen files
+- Type-safe launcher, keyboard, shortcut, and mouse command models
+- Full-width Steam and GOG feature launchers with cyan and violet accent treatments
+- 3-column launcher deck, premium command deck, and fixed segmented bottom navigation
+- No Windows Host, Boot Service, virtual HID driver, Test Mode, or disabled Secure Boot
 
-## Current milestone
+## Build
 
-### **v0.1-dev.13 — Launcher Behavior & Product Polish**
+Open this directory in Android Studio, use JDK 17, and build the `app` configuration.
 
-CouchLink now feels and behaves like a complete product prototype: a polished Android control surface, trusted persistent sessions, Windows launch-or-focus actions, structured launcher feedback, secure lock-screen and sign-in input through Virtual HID, automatic session handoff after login, and live diagnostics on both platforms.
-
-## What works today
-
-| Area | Capability |
-|---|---|
-| **Connection** | LAN discovery, explicit pairing, trusted-device identity, persistent sessions, heartbeat monitoring, automatic reconnection |
-| **Remote input** | Touchpad, clicks, drag lock, scrolling, text entry, keyboard commands, media/system shortcuts |
-| **Launchers** | Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, Epic Games Launcher, Amazon Games |
-| **Launcher behavior** | Launch closed apps, focus running apps, detect unavailable apps, return clear status to Android |
-| **Pre-login** | Lock-screen and sign-in mouse/keyboard control through the signed KMDF/VHF Virtual HID path |
-| **Handoff** | Automatic transition between Boot Service port `45822` and desktop Session Host port `45821` |
-| **Windows host** | WPF dashboard, tray operation, startup support, trusted-device management, live About/diagnostics |
-| **Android client** | Premium Home, Touchpad, Keyboard, Settings, About, and diagnostics views |
-
-## Product principles
-
-- **Local-first:** operation stays on the private network.
-- **No mandatory account, subscription, or cloud dependency.**
-- **No telemetry by default.**
-- **Explicit trust:** new devices require pairing approval.
-- **Windows remains in control:** remote input can be disabled locally.
-- **Authentication is never bypassed:** CouchLink supplies HID input; Windows still validates the PIN or password.
-
-## Architecture at a glance
-
-```text
-Android Remote
-    │
-    ├── UDP 45820 ─────────────── Host discovery
-    │
-    ├── TCP 45821 ─────────────── Desktop Session Host
-    │                               ├── trusted sessions
-    │                               ├── launcher control
-    │                               └── standard desktop input
-    │
-    └── TCP 45822 ─────────────── Boot Service / pre-login broker
-                                    └── signed Virtual HID bridge
-                                            └── Windows HID stack
-```
-
-The Windows side is deliberately split into a user-session host, a LocalSystem Boot Service, shared protocol contracts, and the Virtual HID driver. See [Architecture](docs/ARCHITECTURE.md), [Boot Service](docs/BOOT-SERVICE.md), and [Pre-Login Connectivity](docs/PRELOGIN-CONNECTIVITY.md).
-
-## Repository layout
-
-```text
-CouchLink/
-├── docs/                         Architecture, protocol, decisions, and roadmap
-├── src/
-│   ├── android/                  Kotlin + Jetpack Compose remote
-│   └── windows/                  WPF host, services, protocol, and Virtual HID
-├── tools/                        Development, firewall, service, and diagnostic scripts
-├── CHANGELOG.md                  Milestone history
-└── TEST-v*.md                    Historical validation checklists
-```
-
-## Quick build
-
-### Windows host
+Command line:
 
 ```powershell
-dotnet build .\src\windows\CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj
-```
-
-### Android remote
-
-```powershell
-.\src\android\gradlew.bat -p .\src\android :app:assembleDebug
+.\gradlew.bat clean :app:assembleDebug
 ```
 
 APK output:
 
 ```text
-src\android\app\build\outputs\apk\debug\app-debug.apk
+app\build\outputs\apk\debug\app-debug.apk
 ```
 
-> The Virtual HID driver uses the Windows Driver Kit and must be built, signed, and installed separately. Follow [BUILD-SIGN-TEST.md](src/windows/CouchLink.VirtualHid/BUILD-SIGN-TEST.md).
+## Validation gates
 
-## Development target
-
-Primary development and validation currently run on **Netzach**. Final living-room and 4K validation will move to the dedicated custom Steam PC after assembly.
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Protocol](docs/PROTOCOL.md)
-- [Boot Service](docs/BOOT-SERVICE.md)
-- [Pre-Login Connectivity](docs/PRELOGIN-CONNECTIVITY.md)
-- [Virtual HID Foundation](docs/VIRTUAL-HID-FOUNDATION.md)
-- [Design Decisions](docs/DECISIONS.md)
-- [Roadmap](docs/ROADMAP.md)
-- [Changelog](CHANGELOG.md)
+1. Reconnects automatically after Windows reboot.
+2. Touchpad and keyboard work with Android Wi-Fi disabled.
+3. Input works at the Windows sign-in screen with Secure Boot enabled.
+4. Leaving CouchLink open in the background does not disconnect HID.
+5. Every launcher tile opens the intended Windows application.
+6. Explicit disconnect does not display a false reconnecting state.
+7. Drag lock releases when leaving the Touchpad screen or losing the HID connection.
