@@ -12,8 +12,8 @@ android {
         applicationId = "dev.typezero.couchlink.remote"
         minSdk = 28
         targetSdk = 36
-        versionCode = 45
-        versionName = "0.2-dev.12.1"
+        versionCode = 100
+        versionName = "1.0"
     }
 
     compileOptions {
@@ -24,6 +24,44 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    signingConfigs {
+        val keystoreFile = providers.environmentVariable("COUCHLINK_KEYSTORE_FILE").orNull
+        val keystorePassword = providers.environmentVariable("COUCHLINK_KEYSTORE_PASSWORD").orNull
+        val keyAliasValue = providers.environmentVariable("COUCHLINK_KEY_ALIAS").orNull
+        val keyPasswordValue = providers.environmentVariable("COUCHLINK_KEY_PASSWORD").orNull
+
+        if (!keystoreFile.isNullOrBlank() &&
+            !keystorePassword.isNullOrBlank() &&
+            !keyAliasValue.isNullOrBlank() &&
+            !keyPasswordValue.isNullOrBlank()
+        ) {
+            create("release") {
+                storeFile = file(keystoreFile)
+                storePassword = keystorePassword
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+
+        getByName("release") {
+            isDebuggable = false
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.findByName("release")
+        }
     }
 
     packaging {

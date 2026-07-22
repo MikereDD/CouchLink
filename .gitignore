@@ -6,3 +6,10 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# CouchLink release signing and packaged outputs
+signing/
+release/
+*.jks
+*.keystore
+keystore.properties
