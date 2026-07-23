@@ -1,15 +1,28 @@
+# Android
 .gradle/
-.idea/
-local.properties
 **/build/
-*.iml
-captures/
-.externalNativeBuild/
-.cxx/
+local.properties
+*.apk
+*.aab
 
-# CouchLink release signing and packaged outputs
+# Signing and release secrets
 signing/
 release/
 *.jks
 *.keystore
 keystore.properties
+
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Published packages
+publish/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/

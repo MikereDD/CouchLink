@@ -1,0 +1,229 @@
+<Window x:Class="CouchLink.Host.Wpf.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="About CouchLink Host"
+        Icon="/Assets/couchlink.ico"
+        Width="700"
+        Height="720"
+        MinWidth="620"
+        MinHeight="620"
+        Background="{StaticResource SurfaceBrush}"
+        Foreground="{StaticResource TextBrush}"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        AllowsTransparency="False">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="50"
+                            ResizeBorderThickness="7"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceBrush}"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="46" />
+                    <ColumnDefinition Width="46" />
+                    <ColumnDefinition Width="46" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+                    <Image Source="/Assets/couchlink.png"
+                           Width="34"
+                           Height="34"
+                           Stretch="Uniform" />
+                    <TextBlock Margin="8,0,0,0"
+                               Text="About CouchLink Host"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="—"
+                        Click="Minimize_Click"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextBrush}"
+                        BorderThickness="0"
+                        FontSize="16"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+
+                <Button Grid.Column="2"
+                        Content="□"
+                        Click="MaximizeRestore_Click"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextBrush}"
+                        BorderThickness="0"
+                        FontSize="14"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+
+                <Button Grid.Column="3"
+                        Content="×"
+                        Click="Close_Click"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextBrush}"
+                        BorderThickness="0"
+                        FontSize="20"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="18" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="18" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Image Width="78"
+                   Height="78"
+                   Source="/Assets/couchlink.png"
+                   Stretch="Uniform" />
+            <StackPanel Grid.Column="2"
+                        VerticalAlignment="Center">
+                <TextBlock FontSize="30"
+                           FontWeight="SemiBold">
+                    <Run Text="Couch"/><Run Text="Link" Foreground="{StaticResource AccentBrush}"/><Run Text=" Host"/>
+                </TextBlock>
+                <TextBlock Margin="0,7,0,0"
+                           Text="{Binding HostVersion}"
+                           FontSize="15"
+                           Foreground="{StaticResource MutedTextBrush}" />
+                <TextBlock Margin="0,4,0,0"
+                           Text="{Binding BuildChannel, StringFormat={}Build channel: {0}}"
+                           Foreground="{StaticResource AccentBrush}" />
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel>
+                <Border Padding="18"
+                        CornerRadius="14"
+                        Background="{StaticResource PanelBrush}">
+                    <StackPanel>
+                        <TextBlock Text="ABOUT"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock Margin="0,10,0,0"
+                                   Text="CouchLink turns an Android device into a secure local remote for Windows, including mouse, keyboard, launcher actions, and authorized pre-login control."
+                                   TextWrapping="Wrap"
+                                   FontSize="15" />
+                        <TextBlock Margin="0,12,0,0"
+                                   Text="{Binding PrivacySummary}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,16,0,0"
+                        Padding="18"
+                        CornerRadius="14"
+                        Background="{StaticResource PanelBrush}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1.25*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="HOST"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Margin="0,10,0,0"
+                                       Text="{Binding HostName}"
+                                       FontSize="18"
+                                       FontWeight="SemiBold" />
+                            <TextBlock Margin="0,5,0,0"
+                                       Text="{Binding HostState}"
+                                       Foreground="{StaticResource AccentBrush}" />
+                            <TextBlock Margin="0,5,0,0"
+                                       Text="{Binding SessionEndpoint}"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="COMPONENTS"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Margin="0,10,0,0"
+                                       Text="{Binding ServiceStatus, StringFormat={}Host listener: {0}}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Text="{Binding DiscoveryStatus, StringFormat={}Discovery: {0}}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Text="{Binding ConnectedDevice, StringFormat={}Connected: {0}}"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Text="Input: phone Bluetooth HID"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Margin="0,6,0,0"
+                                       Text="{Binding ProtocolVersion, StringFormat={}Protocol: {0}}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border Margin="0,16,0,0"
+                        Padding="18"
+                        CornerRadius="14"
+                        Background="{StaticResource PanelBrush}">
+                    <StackPanel>
+                        <TextBlock Text="DIAGNOSTICS"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBox Margin="0,10,0,0"
+                                 Height="210"
+                                 Padding="12"
+                                 Text="{Binding DiagnosticsText, Mode=OneWay}"
+                                 IsReadOnly="True"
+                                 TextWrapping="NoWrap"
+                                 AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 Background="{StaticResource PanelRaisedBrush}"
+                                 Foreground="{StaticResource TextBrush}"
+                                 BorderBrush="#343A43" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button Padding="14,10"
+                    Content="COPY DIAGNOSTICS"
+                    Click="CopyDiagnostics_Click" />
+            <Button Grid.Column="2"
+                    Padding="14,10"
+                    Content="CLOSE"
+                    Click="Close_Click" />
+        </Grid>
+    </Grid>
+</Grid>
+</Window>

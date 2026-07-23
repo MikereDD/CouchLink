@@ -1,147 +1,99 @@
 <div align="center">
 
-<img src="docs/assets/couchlink-icon.png" alt="CouchLink app icon" width="150" />
+<img src="src/android/docs/assets/couchlink-icon.png" alt="CouchLink" width="150" />
 
 # CouchLink
 
-### Turn your Android phone into a premium Bluetooth remote for Windows.
+### A living-room Windows launcher with an Android Bluetooth remote.
 
-<p>
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0-ff8617?style=for-the-badge" />
-  <img alt="Android" src="https://img.shields.io/badge/Android-9%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
-  <img alt="Windows" src="https://img.shields.io/badge/Windows-Bluetooth_HID-0078D4?style=for-the-badge&logo=windows11&logoColor=white" />
-  <img alt="Privacy" src="https://img.shields.io/badge/Privacy-No_Telemetry-18181B?style=for-the-badge" />
-  <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge" />
-</p>
+![Android](https://img.shields.io/badge/Android-1.1--dev.2-ff8617?style=for-the-badge&logo=android&logoColor=white)
+![Windows Host](https://img.shields.io/badge/Windows_Host-0.2--dev.1-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
+![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
+![Branding](https://img.shields.io/badge/Branding-Reserved-18181B?style=for-the-badge)
 
-**Keyboard. Mouse. Touchpad. Launcher deck. No Windows companion app required.**
+**Bluetooth input at sign-in. Rich launcher control after sign-in. No cloud relay.**
 
 </div>
 
 ---
 
-## What is CouchLink?
+## Overview
 
-CouchLink turns a compatible Android phone into a persistent Bluetooth HID keyboard and mouse for Windows. It is built for living-room PCs, gaming setups, media systems, and those moments when the keyboard is across the room.
+CouchLink uses two independent connection paths so each part can do what it does best:
 
-Because CouchLink uses the standard Windows Bluetooth HID stack, it can provide input at the Windows sign-in screen without a custom driver, cloud account, disabled Secure Boot, or Windows Test Mode.
+| Path | Responsibility | Works at Windows sign-in? |
+|---|---|---|
+| **Android Bluetooth HID** | Keyboard, mouse, touchpad, media keys, shortcuts, and secure sign-in input | **Yes** |
+| **Windows launcher host** | Local discovery, trusted pairing, launch/focus/close actions, and real launcher-state feedback | After desktop login |
 
-<div align="center">
-  <img src="PREMIUM-UI-REFERENCE.png" alt="CouchLink premium interface" width="420" />
-</div>
+The Android remote remains useful when the Windows host is closed or unavailable. Launcher tiles prefer the host when connected and retain Bluetooth-command fallback behavior.
 
-## Highlights
+## Repository layout
 
-| Feature | What it provides |
-|---|---|
-| **Bluetooth HID** | Persistent keyboard and mouse input directly over Bluetooth |
-| **Windows sign-in support** | Control the PC before the desktop and companion software are available |
-| **Touchpad controls** | Pointer movement, left/right click, scrolling, and drag lock |
-| **Keyboard deck** | Text entry, media keys, navigation, and Windows shortcuts |
-| **Launcher deck** | One-tap access to major PC game launchers |
-| **Automatic reconnect** | Hardened foreground-service behavior for dependable living-room use |
-| **Private by design** | No account, advertisements, analytics, telemetry, or cloud relay |
+```text
+CouchLink/
+├── src/
+│   ├── android/              Android Bluetooth HID remote and launcher client
+│   └── windows/              Optional Windows launcher host
+├── docs/
+│   ├── architecture/         Current system design and protocol boundaries
+│   ├── building/             Build and test instructions
+│   ├── release/              Signing and release procedures
+│   └── history/              Preserved development notes and old manifests
+├── CHANGELOG.md              Current cross-platform changelog
+├── PRIVACY.md                Repository-wide privacy statement
+├── LICENSE                   Apache License 2.0
+└── TRADEMARKS.md             CouchLink brand and trademark policy
+```
 
 ## Supported launchers
 
-<table>
-<tr>
-<td align="center"><b>Steam</b><br><sub>Big Picture</sub></td>
-<td align="center"><b>GOG Galaxy</b><br><sub>DRM-free library</sub></td>
-<td align="center"><b>Xbox</b><br><sub>Xbox app</sub></td>
-<td align="center"><b>EA app</b><br><sub>Electronic Arts</sub></td>
-</tr>
-<tr>
-<td align="center"><b>Ubisoft Connect</b></td>
-<td align="center"><b>Rockstar Games</b></td>
-<td align="center"><b>Epic Games</b></td>
-<td align="center"><b>Amazon Games</b></td>
-</tr>
-</table>
+Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, Epic Games Launcher, and Amazon Games.
 
-## Requirements
+## Build
 
-- Android 9 or newer
-- Android device with Bluetooth HID device support
-- Windows computer with Bluetooth
-- JDK 17 and Android SDK 36 for source builds
-
-## Build from source
-
-### Debug build
+### Android
 
 ```powershell
+cd .\src\android
 .\gradlew.bat clean :app:assembleDebug
 ```
 
-The debug variant uses the package suffix `.debug`, allowing it to coexist with the signed stable release.
+Or open `src/android` directly in Android Studio.
 
-### Signed stable build
-
-Create the permanent release keystore once:
+### Windows host
 
 ```powershell
-.\tools\New-CouchLinkKeystore.ps1
+cd .\src\windows
+dotnet build .\CouchLink.sln -c Debug
+dotnet run --project .\CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj
 ```
 
-Build and verify the signed release:
+See [BUILDING.md](docs/building/BUILDING.md) for release and publish commands.
 
-```powershell
-.\tools\Build-SignedRelease.ps1 `
-  -KeystorePath "C:\full\path\to\couchlink-release.jks"
+## Current development baseline
 
-.\tools\Verify-SignedRelease.ps1
-```
-
-The release workflow writes the finished files to:
-
-```text
-release\CouchLink-v1.0.apk
-release\CouchLink-v1.0.apk.sha256
-```
-
-> [!IMPORTANT]
-> Back up the release keystore and both passwords securely. Every future Android update must be signed with the same key.
-
-See [SIGNING.md](SIGNING.md) for the complete signing procedure.
-
-## Release information
-
-| Property | Value |
-|---|---|
-| Version | `1.0` |
-| Version code | `100` |
-| Stable application ID | `dev.typezero.couchlink.remote` |
-| Debug application ID | `dev.typezero.couchlink.remote.debug` |
-| Minimum Android | API 28 / Android 9 |
-| Target and compile SDK | API 36 |
-| Java toolchain | JDK 17 |
-
-Before publishing or tagging the stable release, complete the [v1.0 release checklist](RELEASE-CHECKLIST-v1.0.md).
-
-## Privacy
-
-CouchLink communicates directly with the paired computer over Bluetooth. It does not require an account and does not include advertising, analytics, telemetry, or cloud data transmission.
-
-Read the full [privacy statement](PRIVACY.md).
+| Component | Version | Status |
+|---|---:|---|
+| Android remote | `1.1-dev.3` | Bluetooth HID + Windows launcher-host integration |
+| Windows host | `0.2-dev.1` | Local-first launcher host |
+| Shared protocol | `1` | UDP discovery + framed TCP session |
+| Working integration archive | `0.1-dev.15.4` | Windows Launcher Host settings restored |
 
 ## Documentation
 
-- [Release notes](RELEASE-NOTES-v1.0.md)
-- [Signing guide](SIGNING.md)
-- [Release checklist](RELEASE-CHECKLIST-v1.0.md)
-- [Privacy statement](PRIVACY.md)
-- [Source manifest](SOURCE-MANIFEST-v1.0.sha256)
+- [Architecture](docs/architecture/ARCHITECTURE.md)
+- [Build instructions](docs/building/BUILDING.md)
+- [Test checklist](docs/building/TESTING.md)
+- [Android signing](docs/release/ANDROID-SIGNING.md)
+- [Changelog](CHANGELOG.md)
+- [Privacy](PRIVACY.md)
+- [Trademark and brand policy](TRADEMARKS.md)
+- [Development history](docs/history/README.md)
 
-## License
+## License and branding
 
-CouchLink is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for the full terms.
+CouchLink source code is licensed under the [Apache License 2.0](LICENSE).
 
----
-
-<div align="center">
-
-**CouchLink 1.0**  
-Built for the couch. Connected directly to Windows.
-
-</div>
+The **CouchLink** name, **CL** branding, icons, logos, original artwork, screenshots, and official visual identity are governed separately by the [CouchLink Trademark and Brand Policy](TRADEMARKS.md). Forks may use the Apache-licensed code, but must rename and rebrand unless explicitly authorized.
