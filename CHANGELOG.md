@@ -1,5 +1,15 @@
 # CouchLink Changelog
 
+## 1.2-dev.7 — Documentation and release cleanup
+
+- Rebuilt the root README around the complete CouchLink experience: Home, Touchpad, Keyboard, Windows launcher control, and Google TV Remote.
+- Added the approved 2×2 feature collage showing Home, Touchpad, Keyboard, and TV Remote in one README-ready image.
+- Changed the debug launcher label from `CouchLink TV Remote Dev` to `CouchLink` while preserving the metallic CL icon.
+- Documented secure Google TV pairing, Wake-on-LAN power-on, Google Live navigation, premium remote controls, and verified Hisense input switching.
+- Added a hardware-validation note separating broadly reusable Google TV controls from model-specific input mappings.
+- Added the v1.2-dev.7 release-cleanup and regression checklist.
+- Updated Android metadata to version `1.2-dev.7` with `versionCode 117`.
+
 ## 1.2-dev.6 — Premium TV Remote visual pass
 
 - Rebuilt the TV Remote controls with custom CouchLink-drawn icons instead of text symbols.
