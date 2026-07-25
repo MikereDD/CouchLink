@@ -16,6 +16,7 @@ internal sealed class SessionServer : IAsyncDisposable
     private readonly PairingStore _pairingStore;
     private readonly PairingCoordinator _pairingCoordinator;
     private readonly LauncherController _launcherController = new();
+    private readonly AudioOutputController _audioOutputController = new();
     private readonly Action<string> _pairingCodeSink;
     private readonly Action<string> _connectedDeviceSink;
     private int _connectedClients;
@@ -149,7 +150,7 @@ internal sealed class SessionServer : IAsyncDisposable
                     new HelloAckMessage(_hostId, _hostName, HostConstants.HostVersion, _hostState(), !trusted, trusted)), cancellationToken);
                 if (trusted)
                 {
-                    string[] capabilities = ["heartbeat", "session_state", "launcher_actions"];
+                    string[] capabilities = ["heartbeat", "session_state", "launcher_actions", "audio_outputs"];
                     await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("session_ready",
                         new SessionReadyMessage(_hostId, _hostName, _hostState(), HostConstants.HeartbeatSeconds, capabilities)), cancellationToken);
                 }
@@ -179,6 +180,34 @@ internal sealed class SessionServer : IAsyncDisposable
                 PingMessage? ping = envelope.Payload.Deserialize<PingMessage>(ProtocolJson.Options);
                 if (ping is null) { await SendErrorAsync(stream, "invalid_ping", "Ping payload is missing.", envelope.MessageId, cancellationToken); return; }
                 await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pong", new PongMessage(ping.Sequence, DateTimeOffset.UtcNow)), cancellationToken);
+                return;
+            }
+
+            case "audio_output_list":
+            {
+                if (!state.Authenticated) return;
+                AudioOutputListResult result = _audioOutputController.List();
+                var devices = result.Devices
+                    .Select(d => new AudioOutputDeviceMessage(d.Id, d.Name, d.IsDefault))
+                    .ToArray();
+                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_list_result",
+                    new AudioOutputListMessage(result.Success, devices, result.Error)), cancellationToken).ConfigureAwait(false);
+                return;
+            }
+
+            case "audio_output_set":
+            {
+                if (!state.Authenticated) return;
+                AudioOutputSetMessage? request = envelope.Payload.Deserialize<AudioOutputSetMessage>(ProtocolJson.Options);
+                if (request is null || string.IsNullOrWhiteSpace(request.EndpointId))
+                {
+                    await SendErrorAsync(stream, "invalid_audio_output", "Audio endpoint ID is missing.", envelope.MessageId, cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+                AudioOutputSetResult result = _audioOutputController.SetDefault(request.EndpointId);
+                _eventSink(result.Message);
+                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_result",
+                    new AudioOutputResultMessage(result.Success, result.EndpointId, result.Name, result.Message)), cancellationToken).ConfigureAwait(false);
                 return;
             }
 

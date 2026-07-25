@@ -100,6 +100,8 @@ internal fun HomeScreen(
     launcherEnabled: Boolean,
     inputEnabled: Boolean,
     onRetryLauncherHost: () -> Unit,
+    onRefreshAudioOutputs: () -> Unit,
+    onAudioOutput: (String) -> Unit,
 ) {
     LauncherHostStatus(launcherHostState, onRetryLauncherHost)
     SectionLabel("LAUNCHERS")
@@ -146,6 +148,14 @@ internal fun HomeScreen(
     }
 
     Spacer(Modifier.height(2.dp))
+    SectionLabel("AUDIO OUTPUT")
+    AudioOutputPanel(
+        state = launcherHostState,
+        onRefresh = onRefreshAudioOutputs,
+        onSelect = onAudioOutput,
+    )
+
+    Spacer(Modifier.height(2.dp))
     SectionLabel("COMMAND DECK")
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -159,6 +169,57 @@ internal fun HomeScreen(
                 modifier = Modifier.weight(1f),
                 onClick = { onShortcut(command.shortcut) },
             )
+        }
+    }
+}
+
+@Composable
+private fun AudioOutputPanel(
+    state: LauncherHostState,
+    onRefresh: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF090D11), shape)
+            .border(1.dp, Accent.copy(alpha = 0.72f), shape)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = state.audioOutputs.firstOrNull { it.isDefault }?.name ?:
+                    if (state.connected) "No active output reported" else "Connect Windows Host",
+                modifier = Modifier.weight(1f),
+                color = TextColor,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+            )
+            Text(
+                text = if (state.audioLoading) "LOADING" else "REFRESH",
+                color = Accent,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable(enabled = state.connected && !state.audioLoading, onClick = onRefresh),
+            )
+        }
+        state.audioOutputs.forEach { device ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (device.isDefault) Accent.copy(alpha = 0.12f) else Color(0xFF05080B), RoundedCornerShape(12.dp))
+                    .border(1.dp, if (device.isDefault) Accent else Silver.copy(alpha = 0.20f), RoundedCornerShape(12.dp))
+                    .clickable(enabled = state.connected && !device.isDefault) { onSelect(device.id) }
+                    .padding(horizontal = 11.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(if (device.isDefault) "●" else "○", color = if (device.isDefault) Success else Muted, fontSize = 11.sp)
+                Spacer(Modifier.width(9.dp))
+                Text(device.name, color = TextColor, fontSize = 11.sp, modifier = Modifier.weight(1f), maxLines = 2)
+            }
         }
     }
 }

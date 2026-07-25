@@ -1,5 +1,11 @@
 package dev.typezero.couchlink.remote.model
 
+internal data class AudioOutputDevice(
+    val id: String,
+    val name: String,
+    val isDefault: Boolean,
+)
+
 internal data class LauncherHostState(
     val discovered: Boolean = false,
     val trusted: Boolean = false,
@@ -13,4 +19,6 @@ internal data class LauncherHostState(
     val hostVersion: String = "",
     val message: String = "Searching for CouchLink Host…",
     val launcherStates: Map<LauncherId, String> = emptyMap(),
+    val audioOutputs: List<AudioOutputDevice> = emptyList(),
+    val audioLoading: Boolean = false,
 )

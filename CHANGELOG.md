@@ -1,3 +1,11 @@
+# Changelog
+
+## 1.3-dev.1
+
+- Added native Windows audio-output enumeration and default-endpoint switching.
+- Added authenticated `audio_output_list` and `audio_output_set` host protocol messages.
+- Added Android audio-output list, active-output indicator, refresh, and tap-to-switch controls.
+
 # CouchLink Changelog
 
 ## 1.2 — Stable Google TV Remote release

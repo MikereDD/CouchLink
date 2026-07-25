@@ -3,6 +3,7 @@ package dev.typezero.couchlink.remote.host
 import android.content.Context
 import android.os.Build
 import dev.typezero.couchlink.remote.BuildConfig
+import dev.typezero.couchlink.remote.model.AudioOutputDevice
 import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.model.LauncherId
 import java.io.DataInputStream
@@ -127,6 +128,26 @@ internal class LauncherHostClient(context: Context) {
                 )
             }
         }
+    }
+
+
+    fun refreshAudioOutputs(): Boolean {
+        if (!_state.value.connected) return false
+        _state.value = _state.value.copy(audioLoading = true)
+        scope.launch {
+            if (!sendEnvelope("audio_output_list", JSONObject())) {
+                _state.value = _state.value.copy(audioLoading = false)
+            }
+        }
+        return true
+    }
+
+    fun setAudioOutput(endpointId: String): Boolean {
+        if (!_state.value.connected || endpointId.isBlank()) return false
+        scope.launch {
+            sendEnvelope("audio_output_set", JSONObject().put("endpointId", endpointId))
+        }
+        return true
     }
 
     fun launch(
@@ -341,6 +362,38 @@ internal class LauncherHostClient(context: Context) {
                     message = "Launcher host connected to ${payload.optString("hostName", hostName)}.",
                 )
                 startHeartbeat(payload.optInt("heartbeatSeconds", 5).coerceIn(2, 15))
+                refreshAudioOutputs()
+            }
+            "audio_output_list_result" -> {
+                val devicesJson = payload.optJSONArray("devices")
+                val devices = buildList {
+                    if (devicesJson != null) {
+                        for (index in 0 until devicesJson.length()) {
+                            val item = devicesJson.optJSONObject(index) ?: continue
+                            val id = item.optString("id")
+                            if (id.isBlank()) continue
+                            add(AudioOutputDevice(id, item.optString("name", id), item.optBoolean("isDefault")))
+                        }
+                    }
+                }
+                _state.value = _state.value.copy(
+                    audioOutputs = devices,
+                    audioLoading = false,
+                    message = payload.optString("error").takeIf { it.isNotBlank() } ?: _state.value.message,
+                )
+            }
+            "audio_output_result" -> {
+                val endpointId = payload.optString("endpointId")
+                val success = payload.optBoolean("success")
+                val devices = if (success) {
+                    _state.value.audioOutputs.map { it.copy(isDefault = it.id.equals(endpointId, ignoreCase = true)) }
+                } else _state.value.audioOutputs
+                _state.value = _state.value.copy(
+                    audioOutputs = devices,
+                    audioLoading = false,
+                    message = payload.optString("message", if (success) "Audio output changed." else "Audio switch failed."),
+                )
+                if (success) refreshAudioOutputs()
             }
             "launcher_result" -> {
                 val launcher = launcherIdFromWireName(payload.optString("launcher"))

@@ -288,6 +288,8 @@ private fun CouchLinkApp() {
                             }
                         },
                         onRetryLauncherHost = launcherHost::retry,
+                        onRefreshAudioOutputs = { launcherHost.refreshAudioOutputs() },
+                        onAudioOutput = { endpointId -> launcherHost.setAudioOutput(endpointId) },
                         onShortcut = { shortcut ->
                             if (hapticsEnabled) {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)

@@ -52,3 +52,9 @@ public sealed record LauncherResultMessage(
     string Message);
 
 public sealed record ProtocolError(string Code, string Message, Guid? RelatedMessageId = null);
+
+public sealed record AudioOutputListRequest();
+public sealed record AudioOutputDeviceMessage(string Id, string Name, bool IsDefault);
+public sealed record AudioOutputListMessage(bool Success, AudioOutputDeviceMessage[] Devices, string? Error);
+public sealed record AudioOutputSetMessage(string EndpointId);
+public sealed record AudioOutputResultMessage(bool Success, string EndpointId, string? Name, string Message);
