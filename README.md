@@ -16,11 +16,14 @@
 
 </div>
 
+---
+
+## Screenshot
 <p align="center">
   <img
     src="docs/images/couchlink-v1.1.png"
     alt="CouchLink v1.1 Android remote and Windows host"
-    width="900"
+    width="560"
   />
 </p>
 
