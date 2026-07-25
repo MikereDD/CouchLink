@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3-dev.2
+
+- Corrected the Windows Core Audio `IMMDeviceCollection` interface IID used by output enumeration.
+- Hid obvious capture/loopback-labelled render endpoints such as Sonar Microphone, Line, and What U Hear from the normal output picker.
+- Shortened common driver suffixes in Android audio-output cards while preserving complete endpoint names and IDs in the protocol.
+- Kept switching by stable Windows endpoint ID and continued setting Console, Multimedia, and Communications roles together.
+
 ## 1.3-dev.1
 
 - Added native Windows audio-output enumeration and default-endpoint switching.

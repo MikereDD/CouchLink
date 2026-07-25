@@ -190,7 +190,7 @@ private fun AudioOutputPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = state.audioOutputs.firstOrNull { it.isDefault }?.name ?:
+                text = state.audioOutputs.firstOrNull { it.isDefault }?.name?.let(::compactAudioOutputName) ?:
                     if (state.connected) "No active output reported" else "Connect Windows Host",
                 modifier = Modifier.weight(1f),
                 color = TextColor,
@@ -218,11 +218,23 @@ private fun AudioOutputPanel(
             ) {
                 Text(if (device.isDefault) "●" else "○", color = if (device.isDefault) Success else Muted, fontSize = 11.sp)
                 Spacer(Modifier.width(9.dp))
-                Text(device.name, color = TextColor, fontSize = 11.sp, modifier = Modifier.weight(1f), maxLines = 2)
+                Text(
+                    compactAudioOutputName(device.name),
+                    color = TextColor,
+                    fontSize = 11.sp,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                )
             }
         }
     }
 }
+
+private fun compactAudioOutputName(name: String): String = name
+    .removeSuffix(" (NVIDIA High Definition Audio)")
+    .removeSuffix(" (SteelSeries Sonar Virtual Audio Device)")
+    .removeSuffix(" (Realtek(R) Audio)")
+    .trim()
 
 @Composable
 private fun LauncherHostStatus(

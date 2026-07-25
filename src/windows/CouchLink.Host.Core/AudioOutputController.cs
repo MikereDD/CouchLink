@@ -26,6 +26,9 @@ internal sealed class AudioOutputController
                 {
                     device.GetId(out string id);
                     string name = ReadFriendlyName(device) ?? id;
+                    if (ShouldHideFromOutputPicker(name))
+                        continue;
+
                     devices.Add(new AudioOutputDevice(id, name, string.Equals(id, defaultId, StringComparison.OrdinalIgnoreCase)));
                 }
                 finally { Marshal.ReleaseComObject(device); }
@@ -74,6 +77,15 @@ internal sealed class AudioOutputController
         }
     }
 
+    private static bool ShouldHideFromOutputPicker(string name)
+    {
+        string trimmed = name.TrimStart();
+        return trimmed.StartsWith("Microphone", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("Line (", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("What U Hear", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains(" - Microphone (", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string? ReadFriendlyName(IMMDevice device)
     {
         device.OpenPropertyStore(0, out IPropertyStore store);
@@ -104,7 +116,7 @@ internal sealed class AudioOutputController
         [PreserveSig] int UnregisterEndpointNotificationCallback(IntPtr client);
     }
 
-    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("0BD7A1BE-7A1A-44DB-8397-C0A7A8B22E79")]
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E")]
     private interface IMMDeviceCollection
     {
         [PreserveSig] int GetCount(out uint count);
