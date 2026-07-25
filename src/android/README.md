@@ -25,7 +25,7 @@ Version `1.1` · Version code `106` · Android 9+ · Protocol `1`
 .\gradlew.bat clean :app:assembleDebug
 ```
 
-Open this directory directly in Android Studio for normal test builds. For a signed APK only, run `.\tools\Build-SignedRelease.ps1`; for the signed APK, Windows EXE, and all SHA-256 files together, run `.\Build-Release.ps1` from the repository root. Signing details are covered by [ANDROID-SIGNING.md](../../docs/release/ANDROID-SIGNING.md).
+Open this directory directly in Android Studio for normal test builds. For a signed APK only, run `.\tools\Build-SignedRelease.ps1`; for the signed APK, Windows EXE, the source archive, release documents, and all SHA-256 files together, run `.\Build-Release.ps1` from the repository root. Signing details are covered by [ANDROID-SIGNING.md](../../docs/release/ANDROID-SIGNING.md).
 
 ## Connection model
 

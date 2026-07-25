@@ -14,7 +14,10 @@ The script:
 2. Securely prompts for the keystore and key passwords.
 3. Builds and verifies the signed Android release APK.
 4. Publishes the Windows x64 host as a single-file executable.
-5. Generates individual SHA-256 files and one combined checksum list.
+5. Verifies the expected CouchLink signing-certificate fingerprint.
+6. Regenerates and verifies the source manifest.
+7. Packages a clean source ZIP and release documentation.
+8. Generates individual SHA-256 files and one combined checksum list.
 
 Default output:
 
@@ -24,7 +27,21 @@ release\CouchLink-v1.1\
 ├── CouchLink-v1.1.apk.sha256
 ├── CouchLink-Host-v1.1-win-x64.exe
 ├── CouchLink-Host-v1.1-win-x64.exe.sha256
-└── SHA256SUMS-v1.1.txt
+├── CouchLink-v1.1-source.zip
+├── CouchLink-v1.1-source.zip.sha256
+├── SHA256SUMS-v1.1.txt
+├── RELEASE-INFO-v1.1.txt
+├── RELEASE-NOTES-v1.1.md
+├── INSTALLATION-v1.1.md
+├── README.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
+├── SOURCE-MANIFEST-v1.1.sha256
+├── LICENSE
+├── NOTICE
+├── PRIVACY.md
+└── TRADEMARKS.md
 ```
 
 The default Windows build is framework-dependent and requires the .NET 8 Desktop Runtime. Add `-SelfContained` to embed the runtime:
@@ -37,7 +54,7 @@ You may supply the keystore path and alias on the command line while keeping bot
 
 ```powershell
 .\Build-Release.ps1 `
-  -KeystorePath 'G:\secure\couchlink-release.jks' `
+  -KeystorePath "$HOME\Documents\Android\Keys\couchlink-release.jks" `
   -KeyAlias 'couchlink-release'
 ```
 
@@ -111,4 +128,6 @@ The root `Build-Release.ps1` script performs this publish and writes the checksu
 
 ## Release integrity
 
-Checksums must be generated from the exact APK and EXE files attached to the release. The combined builder creates both per-file checksum files and `SHA256SUMS-v1.1.txt` from the final renamed artifacts.
+Checksums must be generated from the exact APK, EXE, and source ZIP attached to the release. The combined builder creates per-file checksum files and `SHA256SUMS-v1.1.txt` from the final renamed artifacts.
+
+The source archive is built from the current repository tree after `SOURCE-MANIFEST-v1.1.sha256` is regenerated and verified. Build output, signing material, IDE state, local properties, logs, and machine-specific release folders are excluded.

@@ -56,7 +56,7 @@ import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
 private data class SecondaryLauncherSpec(
     val label: String,
     val launcher: LauncherId,
-    @DrawableRes val iconRes: Int,
+    @param:DrawableRes val iconRes: Int,
 )
 
 private data class CommandSpec(
@@ -547,13 +547,13 @@ private fun CommandGlyph(
             CommandGlyphType.Show -> {
                 val eye = Path().apply {
                     moveTo(size.width * 0.08f, size.height * 0.50f)
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * 0.50f,
                         size.height * 0.10f,
                         size.width * 0.92f,
                         size.height * 0.50f,
                     )
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * 0.50f,
                         size.height * 0.90f,
                         size.width * 0.08f,

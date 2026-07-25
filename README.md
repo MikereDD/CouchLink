@@ -43,7 +43,8 @@ The Android remote remains useful when the optional Windows host is closed or un
 
 ```text
 CouchLink/
-├── Build-Release.ps1       Signed APK + Windows EXE release builder
+├── Build-Release.ps1         Complete stable-release builder
+├── tools/                     Source-manifest update and verification
 ├── src/
 │   ├── android/              Android Bluetooth HID remote and launcher client
 │   └── windows/              Optional Windows launcher host
@@ -71,7 +72,7 @@ From PowerShell on Windows:
 .\Build-Release.ps1
 ```
 
-This prompts for the private Android signing key, builds the signed APK and Windows EXE, verifies the APK signature, and generates SHA-256 checksum files for both artifacts.
+This prompts for the private Android signing key, builds the signed APK and Windows EXE, verifies the expected signing certificate, packages a clean source archive and release documents, and generates SHA-256 checksums for every distributable artifact.
 
 ### Android
 
@@ -94,17 +95,22 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 ## Release baseline
 
+CouchLink 1.1 was promoted to stable on **July 24, 2026**.
+
+
 | Component | Version | Status |
 |---|---:|---|
-| Android remote | `1.1` (`versionCode 106`) | Stable-release candidate |
-| Windows Launcher Host | `1.1` | Stable-release candidate |
+| Android remote | `1.1` (`versionCode 106`) | Stable |
+| Windows Launcher Host | `1.1` | Stable |
 | Shared protocol | `1` | UDP discovery + framed TCP session |
 
 ## Documentation
 
 - [Installation and pairing](docs/release/INSTALLATION.md)
 - [Release notes for 1.1](docs/release/RELEASE-NOTES-v1.1.md)
+- [Release validation](docs/release/RELEASE-VALIDATION-v1.1.md)
 - [Release checklist](docs/release/RELEASE-CHECKLIST-v1.1.md)
+- [Publishing guide](docs/release/PUBLISHING-v1.1.md)
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Build instructions](docs/building/BUILDING.md)
 - [Integration testing](docs/building/TESTING.md)

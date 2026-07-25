@@ -2,7 +2,7 @@
 
 This changelog tracks the combined Android remote and Windows launcher host. Historical one-build notes are preserved under `docs/history/`.
 
-## 1.1 — Stable-release candidate
+## 1.1 — 2026-07-24
 
 ### Android 1.1
 
@@ -15,7 +15,7 @@ This changelog tracks the combined Android remote and Windows launcher host. His
 - Promoted the optional local Windows Launcher Host to the unified CouchLink 1.1 product version.
 - Preserved protocol version 1, local discovery, six-digit trusted pairing, launcher actions, state feedback, tray behavior, startup preferences, and diagnostics.
 
-### Production release preparation
+### Stable release
 
 - Reworked root and component READMEs for a public stable release.
 - Added installation, 1.1 release notes, and final release checklist documents.
@@ -28,7 +28,13 @@ This changelog tracks the combined Android remote and Windows launcher host. His
 - Added secure keystore prompting, automatic APK signature verification, individual APK/EXE SHA-256 files, and a combined checksum list.
 - Updated the Android signing helper so the keystore path can be entered interactively instead of being a mandatory parameter.
 - Preserved existing release output by creating a timestamped directory when the selected destination already contains files.
-- No runtime logic was changed from the tested dev.15.6 reliability baseline.
+- Validated the combined signed release build on Windows: Android `BUILD SUCCESSFUL`, APK signature verified, and Windows single-file publish completed without warnings.
+- Pinned the Android Gradle wrapper to supported Gradle `8.13` for Android Gradle Plugin `8.11.1`.
+- Removed the Kotlin annotation-target and deprecated path-drawing warnings and explicitly preserved the already-unstrippable AndroidX native library.
+- Pinned release verification to the official CouchLink signing-certificate SHA-256 fingerprint.
+- Added deterministic source-manifest update/verification tools and clean source-archive packaging to the combined release builder.
+- Added final release validation and publishing documentation.
+- Runtime behavior remains based on the tested dev.15.6 reliability baseline.
 
 ## Documentation update — Trademark and brand policy
 

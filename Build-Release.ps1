@@ -11,9 +11,14 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$KeyAlias = 'couchlink-release',
 
+    [ValidatePattern('^[0-9a-fA-F]{64}$')]
+    [string]$ExpectedAndroidCertificateSha256 = 'a3d6a2b2a81c3ee0c96c911f31b3e46be663e5cf81ebfe1d5deccfc39d5b96bb',
+
     [switch]$SelfContained,
 
     [switch]$SkipAndroidSignatureVerification,
+
+    [switch]$SkipSourceArchive,
 
     [string]$OutputDirectory
 )
@@ -59,15 +64,116 @@ function Write-Sha256File {
     }
 }
 
+function Test-SourceFileExcluded {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RelativePath
+    )
+
+    $normalized = $RelativePath.Replace('\', '/')
+    $segments = $normalized.Split('/', [System.StringSplitOptions]::RemoveEmptyEntries)
+    $excludedDirectories = @('.git', '.gradle', '.idea', '.vs', 'bin', 'obj', 'build', 'publish', 'signing')
+
+    if ($segments.Length -gt 1) {
+        foreach ($index in 0..($segments.Length - 2)) {
+            $segment = $segments[$index]
+            if ($excludedDirectories -contains $segment) {
+                return $true
+            }
+            if ($segment -eq 'release' -and ($index -eq 0 -or $segments[$index - 1] -ne 'docs')) {
+                return $true
+            }
+        }
+    }
+
+    $name = [System.IO.Path]::GetFileName($normalized)
+    if ($name -in @('local.properties', 'keystore.properties', 'Build-Release-error.log', 'Thumbs.db', '.DS_Store')) {
+        return $true
+    }
+
+    foreach ($pattern in @('*.apk', '*.aab', '*.jks', '*.keystore', '*.pfx', '*.p12', '*.user', '*.suo', '*.zip')) {
+        if ($name -like $pattern) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function New-CouchLinkSourceArchive {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory)]
+        [string]$DestinationDirectory,
+
+        [Parameter(Mandatory)]
+        [string]$ReleaseVersion
+    )
+
+    $stagingParent = Join-Path ([System.IO.Path]::GetTempPath()) "CouchLink-source-$([guid]::NewGuid().ToString('N'))"
+    $stagingRoot = Join-Path $stagingParent "CouchLink-v$ReleaseVersion"
+    $archivePath = Join-Path $DestinationDirectory "CouchLink-v$ReleaseVersion-source.zip"
+
+    try {
+        New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
+
+        Get-ChildItem -LiteralPath $RepoRoot -File -Recurse -Force | ForEach-Object {
+            $relativePath = [System.IO.Path]::GetRelativePath($RepoRoot, $_.FullName)
+            if (-not (Test-SourceFileExcluded -RelativePath $relativePath)) {
+                $destination = Join-Path $stagingRoot $relativePath
+                $destinationParent = Split-Path -Parent $destination
+                New-Item -ItemType Directory -Force -Path $destinationParent | Out-Null
+                Copy-Item -LiteralPath $_.FullName -Destination $destination -Force
+            }
+        }
+
+        if (Test-Path -LiteralPath $archivePath) {
+            Remove-Item -LiteralPath $archivePath -Force
+        }
+
+        Compress-Archive -LiteralPath $stagingRoot -DestinationPath $archivePath -CompressionLevel Optimal
+        return $archivePath
+    }
+    finally {
+        Remove-Item -LiteralPath $stagingParent -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Copy-ReleaseDocument {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Source,
+
+        [Parameter(Mandatory)]
+        [string]$Destination
+    )
+
+    if (-not (Test-Path -LiteralPath $Source -PathType Leaf)) {
+        throw "Required release document was not found: $Source"
+    }
+
+    Copy-Item -LiteralPath $Source -Destination $Destination -Force
+}
+
 function Invoke-CouchLinkReleaseBuild {
     $repoRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
     $androidRoot = Join-Path $repoRoot 'src\android'
     $windowsRoot = Join-Path $repoRoot 'src\windows'
     $androidBuildScript = Join-Path $androidRoot 'tools\Build-SignedRelease.ps1'
     $androidVerifyScript = Join-Path $androidRoot 'tools\Verify-SignedRelease.ps1'
+    $sourceManifestScript = Join-Path $repoRoot 'tools\Update-SourceManifest.ps1'
+    $sourceManifestVerifyScript = Join-Path $repoRoot 'tools\Test-SourceManifest.ps1'
     $windowsProject = Join-Path $windowsRoot 'CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj'
 
-    foreach ($requiredPath in @($androidBuildScript, $androidVerifyScript, $windowsProject)) {
+    foreach ($requiredPath in @(
+        $androidBuildScript,
+        $androidVerifyScript,
+        $sourceManifestScript,
+        $sourceManifestVerifyScript,
+        $windowsProject
+    )) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required project file was not found: $requiredPath"
         }
@@ -97,7 +203,7 @@ function Invoke-CouchLinkReleaseBuild {
     New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
     Write-Host ''
-    Write-Host "CouchLink v$Version release build" -ForegroundColor Cyan
+    Write-Host "CouchLink v$Version stable release build" -ForegroundColor Cyan
     Write-Host "Output: $resolvedOutputDirectory"
     Write-Host ''
 
@@ -120,18 +226,13 @@ function Invoke-CouchLinkReleaseBuild {
     }
 
     Write-Host ''
-    Write-Host '[1/4] Building signed Android APK...' -ForegroundColor Cyan
-
-    # Hashtable splatting is required here because these are named parameters.
-    # Array splatting passes values positionally and caused the Android helper
-    # to exit before reaching its signing prompts.
+    Write-Host '[1/5] Building signed Android APK...' -ForegroundColor Cyan
     $androidParameters = @{
         Version = $Version
         Alias = $KeyAlias
         OutputDirectory = $resolvedOutputDirectory
         KeystorePath = $resolvedKeystorePath
     }
-
     & $androidBuildScript @androidParameters
 
     $finalApk = Join-Path $resolvedOutputDirectory "CouchLink-v$Version.apk"
@@ -140,14 +241,16 @@ function Invoke-CouchLinkReleaseBuild {
     }
 
     if (-not $SkipAndroidSignatureVerification) {
-        Write-Host '[2/4] Verifying Android signature...' -ForegroundColor Cyan
-        & $androidVerifyScript -ApkPath $finalApk
+        Write-Host '[2/5] Verifying Android signature and certificate...' -ForegroundColor Cyan
+        & $androidVerifyScript `
+            -ApkPath $finalApk `
+            -ExpectedCertificateSha256 $ExpectedAndroidCertificateSha256
     }
     else {
-        Write-Host '[2/4] Android signature verification skipped by request.' -ForegroundColor Yellow
+        Write-Host '[2/5] Android signature verification skipped by request.' -ForegroundColor Yellow
     }
 
-    Write-Host '[3/4] Publishing Windows host...' -ForegroundColor Cyan
+    Write-Host '[3/5] Publishing Windows host...' -ForegroundColor Cyan
     $windowsPublishDirectory = Join-Path $windowsRoot "publish\CouchLink-Host-v$Version-$Runtime"
     if (Test-Path -LiteralPath $windowsPublishDirectory) {
         Remove-Item -LiteralPath $windowsPublishDirectory -Recurse -Force
@@ -175,23 +278,76 @@ function Invoke-CouchLinkReleaseBuild {
     $finalExe = Join-Path $resolvedOutputDirectory "CouchLink-Host-v$Version-$Runtime.exe"
     Copy-Item -LiteralPath $publishedExe -Destination $finalExe -Force
 
-    Write-Host '[4/4] Generating SHA-256 checksums...' -ForegroundColor Cyan
-    $apkHash = Write-Sha256File -Path $finalApk
-    $exeHash = Write-Sha256File -Path $finalExe
+    Write-Host '[4/5] Packaging stable source and release documents...' -ForegroundColor Cyan
+    & $sourceManifestScript -Version $Version -RootPath $repoRoot
+    & $sourceManifestVerifyScript -Version $Version -RootPath $repoRoot
+
+    $sourceArchive = $null
+    if (-not $SkipSourceArchive) {
+        $sourceArchive = New-CouchLinkSourceArchive `
+            -RepoRoot $repoRoot `
+            -DestinationDirectory $resolvedOutputDirectory `
+            -ReleaseVersion $Version
+    }
+    else {
+        Write-Host 'Source archive skipped by request.' -ForegroundColor Yellow
+    }
+
+    Copy-ReleaseDocument `
+        -Source (Join-Path $repoRoot "docs\release\RELEASE-NOTES-v$Version.md") `
+        -Destination (Join-Path $resolvedOutputDirectory "RELEASE-NOTES-v$Version.md")
+    Copy-ReleaseDocument `
+        -Source (Join-Path $repoRoot 'docs\release\INSTALLATION.md') `
+        -Destination (Join-Path $resolvedOutputDirectory "INSTALLATION-v$Version.md")
+
+    foreach ($document in @(
+        'README.md',
+        'CHANGELOG.md',
+        'CONTRIBUTING.md',
+        'SECURITY.md',
+        'LICENSE',
+        'NOTICE',
+        'PRIVACY.md',
+        'TRADEMARKS.md',
+        "SOURCE-MANIFEST-v$Version.sha256"
+    )) {
+        Copy-ReleaseDocument `
+            -Source (Join-Path $repoRoot $document) `
+            -Destination (Join-Path $resolvedOutputDirectory $document)
+    }
+
+    Write-Host '[5/5] Generating SHA-256 checksums...' -ForegroundColor Cyan
+    $releaseHashes = [System.Collections.Generic.List[object]]::new()
+    $releaseHashes.Add((Write-Sha256File -Path $finalApk))
+    $releaseHashes.Add((Write-Sha256File -Path $finalExe))
+    if ($sourceArchive) {
+        $releaseHashes.Add((Write-Sha256File -Path $sourceArchive))
+    }
 
     $combinedChecksumPath = Join-Path $resolvedOutputDirectory "SHA256SUMS-v$Version.txt"
+    $releaseHashes |
+        ForEach-Object { "$($_.Hash)  $($_.FileName)" } |
+        Set-Content -LiteralPath $combinedChecksumPath -Encoding ascii
+
+    $releaseInfoPath = Join-Path $resolvedOutputDirectory "RELEASE-INFO-v$Version.txt"
     @(
-        "$($apkHash.Hash)  $($apkHash.FileName)"
-        "$($exeHash.Hash)  $($exeHash.FileName)"
-    ) | Set-Content -LiteralPath $combinedChecksumPath -Encoding ascii
+        "CouchLink v$Version"
+        "Built: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')"
+        "Runtime: $Runtime"
+        "Windows self-contained: $($SelfContained.IsPresent)"
+        "Android signing certificate SHA-256: $($ExpectedAndroidCertificateSha256.ToLowerInvariant())"
+        "Checksums: $([System.IO.Path]::GetFileName($combinedChecksumPath))"
+    ) | Set-Content -LiteralPath $releaseInfoPath -Encoding utf8
 
     Write-Host ''
-    Write-Host 'Release build complete.' -ForegroundColor Green
+    Write-Host 'Stable release build complete.' -ForegroundColor Green
     Write-Host "Signed APK:       $finalApk"
     Write-Host "Windows EXE:      $finalExe"
-    Write-Host "APK checksum:     $($apkHash.Checksum)"
-    Write-Host "Windows checksum: $($exeHash.Checksum)"
+    if ($sourceArchive) {
+        Write-Host "Source archive:   $sourceArchive"
+    }
     Write-Host "Combined sums:    $combinedChecksumPath"
+    Write-Host "Release metadata: $releaseInfoPath"
     if (-not $SelfContained) {
         Write-Host 'Windows package type: framework-dependent single-file app (.NET 8 Desktop Runtime required).' -ForegroundColor Yellow
     }

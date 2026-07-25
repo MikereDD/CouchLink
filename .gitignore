@@ -10,6 +10,8 @@ signing/
 release/
 *.jks
 *.keystore
+*.pfx
+*.p12
 keystore.properties
 
 # .NET / Visual Studio
