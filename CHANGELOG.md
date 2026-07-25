@@ -1,5 +1,14 @@
 # CouchLink Changelog
 
+## v1.2-dev.1 — TV Remote discovery prototype
+
+- added a dedicated TV Remote destination to the Android bottom navigation
+- added Android/Google TV discovery through NSD service browsing
+- added manual TV IP or hostname selection
+- added remembered TV selection
+- added reachability tests for the Android TV pairing and remote-control services
+- added the approved TV Remote visual reference and phased implementation roadmap
+
 This changelog tracks the combined Android remote and Windows launcher host. Historical one-build notes are preserved under `docs/history/`.
 
 ## 1.1 — 2026-07-24
