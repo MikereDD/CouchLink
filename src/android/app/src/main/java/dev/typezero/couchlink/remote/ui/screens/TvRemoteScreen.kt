@@ -45,9 +45,14 @@ internal fun TvRemoteScreen(
     onKey: (RemoteKeyCode) -> Unit,
     onLiveTv: () -> Unit,
     onInput: (TvInputTarget) -> Unit,
+    onHaptic: () -> Unit,
 ) {
     val enabled = state.remote.ready
     var showInputSelector by remember { mutableStateOf(false) }
+    fun press(action: () -> Unit) {
+        onHaptic()
+        action()
+    }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -78,7 +83,7 @@ internal fun TvRemoteScreen(
             RemoteButton(
                 label = "⏻",
                 enabled = state.pairing.paired,
-                onClick = onPower,
+                onClick = { press(onPower) },
                 modifier = Modifier.size(54.dp),
                 circular = true,
                 accentText = true,
@@ -87,36 +92,36 @@ internal fun TvRemoteScreen(
 
         PremiumPanel {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                RemoteButton("INPUT", enabled, { showInputSelector = true }, Modifier.weight(1f))
-                RemoteButton("HOME", enabled, { onKey(RemoteKeyCode.KEYCODE_HOME) }, Modifier.weight(1f))
-                RemoteButton("BACK", enabled, { onKey(RemoteKeyCode.KEYCODE_BACK) }, Modifier.weight(1f))
-                RemoteButton("SETTINGS", enabled, { onKey(RemoteKeyCode.KEYCODE_SETTINGS) }, Modifier.weight(1f))
+                RemoteButton("INPUT", enabled, { press { showInputSelector = true } }, Modifier.weight(1f))
+                RemoteButton("HOME", enabled, { press { onKey(RemoteKeyCode.KEYCODE_HOME) } }, Modifier.weight(1f))
+                RemoteButton("BACK", enabled, { press { onKey(RemoteKeyCode.KEYCODE_BACK) } }, Modifier.weight(1f))
+                RemoteButton("SETTINGS", enabled, { press { onKey(RemoteKeyCode.KEYCODE_SETTINGS) } }, Modifier.weight(1f))
             }
         }
 
-        Dpad(enabled = enabled, onKey = onKey)
+        Dpad(enabled = enabled, onKey = { key -> press { onKey(key) } })
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             PremiumPanel(modifier = Modifier.weight(1f)) {
                 Text("VOLUME", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                RemoteButton("＋", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_UP) }, Modifier.fillMaxWidth())
-                RemoteButton("MUTE", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_MUTE) }, Modifier.fillMaxWidth())
-                RemoteButton("－", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_DOWN) }, Modifier.fillMaxWidth())
+                RemoteButton("＋", enabled, { press { onKey(RemoteKeyCode.KEYCODE_VOLUME_UP) } }, Modifier.fillMaxWidth())
+                RemoteButton("MUTE", enabled, { press { onKey(RemoteKeyCode.KEYCODE_VOLUME_MUTE) } }, Modifier.fillMaxWidth())
+                RemoteButton("－", enabled, { press { onKey(RemoteKeyCode.KEYCODE_VOLUME_DOWN) } }, Modifier.fillMaxWidth())
             }
             PremiumPanel(modifier = Modifier.weight(1f)) {
                 Text("CHANNEL", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                RemoteButton("CH ＋", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_UP) }, Modifier.fillMaxWidth())
-                RemoteButton("GOOGLE LIVE", enabled, onLiveTv, Modifier.fillMaxWidth())
-                RemoteButton("CH －", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_DOWN) }, Modifier.fillMaxWidth())
+                RemoteButton("CH ＋", enabled, { press { onKey(RemoteKeyCode.KEYCODE_CHANNEL_UP) } }, Modifier.fillMaxWidth())
+                RemoteButton("GOOGLE LIVE", enabled, { press(onLiveTv) }, Modifier.fillMaxWidth())
+                RemoteButton("CH －", enabled, { press { onKey(RemoteKeyCode.KEYCODE_CHANNEL_DOWN) } }, Modifier.fillMaxWidth())
             }
         }
 
         PremiumPanel {
             Text("PLAYBACK", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                RemoteButton("−1 MIN", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_REWIND) }, Modifier.weight(1f))
-                RemoteButton("PLAY/PAUSE", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_PLAY_PAUSE) }, Modifier.weight(1f))
-                RemoteButton("+1 MIN", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD) }, Modifier.weight(1f))
+                RemoteButton("−1 MIN", enabled, { press { onKey(RemoteKeyCode.KEYCODE_MEDIA_REWIND) } }, Modifier.weight(1f))
+                RemoteButton("PLAY/PAUSE", enabled, { press { onKey(RemoteKeyCode.KEYCODE_MEDIA_PLAY_PAUSE) } }, Modifier.weight(1f))
+                RemoteButton("+1 MIN", enabled, { press { onKey(RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD) } }, Modifier.weight(1f))
             }
         }
 
@@ -126,7 +131,7 @@ internal fun TvRemoteScreen(
                 onDismiss = { showInputSelector = false },
                 onSelect = { key ->
                     showInputSelector = false
-                    onInput(key)
+                    press { onInput(key) }
                 },
             )
         }
@@ -139,7 +144,7 @@ internal fun TvRemoteScreen(
                     fontSize = 13.sp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable(enabled = state.pairing.paired, onClick = onConnect)
+                        .clickable(enabled = state.pairing.paired, onClick = { press(onConnect) })
                         .padding(vertical = 6.dp),
                 )
             }

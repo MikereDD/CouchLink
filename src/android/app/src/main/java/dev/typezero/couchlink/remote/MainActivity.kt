@@ -343,6 +343,11 @@ private fun CouchLinkApp() {
                         onKey = tvDiscovery::sendKey,
                         onLiveTv = tvDiscovery::openGoogleTvLive,
                         onInput = tvDiscovery::selectInput,
+                        onHaptic = {
+                            if (hapticsEnabled) {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
+                        },
                     )
 
                     AppScreen.Settings -> SettingsScreen(

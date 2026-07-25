@@ -1,5 +1,13 @@
 # CouchLink Changelog
 
+## 1.2-dev.5 — TV Remote polish and hardening
+
+- Added premium haptic feedback to TV Remote controls while respecting the existing haptics setting.
+- Added a short power-command guard to prevent accidental double-taps from toggling the TV twice.
+- Added clearer power, reconnect, and input-switching status messages.
+- Preserved the verified Hisense HDMI 1–3, composite, and tuner passthrough mappings.
+- Updated the Android version to 1.2-dev.5.
+
 ## v1.2-dev.4.2.1
 
 - Fixed Kotlin visibility compilation errors by making `TvDiscoveryController` internal, matching the internal TV model and input-target types it exposes.

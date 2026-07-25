@@ -61,6 +61,7 @@ internal class TvDiscoveryController(
     private val remoteClient = TvRemoteClient(appContext)
     private var pendingPairing: TvPairingClient.PendingPairing? = null
     private var wakeJob: Job? = null
+    private var lastPowerActionAtMs: Long = 0L
 
     private val _state = MutableStateFlow(
         State(
@@ -252,7 +253,14 @@ internal class TvDiscoveryController(
     }
 
     fun togglePower() {
+        val now = System.currentTimeMillis()
+        if (now - lastPowerActionAtMs < POWER_ACTION_GUARD_MS) {
+            _state.value = _state.value.copy(message = "Power command already sent. Please wait a moment.")
+            return
+        }
+        lastPowerActionAtMs = now
         if (_state.value.remote.ready) {
+            _state.value = _state.value.copy(message = "Sending power-off command…")
             sendKey(dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_POWER)
         } else {
             wakeSelectedTv()
@@ -346,8 +354,12 @@ internal class TvDiscoveryController(
             connectRemote()
             return
         }
-        scope.launch(Dispatchers.IO) {
-            remoteClient.launchAppLink(target.appLink)
+        _state.value = _state.value.copy(message = "Switching to ${target.label}…")
+        scope.launch {
+            val opened = withContext(Dispatchers.IO) { remoteClient.launchAppLink(target.appLink) }
+            if (opened) {
+                _state.value = _state.value.copy(message = "Switched to ${target.label}.")
+            }
         }
     }
 
@@ -500,6 +512,7 @@ internal class TvDiscoveryController(
         const val WAKE_RETRY_COUNT = 15
         const val WAKE_RETRY_DELAY_MS = 2_000L
         const val WAKE_TIMEOUT_SECONDS = 30
+        const val POWER_ACTION_GUARD_MS = 1_500L
         const val WAKE_PACKET_BURSTS = 3
         const val WAKE_PACKET_INTERVAL_MS = 100L
         val SERVICE_TYPES = listOf(
