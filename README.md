@@ -43,6 +43,7 @@ The Android remote remains useful when the optional Windows host is closed or un
 
 ```text
 CouchLink/
+├── Build-Release.ps1       Signed APK + Windows EXE release builder
 ├── src/
 │   ├── android/              Android Bluetooth HID remote and launcher client
 │   └── windows/              Optional Windows launcher host
@@ -61,6 +62,16 @@ CouchLink/
 ```
 
 ## Build
+
+### Complete signed release
+
+From PowerShell on Windows:
+
+```powershell
+.\Build-Release.ps1
+```
+
+This prompts for the private Android signing key, builds the signed APK and Windows EXE, verifies the APK signature, and generates SHA-256 checksum files for both artifacts.
 
 ### Android
 

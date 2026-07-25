@@ -22,6 +22,12 @@ This changelog tracks the combined Android remote and Windows launcher host. His
 - Added `SECURITY.md`, `CONTRIBUTING.md`, and `NOTICE`.
 - Corrected privacy documentation to cover both Bluetooth HID and local Launcher Host networking.
 - Expanded build and integration validation instructions.
+- Added a repository-level `Build-Release.ps1` that builds the signed Android APK and single-file Windows EXE in one run.
+- Fixed the combined builder to pass Android helper options with named hashtable splatting instead of positional array splatting.
+- Added an explicit red failure summary and `release\Build-Release-error.log` so release failures cannot return silently.
+- Added secure keystore prompting, automatic APK signature verification, individual APK/EXE SHA-256 files, and a combined checksum list.
+- Updated the Android signing helper so the keystore path can be entered interactively instead of being a mandatory parameter.
+- Preserved existing release output by creating a timestamped directory when the selected destination already contains files.
 - No runtime logic was changed from the tested dev.15.6 reliability baseline.
 
 ## Documentation update — Trademark and brand policy

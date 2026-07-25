@@ -31,6 +31,8 @@ dotnet build .\CouchLink.sln -c Release
 dotnet run --project .\CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj
 ```
 
+For the final single-file EXE and its SHA-256 checksum, run `.\Build-Release.ps1` from the repository root.
+
 ## Runtime endpoints
 
 | Endpoint | Purpose |
