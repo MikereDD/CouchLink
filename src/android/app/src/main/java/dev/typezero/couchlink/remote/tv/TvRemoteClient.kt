@@ -1,6 +1,7 @@
 package dev.typezero.couchlink.remote.tv
 
 import android.content.Context
+import dev.typezero.couchlink.remote.BuildConfig
 import dev.typezero.couchlink.remote.tv.proto.RemoteConfigure
 import dev.typezero.couchlink.remote.tv.proto.RemoteDeviceInfo
 import dev.typezero.couchlink.remote.tv.proto.RemoteDirection
@@ -98,6 +99,7 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
             .build()
 
     override fun close() {
+        epoch++
         runCatching { socket?.close() }
         socket = null
         output = null
@@ -163,8 +165,8 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
                                 .setVendor(android.os.Build.MANUFACTURER)
                                 .setUnknown1(1)
                                 .setUnknown2("1")
-                                .setPackageName("dev.typezero.couchlink.remote")
-                                .setAppVersion("1.2-dev.3.3"),
+                                .setPackageName(context.packageName)
+                                .setAppVersion(BuildConfig.VERSION_NAME),
                         ),
                 ).build()
                 synchronized(writeLock) { writeMessage(stream, reply, "CONFIGURE:${REQUESTED_FEATURES}") }
@@ -244,9 +246,21 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
     }
 
     private fun recordTrace(line: String) {
+        if (!BuildConfig.DEBUG) return
+
         Log.d(TAG, line)
         runCatching {
-            File(context.filesDir, TRACE_FILE).appendText("${System.currentTimeMillis()} $line\n")
+            val traceFile = File(context.filesDir, TRACE_FILE)
+            val entry = "${System.currentTimeMillis()} $line\n"
+
+            if (traceFile.exists() && traceFile.length() + entry.toByteArray().size > MAX_TRACE_BYTES) {
+                val existing = traceFile.readBytes()
+                val keepFrom = (existing.size - TRACE_RETAIN_BYTES).coerceAtLeast(0)
+                val retained = existing.copyOfRange(keepFrom, existing.size)
+                traceFile.writeBytes(retained)
+            }
+
+            traceFile.appendText(entry)
         }
     }
 
@@ -314,6 +328,8 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
         const val REQUESTED_FEATURES = 622
         const val TAG = "CouchLinkTvWire"
         const val TRACE_FILE = "couchlink-tv-wire.txt"
+        const val MAX_TRACE_BYTES = 256 * 1024
+        const val TRACE_RETAIN_BYTES = 192 * 1024
         const val PAIRING_PREFERENCES = "couchlink_tv_remote"
         const val KEY_SERVER_FINGERPRINT = "paired_tv_server_fingerprint"
         val TRUST_SERVER: TrustManager = object : X509TrustManager {

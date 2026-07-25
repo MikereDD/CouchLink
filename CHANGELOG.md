@@ -1,5 +1,12 @@
 # CouchLink Changelog
 
+## v1.2-dev.3.3 — post-fix hardening
+
+- invalidate the active connection epoch whenever the TV remote closes so stale reader threads cannot report late errors
+- restrict persistent wire tracing to debug builds and cap the trace file at approximately 256 KB
+- report the active package name and build version during Google TV configuration
+- regenerate the source integrity manifest after the TV remote command-delivery fixes
+
 ## v1.2-dev.3.3
 
 - Changed Google TV taps from `SHORT` to explicit key-down/key-up delivery for firmware compatibility.
