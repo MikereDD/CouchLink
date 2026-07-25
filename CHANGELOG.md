@@ -1,5 +1,15 @@
 # CouchLink Changelog
 
+## v1.2-dev.3 — First live Google TV controls
+
+- moved TV discovery, manual addressing, diagnostics, pairing, reconnect, and forget actions into Settings
+- replaced the development diagnostics tab with the approved CouchLink TV Remote control layout
+- added the pinned TLS remote-control connection on port 6466
+- added automatic reconnect for the remembered paired TV
+- added D-pad, OK, Home, Back, Menu, Input, power, volume, mute, channel, Guide, and playback commands
+- added Android TV Remote v2 protobuf messages and ping/configuration handling
+- preserved the TV private identity using Android Keystore-backed encrypted storage
+
 ## v1.2-dev.2 — Google TV certificate pairing
 
 - added the real Android TV Remote v2 pairing exchange over TLS on port 6467

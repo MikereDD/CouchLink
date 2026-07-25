@@ -12,27 +12,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.typezero.couchlink.remote.tv.TvDevice
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
+import dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode
 import dev.typezero.couchlink.remote.ui.components.PremiumPanel
 import dev.typezero.couchlink.remote.ui.theme.Accent
 import dev.typezero.couchlink.remote.ui.theme.Muted
@@ -43,323 +34,136 @@ import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
 @Composable
 internal fun TvRemoteScreen(
     state: TvDiscoveryController.State,
-    onScan: () -> Unit,
-    onStopScan: () -> Unit,
-    onSelect: (TvDevice) -> Unit,
-    onSelectManual: (String) -> Unit,
-    onProbe: () -> Unit,
-    onBeginPairing: () -> Unit,
-    onFinishPairing: (String) -> Unit,
-    onCancelPairing: () -> Unit,
+    onConnect: () -> Unit,
+    onKey: (RemoteKeyCode) -> Unit,
 ) {
-    var manualHost by remember { mutableStateOf(state.selectedDevice?.host.orEmpty()) }
-    var pairingCode by remember { mutableStateOf("") }
-
+    val enabled = state.remote.ready
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionLabel("TV REMOTE")
-
-        PremiumPanel {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = state.selectedDevice?.name ?: "No TV selected",
-                        color = if (state.selectedDevice != null) TextColor else Muted,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = state.selectedDevice?.host
-                            ?: "Discover your Hisense Google TV on the local network.",
-                        color = Muted,
-                        fontSize = 13.sp,
-                    )
-                }
-                StatusDot(
-                    active = state.probe?.fullyReachable == true,
-                    busy = state.probing || state.scanning,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text("TV REMOTE", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text(state.selectedDevice?.name ?: "No TV selected", color = TextColor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    when {
+                        state.remote.ready -> "Connected • ${state.selectedDevice?.host.orEmpty()}"
+                        state.remote.connecting -> "Connecting…"
+                        state.pairing.paired -> state.remote.message
+                        else -> "Pair a TV in Settings"
+                    },
+                    color = if (enabled) Success else Muted,
+                    fontSize = 12.sp,
                 )
             }
-
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = state.message,
-                color = if (state.probe?.fullyReachable == true) Success else Muted,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
+            RemoteButton(
+                label = "⏻",
+                enabled = state.pairing.paired,
+                onClick = { if (enabled) onKey(RemoteKeyCode.KEYCODE_POWER) else onConnect() },
+                modifier = Modifier.size(54.dp),
+                circular = true,
+                accentText = true,
             )
         }
 
         PremiumPanel {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                ActionButton(
-                    label = if (state.scanning) "Stop scan" else "Scan for TVs",
-                    onClick = if (state.scanning) onStopScan else onScan,
-                    modifier = Modifier.weight(1f),
-                )
-                ActionButton(
-                    label = if (state.probing) "Testing…" else "Test connection",
-                    onClick = onProbe,
-                    enabled = state.selectedDevice != null && !state.probing,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            state.probe?.let { probe ->
-                Spacer(Modifier.height(14.dp))
-                ProbeRow("Pairing service", 6467, probe.pairingPortReachable)
-                Spacer(Modifier.height(8.dp))
-                ProbeRow("Remote-control service", 6466, probe.remotePortReachable)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                RemoteButton("INPUT", enabled, { onKey(RemoteKeyCode.KEYCODE_TV_INPUT) }, Modifier.weight(1f))
+                RemoteButton("HOME", enabled, { onKey(RemoteKeyCode.KEYCODE_HOME) }, Modifier.weight(1f))
+                RemoteButton("BACK", enabled, { onKey(RemoteKeyCode.KEYCODE_BACK) }, Modifier.weight(1f))
+                RemoteButton("MENU", enabled, { onKey(RemoteKeyCode.KEYCODE_MENU) }, Modifier.weight(1f))
             }
         }
 
-        if (state.probe?.fullyReachable == true || state.pairing.awaitingCode || state.pairing.paired) {
-            SectionLabel("SECURE PAIRING")
+        Dpad(enabled = enabled, onKey = onKey)
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            PremiumPanel(modifier = Modifier.weight(1f)) {
+                Text("VOLUME", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                RemoteButton("＋", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_UP) }, Modifier.fillMaxWidth())
+                RemoteButton("MUTE", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_MUTE) }, Modifier.fillMaxWidth())
+                RemoteButton("－", enabled, { onKey(RemoteKeyCode.KEYCODE_VOLUME_DOWN) }, Modifier.fillMaxWidth())
+            }
+            PremiumPanel(modifier = Modifier.weight(1f)) {
+                Text("CHANNEL", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                RemoteButton("CH ＋", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_UP) }, Modifier.fillMaxWidth())
+                RemoteButton("GUIDE", enabled, { onKey(RemoteKeyCode.KEYCODE_GUIDE) }, Modifier.fillMaxWidth())
+                RemoteButton("CH －", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_DOWN) }, Modifier.fillMaxWidth())
+            }
+        }
+
+        PremiumPanel {
+            Text("PLAYBACK", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                RemoteButton("⏪", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_REWIND) }, Modifier.weight(1f))
+                RemoteButton("▶Ⅱ", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_PLAY_PAUSE) }, Modifier.weight(1f))
+                RemoteButton("⏩", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD) }, Modifier.weight(1f))
+            }
+        }
+
+        if (!enabled) {
             PremiumPanel {
-                when {
-                    state.pairing.paired -> {
-                        Text(
-                            text = "PAIRED",
-                            color = Success,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.4.sp,
-                        )
-                        Spacer(Modifier.height(7.dp))
-                        Text(
-                            text = state.pairing.message ?: "CouchLink has a secure identity for this TV.",
-                            color = Muted,
-                            fontSize = 13.sp,
-                        )
-                    }
-                    state.pairing.awaitingCode -> {
-                        Text(
-                            text = "Check the TV screen and enter its six-character pairing code.",
-                            color = TextColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(
-                            value = pairingCode,
-                            onValueChange = { value ->
-                                pairingCode = value.uppercase().filter { it in '0'..'9' || it in 'A'..'F' }.take(6)
-                            },
-                            label = { Text("TV pairing code") },
-                            placeholder = { Text("A1B2C3") },
-                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            ActionButton(
-                                label = if (state.pairing.inProgress) "Pairing…" else "Pair TV",
-                                onClick = { onFinishPairing(pairingCode) },
-                                enabled = pairingCode.length == 6 && !state.pairing.inProgress,
-                                modifier = Modifier.weight(1f),
-                            )
-                            ActionButton(
-                                label = "Cancel",
-                                onClick = onCancelPairing,
-                                enabled = !state.pairing.inProgress,
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = "Pair CouchLink with the TV to authorize remote-control commands. The private key stays in Android Keystore.",
-                            color = Muted,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp,
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        ActionButton(
-                            label = if (state.pairing.inProgress) "Requesting code…" else "Pair with TV",
-                            onClick = onBeginPairing,
-                            enabled = !state.pairing.inProgress,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-                state.pairing.message?.takeIf { !state.pairing.paired }?.let { message ->
-                    Spacer(Modifier.height(8.dp))
-                    Text(message, color = Muted, fontSize = 12.sp)
-                }
-            }
-        }
-
-        if (state.devices.isNotEmpty()) {
-            SectionLabel("DISCOVERED TVS")
-            state.devices.forEach { device ->
-                DeviceCard(
-                    device = device,
-                    selected = state.selectedDevice?.host == device.host,
-                    onClick = { onSelect(device) },
+                Text(
+                    if (state.pairing.paired) "Tap here to reconnect to ${state.selectedDevice?.name ?: "the TV"}." else "Open Settings to discover and pair your Google TV.",
+                    color = Muted,
+                    fontSize = 13.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = state.pairing.paired, onClick = onConnect)
+                        .padding(vertical = 6.dp),
                 )
             }
         }
-
-        SectionLabel("MANUAL CONNECTION")
-        PremiumPanel {
-            Text(
-                text = "Use the TV's IP address if local discovery does not find it.",
-                color = Muted,
-                fontSize = 13.sp,
-            )
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                value = manualHost,
-                onValueChange = { manualHost = it },
-                label = { Text("TV IP address or hostname") },
-                placeholder = { Text("192.168.4.x") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(10.dp))
-            ActionButton(
-                label = "Use this TV",
-                onClick = { onSelectManual(manualHost) },
-                enabled = manualHost.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        PremiumPanel {
-            Text(
-                text = "PAIRING TEST BUILD",
-                color = Accent,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.5.sp,
-            )
-            Spacer(Modifier.height(7.dp))
-            Text(
-                text = "This build performs the real Google TV certificate pairing exchange. After pairing succeeds, the next build will open the remote-control channel and send live navigation, Home, Back, volume, and mute commands.",
-                color = Muted,
-                fontSize = 13.sp,
-                lineHeight = 18.sp,
-            )
-        }
     }
 }
 
 @Composable
-private fun DeviceCard(
-    device: TvDevice,
-    selected: Boolean,
+private fun Dpad(enabled: Boolean, onKey: (RemoteKeyCode) -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth().height(250.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(230.dp)
+                .background(Raised, CircleShape)
+                .border(1.dp, Accent.copy(alpha = 0.55f), CircleShape),
+        )
+        RemoteButton("▲", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_UP) }, Modifier.align(Alignment.TopCenter).size(72.dp), circular = true)
+        RemoteButton("▼", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_DOWN) }, Modifier.align(Alignment.BottomCenter).size(72.dp), circular = true)
+        RemoteButton("◀", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_LEFT) }, Modifier.align(Alignment.CenterStart).size(72.dp), circular = true)
+        RemoteButton("▶", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_RIGHT) }, Modifier.align(Alignment.CenterEnd).size(72.dp), circular = true)
+        RemoteButton("OK", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_CENTER) }, Modifier.size(92.dp), circular = true, accentText = true)
+    }
+}
+
+@Composable
+private fun RemoteButton(
+    label: String,
+    enabled: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    circular: Boolean = false,
+    accentText: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(18.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Raised, shape)
-            .border(
-                width = if (selected) 1.5.dp else 1.dp,
-                color = if (selected) Accent else Accent.copy(alpha = 0.45f),
-                shape = shape,
-            )
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val shape = if (circular) CircleShape else RoundedCornerShape(15.dp)
+    Box(
+        modifier = modifier
+            .height(52.dp)
+            .background(if (enabled) Raised else Raised.copy(alpha = 0.55f), shape)
+            .border(1.dp, if (enabled) Accent.copy(alpha = 0.65f) else Muted.copy(alpha = 0.25f), shape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text("▣", color = if (selected) Accent else TextColor, fontSize = 28.sp)
-        Spacer(Modifier.size(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(device.name, color = TextColor, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(device.host, color = Muted, fontSize = 13.sp)
-            device.serviceType?.let { Text(it, color = Muted, fontSize = 10.sp) }
-        }
-        Text(if (selected) "SELECTED" else "SELECT", color = if (selected) Accent else Muted, fontSize = 10.sp)
-    }
-}
-
-@Composable
-private fun ProbeRow(label: String, port: Int, reachable: Boolean) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column {
-            Text(label, color = TextColor, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-            Text("TCP port $port", color = Muted, fontSize = 11.sp)
-        }
         Text(
-            text = if (reachable) "REACHABLE" else "NO RESPONSE",
-            color = if (reachable) Success else Muted,
-            fontSize = 11.sp,
+            label,
+            color = when {
+                !enabled -> Muted.copy(alpha = 0.6f)
+                accentText -> Accent
+                else -> TextColor
+            },
+            fontSize = if (label.length <= 2) 20.sp else 11.sp,
             fontWeight = FontWeight.Bold,
         )
     }
-}
-
-@Composable
-private fun StatusDot(active: Boolean, busy: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(46.dp)
-            .background(Raised, RoundedCornerShape(15.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (busy) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(22.dp),
-                color = Accent,
-                strokeWidth = 2.dp,
-            )
-        } else {
-            Text(
-                text = "●",
-                color = if (active) Success else Muted,
-                fontSize = 24.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActionButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(48.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Accent,
-            contentColor = Color.Black,
-            disabledContainerColor = Raised,
-            disabledContentColor = Muted,
-        ),
-        shape = RoundedCornerShape(14.dp),
-    ) {
-        Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        color = Muted,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 3.sp,
-    )
 }

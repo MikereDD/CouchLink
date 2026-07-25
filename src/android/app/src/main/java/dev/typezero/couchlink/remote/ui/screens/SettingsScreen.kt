@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +38,8 @@ import dev.typezero.couchlink.remote.BuildConfig
 import dev.typezero.couchlink.remote.R
 import dev.typezero.couchlink.remote.hid.BluetoothHidController
 import dev.typezero.couchlink.remote.model.LauncherHostState
+import dev.typezero.couchlink.remote.tv.TvDevice
+import dev.typezero.couchlink.remote.tv.TvDiscoveryController
 import dev.typezero.couchlink.remote.ui.components.PremiumPanel
 import dev.typezero.couchlink.remote.ui.theme.Accent
 import dev.typezero.couchlink.remote.ui.theme.Danger
@@ -49,6 +52,7 @@ import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
 internal fun SettingsScreen(
     hidState: BluetoothHidController.State,
     launcherHostState: LauncherHostState,
+    tvState: TvDiscoveryController.State,
     hapticsEnabled: Boolean,
     onHapticsChanged: (Boolean) -> Unit,
     naturalScrolling: Boolean,
@@ -61,6 +65,16 @@ internal fun SettingsScreen(
     onReconnectLauncherHost: () -> Unit,
     onPairLauncherHost: () -> Boolean,
     onForgetLauncherHost: () -> Boolean,
+    onTvScan: () -> Unit,
+    onTvStopScan: () -> Unit,
+    onTvSelect: (TvDevice) -> Unit,
+    onTvSelectManual: (String) -> Unit,
+    onTvProbe: () -> Unit,
+    onTvBeginPairing: () -> Unit,
+    onTvFinishPairing: (String) -> Unit,
+    onTvCancelPairing: () -> Unit,
+    onTvConnect: () -> Unit,
+    onTvForget: () -> Unit,
 ) {
     val context = LocalContext.current
     var diagnosticsCopied by rememberSaveable { mutableStateOf(false) }
@@ -103,6 +117,20 @@ internal fun SettingsScreen(
         onReconnect = onReconnectLauncherHost,
         onPair = onPairLauncherHost,
         onForget = onForgetLauncherHost,
+    )
+
+    TvRemoteSettingsPanel(
+        state = tvState,
+        onScan = onTvScan,
+        onStopScan = onTvStopScan,
+        onSelect = onTvSelect,
+        onSelectManual = onTvSelectManual,
+        onProbe = onTvProbe,
+        onBeginPairing = onTvBeginPairing,
+        onFinishPairing = onTvFinishPairing,
+        onCancelPairing = onTvCancelPairing,
+        onConnect = onTvConnect,
+        onForget = onTvForget,
     )
 
     PremiumPanel {
@@ -198,6 +226,107 @@ internal fun SettingsScreen(
             color = Muted,
             fontSize = 11.sp,
         )
+    }
+}
+
+@Composable
+private fun TvRemoteSettingsPanel(
+    state: TvDiscoveryController.State,
+    onScan: () -> Unit,
+    onStopScan: () -> Unit,
+    onSelect: (TvDevice) -> Unit,
+    onSelectManual: (String) -> Unit,
+    onProbe: () -> Unit,
+    onBeginPairing: () -> Unit,
+    onFinishPairing: (String) -> Unit,
+    onCancelPairing: () -> Unit,
+    onConnect: () -> Unit,
+    onForget: () -> Unit,
+) {
+    var manualHost by rememberSaveable { mutableStateOf(state.selectedDevice?.host.orEmpty()) }
+    var pairingCode by rememberSaveable { mutableStateOf("") }
+
+    PremiumPanel {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("TV Remote", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    state.selectedDevice?.let { "${it.name} • ${it.host}" } ?: "No Google TV selected",
+                    color = Muted,
+                    fontSize = 12.sp,
+                )
+            }
+            Text(
+                when {
+                    state.remote.ready -> "CONNECTED"
+                    state.remote.connecting -> "CONNECTING"
+                    state.pairing.paired -> "PAIRED"
+                    else -> "NOT PAIRED"
+                },
+                color = if (state.remote.ready) Success else Accent,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Text(state.message, color = Muted, fontSize = 12.sp)
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = if (state.scanning) onStopScan else onScan, modifier = Modifier.weight(1f)) {
+                Text(if (state.scanning) "STOP SCAN" else "SCAN")
+            }
+            OutlinedButton(onClick = onProbe, enabled = state.selectedDevice != null && !state.probing, modifier = Modifier.weight(1f)) {
+                Text(if (state.probing) "TESTING" else "DIAGNOSTICS")
+            }
+        }
+
+        state.probe?.let {
+            AboutDetailRow("Pairing service (6467)", if (it.pairingPortReachable) "Reachable" else "No response")
+            AboutDetailRow("Remote service (6466)", if (it.remotePortReachable) "Reachable" else "No response")
+        }
+
+        if (state.devices.isNotEmpty()) {
+            Text("DISCOVERED TVS", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            state.devices.forEach { device ->
+                OutlinedButton(onClick = { onSelect(device) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (state.selectedDevice?.host == device.host) "✓ ${device.name} • ${device.host}" else "${device.name} • ${device.host}")
+                }
+            }
+        }
+
+        OutlinedTextField(
+            value = manualHost,
+            onValueChange = { manualHost = it },
+            label = { Text("Manual TV address") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedButton(onClick = { onSelectManual(manualHost) }, enabled = manualHost.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+            Text("USE MANUAL ADDRESS")
+        }
+
+        when {
+            state.pairing.awaitingCode -> {
+                OutlinedTextField(
+                    value = pairingCode,
+                    onValueChange = { value -> pairingCode = value.uppercase().filter { it.isDigit() || it in 'A'..'F' }.take(6) },
+                    label = { Text("Code shown on TV") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { onFinishPairing(pairingCode) }, enabled = pairingCode.length == 6, modifier = Modifier.weight(1f)) { Text("PAIR") }
+                    OutlinedButton(onClick = onCancelPairing, modifier = Modifier.weight(1f)) { Text("CANCEL") }
+                }
+            }
+            !state.pairing.paired -> Button(onClick = onBeginPairing, enabled = state.selectedDevice != null, modifier = Modifier.fillMaxWidth()) {
+                Text("PAIR WITH TV", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+            else -> {
+                OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) { Text("RECONNECT TV REMOTE") }
+                OutlinedButton(onClick = onForget, modifier = Modifier.fillMaxWidth()) { Text("FORGET TV") }
+            }
+        }
     }
 }
 

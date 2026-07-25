@@ -338,19 +338,14 @@ private fun CouchLinkApp() {
 
                     AppScreen.TvRemote -> TvRemoteScreen(
                         state = tvState,
-                        onScan = tvDiscovery::startDiscovery,
-                        onStopScan = tvDiscovery::stopDiscovery,
-                        onSelect = tvDiscovery::select,
-                        onSelectManual = tvDiscovery::selectManual,
-                        onProbe = tvDiscovery::probeSelected,
-                        onBeginPairing = tvDiscovery::beginPairing,
-                        onFinishPairing = tvDiscovery::finishPairing,
-                        onCancelPairing = tvDiscovery::cancelPairing,
+                        onConnect = tvDiscovery::connectRemote,
+                        onKey = tvDiscovery::sendKey,
                     )
 
                     AppScreen.Settings -> SettingsScreen(
                         hidState = hidState,
                         launcherHostState = launcherHostState,
+                        tvState = tvState,
                         hapticsEnabled = hapticsEnabled,
                         onHapticsChanged = { enabled ->
                             hapticsEnabled = enabled
@@ -373,6 +368,16 @@ private fun CouchLinkApp() {
                         onReconnectLauncherHost = launcherHost::retry,
                         onPairLauncherHost = launcherHost::pairWithHost,
                         onForgetLauncherHost = launcherHost::forgetTrustedHost,
+                        onTvScan = tvDiscovery::startDiscovery,
+                        onTvStopScan = tvDiscovery::stopDiscovery,
+                        onTvSelect = tvDiscovery::select,
+                        onTvSelectManual = tvDiscovery::selectManual,
+                        onTvProbe = tvDiscovery::probeSelected,
+                        onTvBeginPairing = tvDiscovery::beginPairing,
+                        onTvFinishPairing = tvDiscovery::finishPairing,
+                        onTvCancelPairing = tvDiscovery::cancelPairing,
+                        onTvConnect = tvDiscovery::connectRemote,
+                        onTvForget = tvDiscovery::forgetTv,
                     )
                 }
             }

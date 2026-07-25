@@ -26,6 +26,7 @@ internal class TvDiscoveryController(
         val probing: Boolean = false,
         val probe: TvConnectionProbe? = null,
         val pairing: PairingState = PairingState(),
+        val remote: TvRemoteClient.Connection = TvRemoteClient.Connection(),
         val message: String = "Scan your local network for a Google TV.",
     )
 
@@ -43,6 +44,7 @@ internal class TvDiscoveryController(
     private val activeListeners = ConcurrentHashMap<String, NsdManager.DiscoveryListener>()
     private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val pairingClient = TvPairingClient(appContext)
+    private val remoteClient = TvRemoteClient(appContext)
     private var pendingPairing: TvPairingClient.PendingPairing? = null
 
     private val _state = MutableStateFlow(
@@ -55,6 +57,13 @@ internal class TvDiscoveryController(
         ),
     )
     val state: StateFlow<State> = _state.asStateFlow()
+
+    init {
+        val device = _state.value.selectedDevice
+        if (device != null && pairingClient.isPaired(device.host)) {
+            connectRemote()
+        }
+    }
 
     fun startDiscovery() {
         if (_state.value.scanning) return
@@ -90,12 +99,16 @@ internal class TvDiscoveryController(
             .putString(KEY_NAME, device.name)
             .putString(KEY_HOST, device.host)
             .apply()
+        remoteClient.close()
+        val paired = pairingClient.isPaired(device.host)
         _state.value = _state.value.copy(
             selectedDevice = device,
             probe = null,
-            pairing = PairingState(paired = pairingClient.isPaired(device.host)),
+            pairing = PairingState(paired = paired),
+            remote = TvRemoteClient.Connection(),
             message = "Selected ${device.name} at ${device.host}.",
         )
+        if (paired) connectRemote()
     }
 
     fun selectManual(host: String) {
@@ -193,6 +206,7 @@ internal class TvDiscoveryController(
                     pairing = PairingState(paired = true, message = "Paired securely with this TV."),
                     message = "CouchLink is paired with ${pending.host}.",
                 )
+                connectRemote()
             }.onFailure { error ->
                 pendingPairing?.close()
                 pendingPairing = null
@@ -202,6 +216,40 @@ internal class TvDiscoveryController(
                 )
             }
         }
+    }
+
+    fun connectRemote() {
+        val device = _state.value.selectedDevice ?: return
+        if (!pairingClient.isPaired(device.host)) {
+            _state.value = _state.value.copy(
+                remote = TvRemoteClient.Connection(message = "Pair with this TV in Settings first."),
+            )
+            return
+        }
+        remoteClient.connect(device.host) { connection ->
+            scope.launch {
+                _state.value = _state.value.copy(remote = connection)
+            }
+        }
+    }
+
+    fun sendKey(keyCode: dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode) {
+        if (!_state.value.remote.ready) {
+            connectRemote()
+            _state.value = _state.value.copy(message = "Reconnecting to the TV. Try the command again in a moment.")
+            return
+        }
+        if (!remoteClient.sendKey(keyCode)) {
+            connectRemote()
+        }
+    }
+
+    fun forgetTv() {
+        cancelPairing()
+        remoteClient.close()
+        preferences.edit().clear().apply()
+        appContext.getSharedPreferences("couchlink_tv_remote", Context.MODE_PRIVATE).edit().clear().apply()
+        _state.value = State(message = "TV pairing and selection forgotten.")
     }
 
     fun cancelPairing() {
@@ -217,6 +265,7 @@ internal class TvDiscoveryController(
         stopDiscovery()
         pendingPairing?.close()
         pendingPairing = null
+        remoteClient.close()
         scope.cancel()
     }
 
