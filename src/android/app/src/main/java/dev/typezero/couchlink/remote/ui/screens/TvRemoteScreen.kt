@@ -27,6 +27,7 @@ import dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode
 import dev.typezero.couchlink.remote.ui.components.PremiumPanel
 import dev.typezero.couchlink.remote.ui.theme.Accent
 import dev.typezero.couchlink.remote.ui.theme.Muted
+import dev.typezero.couchlink.remote.ui.theme.Orange
 import dev.typezero.couchlink.remote.ui.theme.Raised
 import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
@@ -56,6 +57,25 @@ internal fun TvRemoteScreen(
                     },
                     color = if (enabled) Success else Muted,
                     fontSize = 12.sp,
+                )
+                if (state.remote.ready && state.remote.lastCommand != null) {
+                    Text(
+                        "${state.remote.message} • ${state.remote.commandsSent}",
+                        color = Muted,
+                        fontSize = 10.sp,
+                    )
+                }
+                Text(
+                    "DIAGNOSTIC v1.2-dev.3.3",
+                    color = Orange,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    state.remote.trace,
+                    color = Orange,
+                    fontSize = 10.sp,
+                    maxLines = 4,
                 )
             }
             RemoteButton(

@@ -1,5 +1,11 @@
 # CouchLink Changelog
 
+## v1.2-dev.3.3
+
+- Changed Google TV taps from `SHORT` to explicit key-down/key-up delivery for firmware compatibility.
+- Corrected remote feature negotiation and `RemoteSetActive` replies.
+- Added visible command transmission counters and remote-error reporting.
+
 ## v1.2-dev.3 — First live Google TV controls
 
 - moved TV discovery, manual addressing, diagnostics, pairing, reconnect, and forget actions into Settings
@@ -155,3 +161,10 @@ This changelog tracks the combined Android remote and Windows launcher host. His
 
 - Delivered signed Bluetooth HID remote functionality with touchpad, keyboard, shortcuts, launcher fallback, premium UI, and Apache 2.0 licensing.
 - The original release notes and checklists are preserved in `docs/history/android/`.
+
+## v1.2-dev.3.3
+
+- correct Android TV Remote v2 feature negotiation to the canonical 622 mask
+- add on-screen and Logcat wire traces for inbound and outbound protobuf frames
+- preserve the last wire frame when Abaddon closes the socket
+- keep normal button taps on the canonical SHORT key event

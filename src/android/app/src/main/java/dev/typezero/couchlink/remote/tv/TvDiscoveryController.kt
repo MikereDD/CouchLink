@@ -235,12 +235,15 @@ internal class TvDiscoveryController(
 
     fun sendKey(keyCode: dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode) {
         if (!_state.value.remote.ready) {
-            connectRemote()
             _state.value = _state.value.copy(message = "Reconnecting to the TV. Try the command again in a moment.")
+            connectRemote()
             return
         }
-        if (!remoteClient.sendKey(keyCode)) {
-            connectRemote()
+        // The write is real network I/O and MUST NOT run on the main thread, or Android
+        // throws NetworkOnMainThreadException. Dispatch to IO; state updates from the
+        // client marshal back to Main via its own callback.
+        scope.launch {
+            withContext(Dispatchers.IO) { remoteClient.sendKey(keyCode) }
         }
     }
 
