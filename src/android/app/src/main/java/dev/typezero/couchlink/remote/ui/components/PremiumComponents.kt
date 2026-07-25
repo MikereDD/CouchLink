@@ -62,6 +62,7 @@ private val navigationDestinations = listOf(
     NavigationDestination(AppScreen.Home, "⌂", "Home"),
     NavigationDestination(AppScreen.Touchpad, "◎", "Touchpad"),
     NavigationDestination(AppScreen.Keyboard, "⌨", "Keyboard"),
+    NavigationDestination(AppScreen.TvRemote, "▣", "TV Remote"),
     NavigationDestination(AppScreen.Settings, "⚙", "Settings"),
 )
 
@@ -433,7 +434,7 @@ internal fun BottomNav(
                         Text(
                             text = destination.icon,
                             color = if (selected) TextColor else Muted,
-                            fontSize = if (destination.screen == AppScreen.Settings) 24.sp else 27.sp,
+                            fontSize = if (destination.screen == AppScreen.Settings) 22.sp else 24.sp,
                             lineHeight = 27.sp,
                             fontWeight = FontWeight.Medium,
                         )
@@ -441,8 +442,8 @@ internal fun BottomNav(
                         Text(
                             text = destination.label,
                             color = if (selected) TextColor else Muted,
-                            fontSize = 10.sp,
-                            lineHeight = 11.sp,
+                            fontSize = 9.sp,
+                            lineHeight = 10.sp,
                             maxLines = 1,
                             softWrap = false,
                             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,

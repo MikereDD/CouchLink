@@ -4,6 +4,7 @@ internal enum class AppScreen {
     Home,
     Touchpad,
     Keyboard,
+    TvRemote,
     Settings,
 }
 

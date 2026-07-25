@@ -1,5 +1,117 @@
 # CouchLink Changelog
 
+## 1.2 — Stable Google TV Remote release
+
+- Promoted the tested v1.2 development line to stable Android metadata (`versionName 1.2`, `versionCode 120`).
+- Added secure Google TV Remote v2 pairing and local TLS control.
+- Added premium D-pad, system, volume, channel, playback, and source controls.
+- Added power-off through the secure remote protocol and Wake-on-LAN power-on with automatic reconnect.
+- Added Google TV Live-tab navigation without opening the antenna tuner.
+- Added verified Hisense A6H hardware-input switching for HDMI 1–3, composite, and TV/antenna.
+- Added premium haptics, clear connection states, and accidental Power double-tap protection.
+- Finalized the installed Android label as `CouchLink` and preserved the metallic CL icon.
+- Added the approved Home, Touchpad, Keyboard, and TV Remote README showcase.
+- Finalized release notes, validation guidance, source-manifest tooling, and signed-build preparation.
+
+## 1.2-dev.7 — Documentation and release cleanup
+
+- Rebuilt the root README around the complete CouchLink experience: Home, Touchpad, Keyboard, Windows launcher control, and Google TV Remote.
+- Added the approved 2×2 feature collage showing Home, Touchpad, Keyboard, and TV Remote in one README-ready image.
+- Changed the debug launcher label from `CouchLink TV Remote Dev` to `CouchLink` while preserving the metallic CL icon.
+- Documented secure Google TV pairing, Wake-on-LAN power-on, Google Live navigation, premium remote controls, and verified Hisense input switching.
+- Added a hardware-validation note separating broadly reusable Google TV controls from model-specific input mappings.
+- Added the v1.2-dev.7 release-cleanup and regression checklist.
+- Updated Android metadata to version `1.2-dev.7` with `versionCode 117`.
+
+## 1.2-dev.6 — Premium TV Remote visual pass
+
+- Rebuilt the TV Remote controls with custom CouchLink-drawn icons instead of text symbols.
+- Added layered metallic gradients, orange edge accents, inset borders, controlled shadows, and premium pressed/disabled states.
+- Redesigned the D-pad as a unified circular remote control with a raised orange-accented OK center.
+- Redesigned the input selector as a full premium source panel with HDMI, composite, tuner icons, and the verified Fire TV Stick source highlighted.
+- Added clearer Ready, Connecting, Standby, and Pairing Required status presentation.
+- Preserved every verified Google TV command, Wake-on-LAN behavior, and Hisense input mapping.
+- Updated the Android version to 1.2-dev.6.
+
+## 1.2-dev.5 — TV Remote polish and hardening
+
+- Added premium haptic feedback to TV Remote controls while respecting the existing haptics setting.
+- Added a short power-command guard to prevent accidental double-taps from toggling the TV twice.
+- Added clearer power, reconnect, and input-switching status messages.
+- Preserved the verified Hisense HDMI 1–3, composite, and tuner passthrough mappings.
+- Updated the Android version to 1.2-dev.5.
+
+## v1.2-dev.4.2.1
+
+- Fixed Kotlin visibility compilation errors by making `TvDiscoveryController` internal, matching the internal TV model and input-target types it exposes.
+- Preserved the verified Hisense HDMI passthrough URI mappings from v1.2-dev.4.2.
+
+## v1.2-dev.4.2
+
+- Replaced ignored direct HDMI keycodes with Google TV Remote v2 app-link launches targeting Hisense TV Input Framework passthrough URIs.
+- Added verified Abaddon mappings: HDMI 1 = HW4, HDMI 2 = HW5, HDMI 3 = HW6.
+- Removed nonexistent HDMI 4 from the selector and retained Composite and TV/Antenna via their discovered hardware input IDs.
+- Confirmed the HDMI 3 URI manually over ADB with a powered Fire TV Stick.
+
+## v1.2-dev.4.1
+
+- Replaced the ignored generic Input key with an on-phone direct input selector for HDMI 1-4, Composite, and TV.
+- Replaced the tuner-oriented Live TV key with a Google TV Home navigation macro targeting the built-in Live tab.
+- Preserved all confirmed v1.2-dev.4 controls, Wake-on-LAN power-on, and automatic reconnect behavior.
+
+
+## v1.2-dev.4 — TV power wake and Hisense control refinement
+
+- add hybrid Power behavior: send the normal power key while connected and Wake-on-LAN while offline
+- store Abaddon's confirmed wake address (`38:64:07:C2:BF:EE`) with the selected TV
+- retry port 6466 for up to 30 seconds and reconnect automatically after the TV wakes
+- remap Guide to the Android TV `TV` key so it targets the Google TV live-TV experience instead of antenna setup
+- preserve Channel Up and Channel Down for live streaming channels
+- replace the ignored Menu key with the system Settings key
+- relabel playback skipping as `−1 MIN` and `+1 MIN` to match confirmed behavior
+- remove wire-diagnostic text from the normal TV Remote interface
+
+## v1.2-dev.3.3 — post-fix hardening
+
+- invalidate the active connection epoch whenever the TV remote closes so stale reader threads cannot report late errors
+- restrict persistent wire tracing to debug builds and cap the trace file at approximately 256 KB
+- report the active package name and build version during Google TV configuration
+- regenerate the source integrity manifest after the TV remote command-delivery fixes
+
+## v1.2-dev.3.3
+
+- Changed Google TV taps from `SHORT` to explicit key-down/key-up delivery for firmware compatibility.
+- Corrected remote feature negotiation and `RemoteSetActive` replies.
+- Added visible command transmission counters and remote-error reporting.
+
+## v1.2-dev.3 — First live Google TV controls
+
+- moved TV discovery, manual addressing, diagnostics, pairing, reconnect, and forget actions into Settings
+- replaced the development diagnostics tab with the approved CouchLink TV Remote control layout
+- added the pinned TLS remote-control connection on port 6466
+- added automatic reconnect for the remembered paired TV
+- added D-pad, OK, Home, Back, Menu, Input, power, volume, mute, channel, Guide, and playback commands
+- added Android TV Remote v2 protobuf messages and ping/configuration handling
+- preserved the TV private identity using Android Keystore-backed encrypted storage
+
+## v1.2-dev.2 — Google TV certificate pairing
+
+- added the real Android TV Remote v2 pairing exchange over TLS on port 6467
+- added a CouchLink RSA client identity stored in Android Keystore
+- added the TV-displayed six-character hexadecimal pairing-code workflow
+- added pairing-state, cancellation, validation, and error reporting to the TV Remote screen
+- stored the paired TV host and server-certificate fingerprint for the upcoming pinned remote connection
+- added protobuf-lite generation for the Google Polo pairing protocol
+
+## v1.2-dev.1 — TV Remote discovery prototype
+
+- added a dedicated TV Remote destination to the Android bottom navigation
+- added Android/Google TV discovery through NSD service browsing
+- added manual TV IP or hostname selection
+- added remembered TV selection
+- added reachability tests for the Android TV pairing and remote-control services
+- added the approved TV Remote visual reference and phased implementation roadmap
+
 This changelog tracks the combined Android remote and Windows launcher host. Historical one-build notes are preserved under `docs/history/`.
 
 ## 1.1 — 2026-07-24
@@ -127,3 +239,10 @@ This changelog tracks the combined Android remote and Windows launcher host. His
 
 - Delivered signed Bluetooth HID remote functionality with touchpad, keyboard, shortcuts, launcher fallback, premium UI, and Apache 2.0 licensing.
 - The original release notes and checklists are preserved in `docs/history/android/`.
+
+## v1.2-dev.3.3
+
+- correct Android TV Remote v2 feature negotiation to the canonical 622 mask
+- add on-screen and Logcat wire traces for inbound and outbound protobuf frames
+- preserve the last wire frame when Abaddon closes the socket
+- keep normal button taps on the canonical SHORT key event
