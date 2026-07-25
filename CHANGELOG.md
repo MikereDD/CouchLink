@@ -1,5 +1,18 @@
 # CouchLink Changelog
 
+## 1.2 — Stable Google TV Remote release
+
+- Promoted the tested v1.2 development line to stable Android metadata (`versionName 1.2`, `versionCode 120`).
+- Added secure Google TV Remote v2 pairing and local TLS control.
+- Added premium D-pad, system, volume, channel, playback, and source controls.
+- Added power-off through the secure remote protocol and Wake-on-LAN power-on with automatic reconnect.
+- Added Google TV Live-tab navigation without opening the antenna tuner.
+- Added verified Hisense A6H hardware-input switching for HDMI 1–3, composite, and TV/antenna.
+- Added premium haptics, clear connection states, and accidental Power double-tap protection.
+- Finalized the installed Android label as `CouchLink` and preserved the metallic CL icon.
+- Added the approved Home, Touchpad, Keyboard, and TV Remote README showcase.
+- Finalized release notes, validation guidance, source-manifest tooling, and signed-build preparation.
+
 ## 1.2-dev.7 — Documentation and release cleanup
 
 - Rebuilt the root README around the complete CouchLink experience: Home, Touchpad, Keyboard, Windows launcher control, and Google TV Remote.

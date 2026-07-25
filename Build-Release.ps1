@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.1',
+    [string]$Version = '1.2',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -293,9 +293,15 @@ function Invoke-CouchLinkReleaseBuild {
         Write-Host 'Source archive skipped by request.' -ForegroundColor Yellow
     }
 
-    Copy-ReleaseDocument `
-        -Source (Join-Path $repoRoot "docs\release\RELEASE-NOTES-v$Version.md") `
-        -Destination (Join-Path $resolvedOutputDirectory "RELEASE-NOTES-v$Version.md")
+    foreach ($releaseDocument in @(
+        "RELEASE-NOTES-v$Version.md",
+        "RELEASE-CHECKLIST-v$Version.md",
+        "RELEASE-VALIDATION-v$Version.md"
+    )) {
+        Copy-ReleaseDocument `
+            -Source (Join-Path $repoRoot "docs\release\$releaseDocument") `
+            -Destination (Join-Path $resolvedOutputDirectory $releaseDocument)
+    }
     Copy-ReleaseDocument `
         -Source (Join-Path $repoRoot 'docs\release\INSTALLATION.md') `
         -Destination (Join-Path $resolvedOutputDirectory "INSTALLATION-v$Version.md")

@@ -6,7 +6,7 @@
 
 ### A premium Android couch remote for Windows gaming and Google TV control.
 
-![Android](https://img.shields.io/badge/Android-1.2--dev.7-ff8617?style=for-the-badge&logo=android&logoColor=white)
+![Android](https://img.shields.io/badge/Android-1.2-ff8617?style=for-the-badge&logo=android&logoColor=white)
 ![Windows Host](https://img.shields.io/badge/Windows_Host-1.1-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
 ![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
@@ -158,12 +158,12 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 | Component | Version | Status |
 |---|---:|---|
-| Android remote | `1.2-dev.7` (`versionCode 117`) | Release cleanup and validation |
+| Android remote | `1.2` (`versionCode 120`) | Stable |
 | Windows Launcher Host | `1.1` | Stable |
 | Shared launcher protocol | `1` | UDP discovery + framed TCP session |
 | Google TV protocol | Remote v2 | Secure local TLS pairing and control |
 
-CouchLink 1.1 was promoted to stable on **July 24, 2026**. The 1.2 line adds the complete Google TV Remote experience and its premium visual integration.
+CouchLink 1.1 was promoted to stable on **July 24, 2026**. CouchLink 1.2 adds the complete Google TV Remote experience and its premium visual integration.
 
 ## Documentation
 
@@ -173,7 +173,9 @@ CouchLink 1.1 was promoted to stable on **July 24, 2026**. The 1.2 line adds the
 - [Integration testing](docs/building/TESTING.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
-- [v1.2-dev.7 release-cleanup checklist](docs/tv-remote/v1.2-dev.7-release-cleanup-checklist.md)
+- [Release notes for 1.2](docs/release/RELEASE-NOTES-v1.2.md)
+- [Release checklist for 1.2](docs/release/RELEASE-CHECKLIST-v1.2.md)
+- [Release validation for 1.2](docs/release/RELEASE-VALIDATION-v1.2.md)
 - [Release notes for 1.1](docs/release/RELEASE-NOTES-v1.1.md)
 - [Release validation for 1.1](docs/release/RELEASE-VALIDATION-v1.1.md)
 - [Changelog](CHANGELOG.md)
