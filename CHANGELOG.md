@@ -1,5 +1,15 @@
 # CouchLink Changelog
 
+## 1.2-dev.6 — Premium TV Remote visual pass
+
+- Rebuilt the TV Remote controls with custom CouchLink-drawn icons instead of text symbols.
+- Added layered metallic gradients, orange edge accents, inset borders, controlled shadows, and premium pressed/disabled states.
+- Redesigned the D-pad as a unified circular remote control with a raised orange-accented OK center.
+- Redesigned the input selector as a full premium source panel with HDMI, composite, tuner icons, and the verified Fire TV Stick source highlighted.
+- Added clearer Ready, Connecting, Standby, and Pairing Required status presentation.
+- Preserved every verified Google TV command, Wake-on-LAN behavior, and Hisense input mapping.
+- Updated the Android version to 1.2-dev.6.
+
 ## 1.2-dev.5 — TV Remote polish and hardening
 
 - Added premium haptic feedback to TV Remote controls while respecting the existing haptics setting.
