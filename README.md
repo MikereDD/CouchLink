@@ -10,7 +10,6 @@
 ![Windows Host](https://img.shields.io/badge/Windows_Host-0.2--dev.1-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
 ![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
-![Branding](https://img.shields.io/badge/Branding-Reserved-18181B?style=for-the-badge)
 
 **Bluetooth input at sign-in. Rich launcher control after sign-in. No cloud relay.**
 
@@ -43,8 +42,7 @@ CouchLink/
 │   └── history/              Preserved development notes and old manifests
 ├── CHANGELOG.md              Current cross-platform changelog
 ├── PRIVACY.md                Repository-wide privacy statement
-├── LICENSE                   Apache License 2.0
-└── TRADEMARKS.md             CouchLink brand and trademark policy
+└── LICENSE                   Apache License 2.0
 ```
 
 ## Supported launchers
@@ -89,11 +87,8 @@ See [BUILDING.md](docs/building/BUILDING.md) for release and publish commands.
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [Changelog](CHANGELOG.md)
 - [Privacy](PRIVACY.md)
-- [Trademark and brand policy](TRADEMARKS.md)
 - [Development history](docs/history/README.md)
 
-## License and branding
+## License
 
-CouchLink source code is licensed under the [Apache License 2.0](LICENSE).
-
-The **CouchLink** name, **CL** branding, icons, logos, original artwork, screenshots, and official visual identity are governed separately by the [CouchLink Trademark and Brand Policy](TRADEMARKS.md). Forks may use the Apache-licensed code, but must rename and rebrand unless explicitly authorized.
+CouchLink is licensed under the [Apache License 2.0](LICENSE).

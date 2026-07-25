@@ -41,9 +41,3 @@ Bluetooth HID and Windows launcher-host connectivity are independent. A host out
 - [Historical Android notes](../../docs/history/android/)
 - [Privacy](../../PRIVACY.md)
 - [Apache 2.0 license](../../LICENSE)
-- [Trademark and brand policy](../../TRADEMARKS.md)
-
-
-## License and branding
-
-The Android source is licensed under the [Apache License 2.0](../../LICENSE). CouchLink names, logos, icons, artwork, screenshots, and official branding are covered separately by the [CouchLink Trademark and Brand Policy](../../TRADEMARKS.md).

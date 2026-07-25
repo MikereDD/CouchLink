@@ -2,14 +2,6 @@
 
 This changelog tracks the combined Android remote and Windows launcher host. Historical one-build notes are preserved under `docs/history/`.
 
-## Documentation update — Trademark and brand policy
-
-- Added a root-level `TRADEMARKS.md` separating Apache-licensed source code from reserved CouchLink branding.
-- Reserved the CouchLink name, CL identity, icons, logos, artwork, screenshots, and official visual identity.
-- Clarified rename-and-rebrand requirements for modified distributions and independent forks.
-- Added third-party trademark attribution and linked the policy from the root, Android, and Windows READMEs.
-- No application behavior or component version changed.
-
 ## 0.1-dev.15.6 — Launcher-host reliability hardening
 
 ### Android 1.1-dev.5
