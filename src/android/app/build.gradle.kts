@@ -66,7 +66,10 @@ android {
     }
 
     packaging {
-        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        resources.excludes += setOf(
+            "/META-INF/{AL2.0,LGPL2.1}",
+            "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        )
         jniLibs.keepDebugSymbols += "**/libandroidx.graphics.path.so"
     }
 }
@@ -83,6 +86,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.google.protobuf:protobuf-javalite:4.31.1")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 

@@ -1,23 +1,15 @@
 package dev.typezero.couchlink.remote.tv
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
 import com.google.polo.wire.protobuf.PoloProto
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
-import java.math.BigInteger
 import java.net.InetSocketAddress
-import java.security.KeyPairGenerator
-import java.security.KeyStore
+import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.Principal
-import java.security.PrivateKey
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
-import java.util.Calendar
-import javax.net.ssl.KeyManager
-import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.TrustManager
@@ -38,10 +30,10 @@ internal class TvPairingClient(
     }
 
     fun begin(host: String, clientName: String = "CouchLink"): PendingPairing {
-        ensureClientIdentity()
-        val sslContext = buildSslContext()
+        val identity = TvTlsIdentityStore(context).loadOrCreate()
+        val sslContext = buildSslContext(identity)
         val socket = (sslContext.socketFactory.createSocket() as SSLSocket).apply {
-            enabledProtocols = enabledProtocols.filter { it == "TLSv1.2" || it == "TLSv1.3" }.toTypedArray()
+            enabledProtocols = arrayOf("TLSv1.2")
             connect(InetSocketAddress(host, PAIRING_PORT), CONNECT_TIMEOUT_MS)
             soTimeout = IO_TIMEOUT_MS
             startHandshake()
@@ -99,8 +91,7 @@ internal class TvPairingClient(
             "Enter the six-character hexadecimal code shown on the TV."
         }
 
-        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-        val clientCertificate = keyStore.getCertificate(CLIENT_ALIAS) as X509Certificate
+        val clientCertificate = TvTlsIdentityStore(context).loadOrCreate().certificate
         val secret = computeSecret(clientCertificate, pending.serverCertificate, normalized)
 
         val message = baseMessage().toBuilder()
@@ -129,40 +120,10 @@ internal class TvPairingClient(
             !prefs.getString(KEY_SERVER_FINGERPRINT, null).isNullOrBlank()
     }
 
-    private fun ensureClientIdentity() {
-        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-        if (keyStore.containsAlias(CLIENT_ALIAS)) return
-
-        val start = Calendar.getInstance()
-        val end = Calendar.getInstance().apply { add(Calendar.YEAR, 20) }
-        val spec = KeyGenParameterSpec.Builder(
-            CLIENT_ALIAS,
-            KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY,
-        )
-            .setKeySize(2048)
-            .setDigests(KeyProperties.DIGEST_SHA256, KeyProperties.DIGEST_SHA512)
-            .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PKCS1)
-            .setCertificateSubject(javax.security.auth.x500.X500Principal("CN=CouchLink TV Remote"))
-            .setCertificateSerialNumber(BigInteger.valueOf(System.currentTimeMillis()))
-            .setCertificateNotBefore(start.time)
-            .setCertificateNotAfter(end.time)
-            .build()
-        KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, ANDROID_KEY_STORE).apply {
-            initialize(spec)
-            generateKeyPair()
-        }
-    }
-
-    private fun buildSslContext(): SSLContext {
-        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
-        val factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()).apply {
-            init(keyStore, null)
-        }
-        val managers = factory.keyManagers.map { manager ->
-            if (manager is X509ExtendedKeyManager) ForcedAliasKeyManager(manager, CLIENT_ALIAS) else manager
-        }.toTypedArray()
-        return SSLContext.getInstance("TLS").apply {
-            init(managers, arrayOf(TRUST_PAIRING_SERVER), SecureRandom())
+    private fun buildSslContext(identity: TvTlsIdentityStore.Identity): SSLContext {
+        val manager = SingleIdentityKeyManager(identity)
+        return SSLContext.getInstance("TLSv1.2").apply {
+            init(arrayOf(manager), arrayOf(TRUST_PAIRING_SERVER), SecureRandom())
         }
     }
 
@@ -259,18 +220,19 @@ internal class TvPairingClient(
         return bytes
     }
 
-    private class ForcedAliasKeyManager(
-        private val delegate: X509ExtendedKeyManager,
-        private val alias: String,
+    private class SingleIdentityKeyManager(
+        private val identity: TvTlsIdentityStore.Identity,
     ) : X509ExtendedKeyManager() {
-        override fun chooseClientAlias(keyType: Array<out String>?, issuers: Array<out Principal>?, socket: java.net.Socket?) = alias
-        override fun chooseEngineClientAlias(keyType: Array<out String>?, issuers: Array<out Principal>?, engine: javax.net.ssl.SSLEngine?) = alias
-        override fun getCertificateChain(alias: String?) = delegate.getCertificateChain(this.alias)
-        override fun getPrivateKey(alias: String?) = delegate.getPrivateKey(this.alias)
-        override fun getClientAliases(keyType: String?, issuers: Array<out Principal>?) = arrayOf(alias)
-        override fun chooseServerAlias(keyType: String?, issuers: Array<out Principal>?, socket: java.net.Socket?) = delegate.chooseServerAlias(keyType, issuers, socket)
-        override fun getServerAliases(keyType: String?, issuers: Array<out Principal>?) = delegate.getServerAliases(keyType, issuers)
-        override fun chooseEngineServerAlias(keyType: String?, issuers: Array<out Principal>?, engine: javax.net.ssl.SSLEngine?) = delegate.chooseEngineServerAlias(keyType, issuers, engine)
+        override fun chooseClientAlias(keyType: Array<out String>?, issuers: Array<out Principal>?, socket: java.net.Socket?) = ALIAS
+        override fun chooseEngineClientAlias(keyType: Array<out String>?, issuers: Array<out Principal>?, engine: javax.net.ssl.SSLEngine?) = ALIAS
+        override fun getCertificateChain(alias: String?) = arrayOf(identity.certificate)
+        override fun getPrivateKey(alias: String?) = identity.privateKey
+        override fun getClientAliases(keyType: String?, issuers: Array<out Principal>?) = arrayOf(ALIAS)
+        override fun chooseServerAlias(keyType: String?, issuers: Array<out Principal>?, socket: java.net.Socket?) = null
+        override fun getServerAliases(keyType: String?, issuers: Array<out Principal>?) = null
+        override fun chooseEngineServerAlias(keyType: String?, issuers: Array<out Principal>?, engine: javax.net.ssl.SSLEngine?) = null
+
+        private companion object { const val ALIAS = "couchlink-tv" }
     }
 
     private companion object {
@@ -278,8 +240,6 @@ internal class TvPairingClient(
         const val CONNECT_TIMEOUT_MS = 5_000
         const val IO_TIMEOUT_MS = 15_000
         const val MAX_MESSAGE_SIZE = 1024 * 1024
-        const val ANDROID_KEY_STORE = "AndroidKeyStore"
-        const val CLIENT_ALIAS = "couchlink_tv_remote_identity_v1"
         const val PREFERENCES = "couchlink_tv_remote"
         const val KEY_PAIRED_HOST = "paired_tv_host"
         const val KEY_SERVER_FINGERPRINT = "paired_tv_server_fingerprint"
