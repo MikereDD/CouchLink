@@ -5,16 +5,29 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
+
+internal enum class TvInputTarget(val label: String, val appLink: String) {
+    HDMI_1("HDMI 1", "content://android.media.tv/passthrough/com.hisense.tv.hitvinput%2F.hdmi.HdmiTvInputService%2FHW4"),
+    HDMI_2("HDMI 2", "content://android.media.tv/passthrough/com.hisense.tv.hitvinput%2F.hdmi.HdmiTvInputService%2FHW5"),
+    HDMI_3("HDMI 3", "content://android.media.tv/passthrough/com.hisense.tv.hitvinput%2F.hdmi.HdmiTvInputService%2FHW6"),
+    COMPOSITE("Composite", "content://android.media.tv/passthrough/com.hisense.tv.hitvinput%2F.composite.CompositeTvInputService%2FHW1"),
+    TV("TV", "content://android.media.tv/passthrough/com.hisense.tv.hitvinput%2F.tuner.TunerTvInputService%2FHW0"),
+}
 
 internal class TvDiscoveryController(
     context: Context,
@@ -27,6 +40,7 @@ internal class TvDiscoveryController(
         val probe: TvConnectionProbe? = null,
         val pairing: PairingState = PairingState(),
         val remote: TvRemoteClient.Connection = TvRemoteClient.Connection(),
+        val wakeMacAddress: String? = null,
         val message: String = "Scan your local network for a Google TV.",
     )
 
@@ -46,11 +60,13 @@ internal class TvDiscoveryController(
     private val pairingClient = TvPairingClient(appContext)
     private val remoteClient = TvRemoteClient(appContext)
     private var pendingPairing: TvPairingClient.PendingPairing? = null
+    private var wakeJob: Job? = null
 
     private val _state = MutableStateFlow(
         State(
             selectedDevice = rememberedDevice(),
             pairing = rememberedDevice()?.let { PairingState(paired = pairingClient.isPaired(it.host)) } ?: PairingState(),
+            wakeMacAddress = rememberedWakeMac(rememberedDevice()),
             message = rememberedDevice()?.let {
                 "Saved TV: ${it.name} (${it.host}). Scan or test the connection."
             } ?: "Scan your local network for a Google TV.",
@@ -99,6 +115,7 @@ internal class TvDiscoveryController(
             .putString(KEY_NAME, device.name)
             .putString(KEY_HOST, device.host)
             .apply()
+        ensureKnownWakeMac(device)
         remoteClient.close()
         val paired = pairingClient.isPaired(device.host)
         _state.value = _state.value.copy(
@@ -106,6 +123,7 @@ internal class TvDiscoveryController(
             probe = null,
             pairing = PairingState(paired = paired),
             remote = TvRemoteClient.Connection(),
+            wakeMacAddress = rememberedWakeMac(device),
             message = "Selected ${device.name} at ${device.host}.",
         )
         if (paired) connectRemote()
@@ -233,6 +251,55 @@ internal class TvDiscoveryController(
         }
     }
 
+    fun togglePower() {
+        if (_state.value.remote.ready) {
+            sendKey(dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_POWER)
+        } else {
+            wakeSelectedTv()
+        }
+    }
+
+    private fun wakeSelectedTv() {
+        if (wakeJob?.isActive == true) return
+        val device = _state.value.selectedDevice ?: run {
+            _state.value = _state.value.copy(message = "Select a TV before using Wake-on-LAN.")
+            return
+        }
+        val mac = _state.value.wakeMacAddress ?: rememberedWakeMac(device) ?: run {
+            _state.value = _state.value.copy(message = "No Wake-on-LAN MAC address is stored for ${device.name}.")
+            return
+        }
+        if (!_state.value.pairing.paired) {
+            _state.value = _state.value.copy(message = "Pair with ${device.name} before using the Power button.")
+            return
+        }
+
+        _state.value = _state.value.copy(
+            remote = TvRemoteClient.Connection(connecting = true, message = "Waking ${device.name}…"),
+            message = "Sending Wake-on-LAN to ${device.name}…",
+        )
+        wakeJob = scope.launch {
+            val woke = withContext(Dispatchers.IO) {
+                sendWakePackets(mac)
+                repeat(WAKE_RETRY_COUNT) { attempt ->
+                    if (canConnect(device.host, REMOTE_PORT)) return@withContext true
+                    if (attempt + 1 < WAKE_RETRY_COUNT) delay(WAKE_RETRY_DELAY_MS)
+                }
+                false
+            }
+            if (woke) {
+                _state.value = _state.value.copy(message = "${device.name} is awake. Reconnecting TV Remote…")
+                connectRemote()
+            } else {
+                _state.value = _state.value.copy(
+                    remote = TvRemoteClient.Connection(message = "Wake packet sent, but the TV Remote service did not return yet."),
+                    message = "${device.name} did not reconnect within ${WAKE_TIMEOUT_SECONDS} seconds.",
+                )
+            }
+            wakeJob = null
+        }
+    }
+
     fun sendKey(keyCode: dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode) {
         if (!_state.value.remote.ready) {
             _state.value = _state.value.copy(message = "Reconnecting to the TV. Try the command again in a moment.")
@@ -244,6 +311,43 @@ internal class TvDiscoveryController(
         // client marshal back to Main via its own callback.
         scope.launch {
             withContext(Dispatchers.IO) { remoteClient.sendKey(keyCode) }
+        }
+    }
+
+    /** Opens the Google TV Home Live tab instead of the manufacturer's antenna tuner.
+     * Google TV does not expose the Live tab as a public remote key, so use a short,
+     * deterministic launcher-navigation macro: Home, refocus Home, move to Live, open.
+     */
+    fun openGoogleTvLive() {
+        if (!_state.value.remote.ready) {
+            _state.value = _state.value.copy(message = "Reconnect to the TV before opening Google TV Live.")
+            connectRemote()
+            return
+        }
+        scope.launch {
+            val sequence = listOf(
+                dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_HOME to 850L,
+                dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_HOME to 250L,
+                dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_DPAD_RIGHT to 150L,
+                dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode.KEYCODE_DPAD_CENTER to 0L,
+            )
+            withContext(Dispatchers.IO) {
+                sequence.forEach { (key, pauseAfter) ->
+                    remoteClient.sendKey(key)
+                    if (pauseAfter > 0) delay(pauseAfter)
+                }
+            }
+        }
+    }
+
+    fun selectInput(target: TvInputTarget) {
+        if (!_state.value.remote.ready) {
+            _state.value = _state.value.copy(message = "Reconnect to the TV before changing inputs.")
+            connectRemote()
+            return
+        }
+        scope.launch(Dispatchers.IO) {
+            remoteClient.launchAppLink(target.appLink)
         }
     }
 
@@ -268,6 +372,8 @@ internal class TvDiscoveryController(
         stopDiscovery()
         pendingPairing?.close()
         pendingPairing = null
+        wakeJob?.cancel()
+        wakeJob = null
         remoteClient.close()
         scope.cancel()
     }
@@ -341,6 +447,39 @@ internal class TvDiscoveryController(
         return TvDevice(name = name, host = host)
     }
 
+    private fun ensureKnownWakeMac(device: TvDevice) {
+        if (preferences.getString(KEY_WAKE_MAC, null).isNullOrBlank() && device.host == ABADDON_HOST) {
+            preferences.edit().putString(KEY_WAKE_MAC, ABADDON_MAC).apply()
+        }
+    }
+
+    private fun rememberedWakeMac(device: TvDevice?): String? {
+        val saved = preferences.getString(KEY_WAKE_MAC, null)?.takeIf { it.isNotBlank() }
+        if (saved != null) return saved
+        return if (device?.host == ABADDON_HOST) ABADDON_MAC else null
+    }
+
+    private fun sendWakePackets(macAddress: String) {
+        val mac = macAddress.split(':', '-').map { it.toInt(16).toByte() }.toByteArray()
+        require(mac.size == 6) { "Invalid TV MAC address: $macAddress" }
+        val payload = ByteArray(6 + 16 * mac.size)
+        repeat(6) { payload[it] = 0xFF.toByte() }
+        repeat(16) { copy ->
+            mac.copyInto(payload, destinationOffset = 6 + copy * mac.size)
+        }
+        DatagramSocket().use { socket ->
+            socket.broadcast = true
+            val targets = listOf(
+                InetSocketAddress(InetAddress.getByName("255.255.255.255"), 9),
+                InetSocketAddress(InetAddress.getByName("255.255.255.255"), 7),
+            )
+            repeat(WAKE_PACKET_BURSTS) {
+                targets.forEach { target -> socket.send(DatagramPacket(payload, payload.size, target)) }
+                Thread.sleep(WAKE_PACKET_INTERVAL_MS)
+            }
+        }
+    }
+
     private fun canConnect(host: String, port: Int): Boolean = runCatching {
         Socket().use { socket ->
             socket.connect(InetSocketAddress(host, port), SOCKET_TIMEOUT_MS)
@@ -352,9 +491,17 @@ internal class TvDiscoveryController(
         const val PREFERENCES = "couchlink_tv_remote"
         const val KEY_NAME = "selected_tv_name"
         const val KEY_HOST = "selected_tv_host"
+        const val KEY_WAKE_MAC = "selected_tv_wake_mac"
+        const val ABADDON_HOST = "192.168.4.39"
+        const val ABADDON_MAC = "38:64:07:C2:BF:EE"
         const val PAIRING_PORT = 6467
         const val REMOTE_PORT = 6466
         const val SOCKET_TIMEOUT_MS = 1_500
+        const val WAKE_RETRY_COUNT = 15
+        const val WAKE_RETRY_DELAY_MS = 2_000L
+        const val WAKE_TIMEOUT_SECONDS = 30
+        const val WAKE_PACKET_BURSTS = 3
+        const val WAKE_PACKET_INTERVAL_MS = 100L
         val SERVICE_TYPES = listOf(
             "_androidtvremote2._tcp.",
             "_androidtvremote._tcp.",

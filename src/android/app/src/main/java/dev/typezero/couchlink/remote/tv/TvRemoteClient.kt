@@ -8,6 +8,7 @@ import dev.typezero.couchlink.remote.tv.proto.RemoteDirection
 import dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode
 import dev.typezero.couchlink.remote.tv.proto.RemoteKeyInject
 import dev.typezero.couchlink.remote.tv.proto.RemoteMessage
+import dev.typezero.couchlink.remote.tv.proto.RemoteAppLinkLaunchRequest
 import dev.typezero.couchlink.remote.tv.proto.RemotePingResponse
 import dev.typezero.couchlink.remote.tv.proto.RemoteSetActive
 import java.io.BufferedInputStream
@@ -79,6 +80,32 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
                     lastCommand = keyCode.name,
                     commandsSent = currentConnection.commandsSent + 1,
                     message = "Sent ${keyCode.name.removePrefix("KEYCODE_")}",
+                    trace = currentConnection.trace,
+                ),
+            )
+            true
+        }.getOrElse {
+            updateState(currentConnection.copy(connected = false, ready = false, message = "TV command failed: ${it.message ?: it.javaClass.simpleName}"))
+            false
+        }
+    }
+
+    fun launchAppLink(appLink: String): Boolean {
+        val stream = output ?: return false
+        val message = RemoteMessage.newBuilder()
+            .setRemoteAppLinkLaunchRequest(
+                RemoteAppLinkLaunchRequest.newBuilder().setAppLink(appLink),
+            )
+            .build()
+        return runCatching {
+            synchronized(writeLock) {
+                writeMessage(stream, message, "APP_LINK:$appLink")
+            }
+            updateState(
+                currentConnection.copy(
+                    lastCommand = "APP_LINK",
+                    commandsSent = currentConnection.commandsSent + 1,
+                    message = "Opened TV input",
                     trace = currentConnection.trace,
                 ),
             )

@@ -1,5 +1,35 @@
 # CouchLink Changelog
 
+## v1.2-dev.4.2.1
+
+- Fixed Kotlin visibility compilation errors by making `TvDiscoveryController` internal, matching the internal TV model and input-target types it exposes.
+- Preserved the verified Hisense HDMI passthrough URI mappings from v1.2-dev.4.2.
+
+## v1.2-dev.4.2
+
+- Replaced ignored direct HDMI keycodes with Google TV Remote v2 app-link launches targeting Hisense TV Input Framework passthrough URIs.
+- Added verified Abaddon mappings: HDMI 1 = HW4, HDMI 2 = HW5, HDMI 3 = HW6.
+- Removed nonexistent HDMI 4 from the selector and retained Composite and TV/Antenna via their discovered hardware input IDs.
+- Confirmed the HDMI 3 URI manually over ADB with a powered Fire TV Stick.
+
+## v1.2-dev.4.1
+
+- Replaced the ignored generic Input key with an on-phone direct input selector for HDMI 1-4, Composite, and TV.
+- Replaced the tuner-oriented Live TV key with a Google TV Home navigation macro targeting the built-in Live tab.
+- Preserved all confirmed v1.2-dev.4 controls, Wake-on-LAN power-on, and automatic reconnect behavior.
+
+
+## v1.2-dev.4 — TV power wake and Hisense control refinement
+
+- add hybrid Power behavior: send the normal power key while connected and Wake-on-LAN while offline
+- store Abaddon's confirmed wake address (`38:64:07:C2:BF:EE`) with the selected TV
+- retry port 6466 for up to 30 seconds and reconnect automatically after the TV wakes
+- remap Guide to the Android TV `TV` key so it targets the Google TV live-TV experience instead of antenna setup
+- preserve Channel Up and Channel Down for live streaming channels
+- replace the ignored Menu key with the system Settings key
+- relabel playback skipping as `−1 MIN` and `+1 MIN` to match confirmed behavior
+- remove wire-diagnostic text from the normal TV Remote interface
+
 ## v1.2-dev.3.3 — post-fix hardening
 
 - invalidate the active connection epoch whenever the TV remote closes so stale reader threads cannot report late errors

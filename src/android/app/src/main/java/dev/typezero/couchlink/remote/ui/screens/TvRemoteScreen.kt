@@ -14,8 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,11 +28,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
+import dev.typezero.couchlink.remote.tv.TvInputTarget
 import dev.typezero.couchlink.remote.tv.proto.RemoteKeyCode
 import dev.typezero.couchlink.remote.ui.components.PremiumPanel
 import dev.typezero.couchlink.remote.ui.theme.Accent
 import dev.typezero.couchlink.remote.ui.theme.Muted
-import dev.typezero.couchlink.remote.ui.theme.Orange
 import dev.typezero.couchlink.remote.ui.theme.Raised
 import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
@@ -36,9 +41,13 @@ import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
 internal fun TvRemoteScreen(
     state: TvDiscoveryController.State,
     onConnect: () -> Unit,
+    onPower: () -> Unit,
     onKey: (RemoteKeyCode) -> Unit,
+    onLiveTv: () -> Unit,
+    onInput: (TvInputTarget) -> Unit,
 ) {
     val enabled = state.remote.ready
+    var showInputSelector by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -65,23 +74,11 @@ internal fun TvRemoteScreen(
                         fontSize = 10.sp,
                     )
                 }
-                Text(
-                    "DIAGNOSTIC v1.2-dev.3.3",
-                    color = Orange,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    state.remote.trace,
-                    color = Orange,
-                    fontSize = 10.sp,
-                    maxLines = 4,
-                )
             }
             RemoteButton(
                 label = "⏻",
                 enabled = state.pairing.paired,
-                onClick = { if (enabled) onKey(RemoteKeyCode.KEYCODE_POWER) else onConnect() },
+                onClick = onPower,
                 modifier = Modifier.size(54.dp),
                 circular = true,
                 accentText = true,
@@ -90,10 +87,10 @@ internal fun TvRemoteScreen(
 
         PremiumPanel {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                RemoteButton("INPUT", enabled, { onKey(RemoteKeyCode.KEYCODE_TV_INPUT) }, Modifier.weight(1f))
+                RemoteButton("INPUT", enabled, { showInputSelector = true }, Modifier.weight(1f))
                 RemoteButton("HOME", enabled, { onKey(RemoteKeyCode.KEYCODE_HOME) }, Modifier.weight(1f))
                 RemoteButton("BACK", enabled, { onKey(RemoteKeyCode.KEYCODE_BACK) }, Modifier.weight(1f))
-                RemoteButton("MENU", enabled, { onKey(RemoteKeyCode.KEYCODE_MENU) }, Modifier.weight(1f))
+                RemoteButton("SETTINGS", enabled, { onKey(RemoteKeyCode.KEYCODE_SETTINGS) }, Modifier.weight(1f))
             }
         }
 
@@ -109,7 +106,7 @@ internal fun TvRemoteScreen(
             PremiumPanel(modifier = Modifier.weight(1f)) {
                 Text("CHANNEL", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 RemoteButton("CH ＋", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_UP) }, Modifier.fillMaxWidth())
-                RemoteButton("GUIDE", enabled, { onKey(RemoteKeyCode.KEYCODE_GUIDE) }, Modifier.fillMaxWidth())
+                RemoteButton("GOOGLE LIVE", enabled, onLiveTv, Modifier.fillMaxWidth())
                 RemoteButton("CH －", enabled, { onKey(RemoteKeyCode.KEYCODE_CHANNEL_DOWN) }, Modifier.fillMaxWidth())
             }
         }
@@ -117,10 +114,21 @@ internal fun TvRemoteScreen(
         PremiumPanel {
             Text("PLAYBACK", color = Muted, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                RemoteButton("⏪", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_REWIND) }, Modifier.weight(1f))
-                RemoteButton("▶Ⅱ", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_PLAY_PAUSE) }, Modifier.weight(1f))
-                RemoteButton("⏩", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD) }, Modifier.weight(1f))
+                RemoteButton("−1 MIN", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_REWIND) }, Modifier.weight(1f))
+                RemoteButton("PLAY/PAUSE", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_PLAY_PAUSE) }, Modifier.weight(1f))
+                RemoteButton("+1 MIN", enabled, { onKey(RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD) }, Modifier.weight(1f))
             }
+        }
+
+
+        if (showInputSelector) {
+            InputSelectorDialog(
+                onDismiss = { showInputSelector = false },
+                onSelect = { key ->
+                    showInputSelector = false
+                    onInput(key)
+                },
+            )
         }
 
         if (!enabled) {
@@ -154,6 +162,35 @@ private fun Dpad(enabled: Boolean, onKey: (RemoteKeyCode) -> Unit) {
         RemoteButton("▶", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_RIGHT) }, Modifier.align(Alignment.CenterEnd).size(72.dp), circular = true)
         RemoteButton("OK", enabled, { onKey(RemoteKeyCode.KEYCODE_DPAD_CENTER) }, Modifier.size(92.dp), circular = true, accentText = true)
     }
+}
+
+@Composable
+private fun InputSelectorDialog(
+    onDismiss: () -> Unit,
+    onSelect: (TvInputTarget) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Raised,
+        title = { Text("SELECT INPUT", color = TextColor, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Choose a Hisense hardware input.", color = Muted, fontSize = 12.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    RemoteButton("HDMI 1", true, { onSelect(TvInputTarget.HDMI_1) }, Modifier.weight(1f))
+                    RemoteButton("HDMI 2", true, { onSelect(TvInputTarget.HDMI_2) }, Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    RemoteButton("HDMI 3", true, { onSelect(TvInputTarget.HDMI_3) }, Modifier.weight(1f))
+                    RemoteButton("COMPOSITE", true, { onSelect(TvInputTarget.COMPOSITE) }, Modifier.weight(1f))
+                }
+                RemoteButton("TV / ANTENNA", true, { onSelect(TvInputTarget.TV) }, Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            Text("CANCEL", color = Accent, modifier = Modifier.clickable(onClick = onDismiss).padding(12.dp))
+        },
+    )
 }
 
 @Composable

@@ -339,7 +339,10 @@ private fun CouchLinkApp() {
                     AppScreen.TvRemote -> TvRemoteScreen(
                         state = tvState,
                         onConnect = tvDiscovery::connectRemote,
+                        onPower = tvDiscovery::togglePower,
                         onKey = tvDiscovery::sendKey,
+                        onLiveTv = tvDiscovery::openGoogleTvLive,
+                        onInput = tvDiscovery::selectInput,
                     )
 
                     AppScreen.Settings -> SettingsScreen(

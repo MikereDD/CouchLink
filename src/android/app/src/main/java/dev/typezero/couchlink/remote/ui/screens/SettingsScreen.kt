@@ -270,6 +270,7 @@ private fun TvRemoteSettingsPanel(
         }
 
         Text(state.message, color = Muted, fontSize = 12.sp)
+        state.wakeMacAddress?.let { AboutDetailRow("Wake-on-LAN", it) }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = if (state.scanning) onStopScan else onScan, modifier = Modifier.weight(1f)) {
