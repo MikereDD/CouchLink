@@ -343,6 +343,9 @@ private fun CouchLinkApp() {
                         onSelect = tvDiscovery::select,
                         onSelectManual = tvDiscovery::selectManual,
                         onProbe = tvDiscovery::probeSelected,
+                        onBeginPairing = tvDiscovery::beginPairing,
+                        onFinishPairing = tvDiscovery::finishPairing,
+                        onCancelPairing = tvDiscovery::cancelPairing,
                     )
 
                     AppScreen.Settings -> SettingsScreen(

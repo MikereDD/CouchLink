@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.typezero.couchlink.remote.tv.TvDevice
@@ -46,8 +48,12 @@ internal fun TvRemoteScreen(
     onSelect: (TvDevice) -> Unit,
     onSelectManual: (String) -> Unit,
     onProbe: () -> Unit,
+    onBeginPairing: () -> Unit,
+    onFinishPairing: (String) -> Unit,
+    onCancelPairing: () -> Unit,
 ) {
     var manualHost by remember { mutableStateOf(state.selectedDevice?.host.orEmpty()) }
+    var pairingCode by remember { mutableStateOf("") }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionLabel("TV REMOTE")
@@ -114,6 +120,86 @@ internal fun TvRemoteScreen(
             }
         }
 
+        if (state.probe?.fullyReachable == true || state.pairing.awaitingCode || state.pairing.paired) {
+            SectionLabel("SECURE PAIRING")
+            PremiumPanel {
+                when {
+                    state.pairing.paired -> {
+                        Text(
+                            text = "PAIRED",
+                            color = Success,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.4.sp,
+                        )
+                        Spacer(Modifier.height(7.dp))
+                        Text(
+                            text = state.pairing.message ?: "CouchLink has a secure identity for this TV.",
+                            color = Muted,
+                            fontSize = 13.sp,
+                        )
+                    }
+                    state.pairing.awaitingCode -> {
+                        Text(
+                            text = "Check the TV screen and enter its six-character pairing code.",
+                            color = TextColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = pairingCode,
+                            onValueChange = { value ->
+                                pairingCode = value.uppercase().filter { it in '0'..'9' || it in 'A'..'F' }.take(6)
+                            },
+                            label = { Text("TV pairing code") },
+                            placeholder = { Text("A1B2C3") },
+                            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            ActionButton(
+                                label = if (state.pairing.inProgress) "Pairing…" else "Pair TV",
+                                onClick = { onFinishPairing(pairingCode) },
+                                enabled = pairingCode.length == 6 && !state.pairing.inProgress,
+                                modifier = Modifier.weight(1f),
+                            )
+                            ActionButton(
+                                label = "Cancel",
+                                onClick = onCancelPairing,
+                                enabled = !state.pairing.inProgress,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    else -> {
+                        Text(
+                            text = "Pair CouchLink with the TV to authorize remote-control commands. The private key stays in Android Keystore.",
+                            color = Muted,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        ActionButton(
+                            label = if (state.pairing.inProgress) "Requesting code…" else "Pair with TV",
+                            onClick = onBeginPairing,
+                            enabled = !state.pairing.inProgress,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                state.pairing.message?.takeIf { !state.pairing.paired }?.let { message ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(message, color = Muted, fontSize = 12.sp)
+                }
+            }
+        }
+
         if (state.devices.isNotEmpty()) {
             SectionLabel("DISCOVERED TVS")
             state.devices.forEach { device ->
@@ -152,7 +238,7 @@ internal fun TvRemoteScreen(
 
         PremiumPanel {
             Text(
-                text = "FIRST TEST BUILD",
+                text = "PAIRING TEST BUILD",
                 color = Accent,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
@@ -160,7 +246,7 @@ internal fun TvRemoteScreen(
             )
             Spacer(Modifier.height(7.dp))
             Text(
-                text = "This build verifies discovery and network reachability before CouchLink stores a TV certificate or sends commands. Pairing and the full remote controls are the next step after your A6H passes this test.",
+                text = "This build performs the real Google TV certificate pairing exchange. After pairing succeeds, the next build will open the remote-control channel and send live navigation, Home, Back, volume, and mute commands.",
                 color = Muted,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,

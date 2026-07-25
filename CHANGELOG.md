@@ -1,5 +1,14 @@
 # CouchLink Changelog
 
+## v1.2-dev.2 — Google TV certificate pairing
+
+- added the real Android TV Remote v2 pairing exchange over TLS on port 6467
+- added a CouchLink RSA client identity stored in Android Keystore
+- added the TV-displayed six-character hexadecimal pairing-code workflow
+- added pairing-state, cancellation, validation, and error reporting to the TV Remote screen
+- stored the paired TV host and server-certificate fingerprint for the upcoming pinned remote connection
+- added protobuf-lite generation for the Google Polo pairing protocol
+
 ## v1.2-dev.1 — TV Remote discovery prototype
 
 - added a dedicated TV Remote destination to the Android bottom navigation

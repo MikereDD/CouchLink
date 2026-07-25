@@ -25,7 +25,15 @@ internal class TvDiscoveryController(
         val selectedDevice: TvDevice? = null,
         val probing: Boolean = false,
         val probe: TvConnectionProbe? = null,
+        val pairing: PairingState = PairingState(),
         val message: String = "Scan your local network for a Google TV.",
+    )
+
+    internal data class PairingState(
+        val inProgress: Boolean = false,
+        val awaitingCode: Boolean = false,
+        val paired: Boolean = false,
+        val message: String? = null,
     )
 
     private val appContext = context.applicationContext
@@ -34,10 +42,13 @@ internal class TvDiscoveryController(
     private val discovered = ConcurrentHashMap<String, TvDevice>()
     private val activeListeners = ConcurrentHashMap<String, NsdManager.DiscoveryListener>()
     private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val pairingClient = TvPairingClient(appContext)
+    private var pendingPairing: TvPairingClient.PendingPairing? = null
 
     private val _state = MutableStateFlow(
         State(
             selectedDevice = rememberedDevice(),
+            pairing = rememberedDevice()?.let { PairingState(paired = pairingClient.isPaired(it.host)) } ?: PairingState(),
             message = rememberedDevice()?.let {
                 "Saved TV: ${it.name} (${it.host}). Scan or test the connection."
             } ?: "Scan your local network for a Google TV.",
@@ -82,6 +93,7 @@ internal class TvDiscoveryController(
         _state.value = _state.value.copy(
             selectedDevice = device,
             probe = null,
+            pairing = PairingState(paired = pairingClient.isPaired(device.host)),
             message = "Selected ${device.name} at ${device.host}.",
         )
     }
@@ -127,8 +139,84 @@ internal class TvDiscoveryController(
         }
     }
 
+
+    fun beginPairing() {
+        val device = _state.value.selectedDevice ?: run {
+            _state.value = _state.value.copy(message = "Select a TV before pairing.")
+            return
+        }
+        if (_state.value.pairing.inProgress || _state.value.pairing.awaitingCode) return
+        pendingPairing?.close()
+        pendingPairing = null
+        _state.value = _state.value.copy(
+            pairing = PairingState(inProgress = true, message = "Starting secure pairing…"),
+            message = "Starting pairing with ${device.name}…",
+        )
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { pairingClient.begin(device.host) }
+            }.onSuccess { pending ->
+                pendingPairing = pending
+                _state.value = _state.value.copy(
+                    pairing = PairingState(
+                        awaitingCode = true,
+                        message = "Enter the six-character code shown on the TV.",
+                    ),
+                    message = "Pairing code requested from ${device.name}.",
+                )
+            }.onFailure { error ->
+                pendingPairing?.close()
+                pendingPairing = null
+                _state.value = _state.value.copy(
+                    pairing = PairingState(message = error.message ?: "Pairing could not start."),
+                    message = "Pairing failed: ${error.message ?: error.javaClass.simpleName}",
+                )
+            }
+        }
+    }
+
+    fun finishPairing(code: String) {
+        val pending = pendingPairing ?: run {
+            _state.value = _state.value.copy(message = "Start pairing before entering a code.")
+            return
+        }
+        if (_state.value.pairing.inProgress) return
+        _state.value = _state.value.copy(
+            pairing = _state.value.pairing.copy(inProgress = true, message = "Verifying pairing code…"),
+        )
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { pairingClient.finish(pending, code) }
+            }.onSuccess {
+                pendingPairing = null
+                _state.value = _state.value.copy(
+                    pairing = PairingState(paired = true, message = "Paired securely with this TV."),
+                    message = "CouchLink is paired with ${pending.host}.",
+                )
+            }.onFailure { error ->
+                pendingPairing?.close()
+                pendingPairing = null
+                _state.value = _state.value.copy(
+                    pairing = PairingState(message = error.message ?: "Pairing failed."),
+                    message = "Pairing failed: ${error.message ?: error.javaClass.simpleName}",
+                )
+            }
+        }
+    }
+
+    fun cancelPairing() {
+        pendingPairing?.close()
+        pendingPairing = null
+        _state.value = _state.value.copy(
+            pairing = PairingState(paired = _state.value.selectedDevice?.host?.let(pairingClient::isPaired) == true),
+            message = "Pairing cancelled.",
+        )
+    }
+
     fun close() {
         stopDiscovery()
+        pendingPairing?.close()
+        pendingPairing = null
         scope.cancel()
     }
 

@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.protobuf")
 }
 
 android {
@@ -12,8 +13,8 @@ android {
         applicationId = "dev.typezero.couchlink.remote"
         minSdk = 28
         targetSdk = 36
-        versionCode = 107
-        versionName = "1.2-dev.1"
+        versionCode = 108
+        versionName = "1.2-dev.2"
     }
 
     compileOptions {
@@ -81,5 +82,17 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("com.google.protobuf:protobuf-javalite:4.31.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
+}
+
+protobuf {
+    protoc { artifact = "com.google.protobuf:protoc:4.31.1" }
+    generateProtoTasks {
+        all().configureEach {
+            builtins {
+                create("java") { option("lite") }
+            }
+        }
+    }
 }
