@@ -233,7 +233,7 @@ private fun AudioOutputPanel(
 private fun compactAudioOutputName(name: String): String = name
     .removeSuffix(" (NVIDIA High Definition Audio)")
     .removeSuffix(" (SteelSeries Sonar Virtual Audio Device)")
-    .removeSuffix(" (Realtek(R) Audio)")
+    .replace(" (Realtek(R) Audio)", " (Realtek)")
     .trim()
 
 @Composable

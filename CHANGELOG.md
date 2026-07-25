@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3-dev.3
+
+- Preserved useful hardware identity when compacting generic Realtek speaker names.
+- Changed `Speakers (Realtek(R) Audio)` to the clearer `Speakers (Realtek)` in the Android Audio Output picker.
+- Continued shortening bulky display and virtual-driver suffixes while preserving complete endpoint names and stable IDs internally.
+- Preserved the tested native Core Audio enumeration, filtering, current-output detection, and endpoint switching behavior from v1.3-dev.2.
+
 ## 1.3-dev.2
 
 - Corrected the Windows Core Audio `IMMDeviceCollection` interface IID used by output enumeration.
