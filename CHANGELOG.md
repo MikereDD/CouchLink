@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3-dev.4
+
+- Added per-host Headphones and TV / Display favorite output shortcuts on Android.
+- Added a built-in favorite picker with edit and clear actions.
+- Automatically seeds sensible favorites from active headphone and display endpoints while allowing full user reassignment.
+- Stores favorite endpoint IDs and full names per trusted Windows host.
+- Keeps disconnected HDMI, Bluetooth, USB, and wireless favorites visible as unavailable instead of silently losing them.
+- Restores favorite availability automatically when the saved endpoint returns during refresh.
+- Preserved the complete active-output list, compact labels, stable-ID switching, and native Core Audio implementation.
+
 ## 1.3-dev.3
 
 - Preserved useful hardware identity when compacting generic Realtek speaker names.

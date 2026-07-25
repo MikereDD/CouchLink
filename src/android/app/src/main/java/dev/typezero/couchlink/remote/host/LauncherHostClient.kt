@@ -3,7 +3,9 @@ package dev.typezero.couchlink.remote.host
 import android.content.Context
 import android.os.Build
 import dev.typezero.couchlink.remote.BuildConfig
+import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
 import dev.typezero.couchlink.remote.model.AudioOutputDevice
+import dev.typezero.couchlink.remote.model.AudioOutputFavorite
 import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.model.LauncherId
 import java.io.DataInputStream
@@ -147,6 +149,28 @@ internal class LauncherHostClient(context: Context) {
         scope.launch {
             sendEnvelope("audio_output_set", JSONObject().put("endpointId", endpointId))
         }
+        return true
+    }
+
+
+    fun setAudioFavorite(slot: AudioFavoriteSlot, endpointId: String): Boolean {
+        val hostId = activeHostId ?: _state.value.hostId.takeIf(String::isNotBlank) ?: return false
+        val device = _state.value.audioOutputs.firstOrNull { it.id.equals(endpointId, ignoreCase = true) } ?: return false
+        preferences.edit()
+            .putString(favoriteIdKey(hostId, slot), device.id)
+            .putString(favoriteNameKey(hostId, slot), device.name)
+            .apply()
+        applyStoredFavorites(hostId)
+        return true
+    }
+
+    fun clearAudioFavorite(slot: AudioFavoriteSlot): Boolean {
+        val hostId = activeHostId ?: _state.value.hostId.takeIf(String::isNotBlank) ?: return false
+        preferences.edit()
+            .remove(favoriteIdKey(hostId, slot))
+            .remove(favoriteNameKey(hostId, slot))
+            .apply()
+        applyStoredFavorites(hostId)
         return true
     }
 
@@ -361,6 +385,7 @@ internal class LauncherHostClient(context: Context) {
                     pairingRequired = false,
                     message = "Launcher host connected to ${payload.optString("hostName", hostName)}.",
                 )
+                applyStoredFavorites(activeHostId ?: _state.value.hostId)
                 startHeartbeat(payload.optInt("heartbeatSeconds", 5).coerceIn(2, 15))
                 refreshAudioOutputs()
             }
@@ -381,6 +406,9 @@ internal class LauncherHostClient(context: Context) {
                     audioLoading = false,
                     message = payload.optString("error").takeIf { it.isNotBlank() } ?: _state.value.message,
                 )
+                val currentHostId = activeHostId ?: _state.value.hostId
+                autoAssignFavorites(currentHostId, devices)
+                applyStoredFavorites(currentHostId)
             }
             "audio_output_result" -> {
                 val endpointId = payload.optString("endpointId")
@@ -480,6 +508,53 @@ internal class LauncherHostClient(context: Context) {
         lastAttemptHostId == hostId &&
             !_state.value.connected &&
             System.currentTimeMillis() - lastAttemptAtMs < RECONNECT_BACKOFF_MS
+
+
+    private fun autoAssignFavorites(hostId: String, devices: List<AudioOutputDevice>) {
+        if (hostId.isBlank() || devices.isEmpty()) return
+        val editor = preferences.edit()
+        var changed = false
+        if (preferences.getString(favoriteIdKey(hostId, AudioFavoriteSlot.Headphones), null).isNullOrBlank()) {
+            devices.firstOrNull { device ->
+                val name = device.name.lowercase()
+                "headphones" in name || "headset earphone" in name
+            }?.let {
+                editor.putString(favoriteIdKey(hostId, AudioFavoriteSlot.Headphones), it.id)
+                editor.putString(favoriteNameKey(hostId, AudioFavoriteSlot.Headphones), it.name)
+                changed = true
+            }
+        }
+        if (preferences.getString(favoriteIdKey(hostId, AudioFavoriteSlot.TvDisplay), null).isNullOrBlank()) {
+            devices.firstOrNull { device ->
+                val name = device.name.lowercase()
+                "nvidia high definition audio" in name || " hdmi" in name || "tv" in name || "ultragear" in name
+            }?.let {
+                editor.putString(favoriteIdKey(hostId, AudioFavoriteSlot.TvDisplay), it.id)
+                editor.putString(favoriteNameKey(hostId, AudioFavoriteSlot.TvDisplay), it.name)
+                changed = true
+            }
+        }
+        if (changed) editor.apply()
+    }
+
+    private fun applyStoredFavorites(hostId: String) {
+        if (hostId.isBlank()) return
+        _state.value = _state.value.copy(
+            favoriteHeadphones = readFavorite(hostId, AudioFavoriteSlot.Headphones),
+            favoriteTvDisplay = readFavorite(hostId, AudioFavoriteSlot.TvDisplay),
+        )
+    }
+
+    private fun readFavorite(hostId: String, slot: AudioFavoriteSlot): AudioOutputFavorite = AudioOutputFavorite(
+        endpointId = preferences.getString(favoriteIdKey(hostId, slot), "").orEmpty(),
+        name = preferences.getString(favoriteNameKey(hostId, slot), "").orEmpty(),
+    )
+
+    private fun favoriteIdKey(hostId: String, slot: AudioFavoriteSlot) =
+        "audio_favorite_${slot.name.lowercase()}_id_$hostId"
+
+    private fun favoriteNameKey(hostId: String, slot: AudioFavoriteSlot) =
+        "audio_favorite_${slot.name.lowercase()}_name_$hostId"
 
     private fun deviceName(): String = Build.MODEL?.takeIf(String::isNotBlank) ?: "Android device"
     private fun tokenKey(hostId: String) = "pairing_token_$hostId"

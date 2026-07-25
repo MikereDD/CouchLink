@@ -14,12 +14,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -42,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.typezero.couchlink.remote.R
 import dev.typezero.couchlink.remote.hid.WindowsShortcut
+import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
+import dev.typezero.couchlink.remote.model.AudioOutputFavorite
 import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.model.LauncherId
 import dev.typezero.couchlink.remote.ui.components.SectionLabel
@@ -102,6 +113,8 @@ internal fun HomeScreen(
     onRetryLauncherHost: () -> Unit,
     onRefreshAudioOutputs: () -> Unit,
     onAudioOutput: (String) -> Unit,
+    onSetAudioFavorite: (AudioFavoriteSlot, String) -> Unit,
+    onClearAudioFavorite: (AudioFavoriteSlot) -> Unit,
 ) {
     LauncherHostStatus(launcherHostState, onRetryLauncherHost)
     SectionLabel("LAUNCHERS")
@@ -153,6 +166,8 @@ internal fun HomeScreen(
         state = launcherHostState,
         onRefresh = onRefreshAudioOutputs,
         onSelect = onAudioOutput,
+        onSetFavorite = onSetAudioFavorite,
+        onClearFavorite = onClearAudioFavorite,
     )
 
     Spacer(Modifier.height(2.dp))
@@ -178,7 +193,10 @@ private fun AudioOutputPanel(
     state: LauncherHostState,
     onRefresh: () -> Unit,
     onSelect: (String) -> Unit,
+    onSetFavorite: (AudioFavoriteSlot, String) -> Unit,
+    onClearFavorite: (AudioFavoriteSlot) -> Unit,
 ) {
+    var editingFavorite by remember { mutableStateOf<AudioFavoriteSlot?>(null) }
     val shape = RoundedCornerShape(18.dp)
     Column(
         modifier = Modifier
@@ -206,6 +224,29 @@ private fun AudioOutputPanel(
                 modifier = Modifier.clickable(enabled = state.connected && !state.audioLoading, onClick = onRefresh),
             )
         }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AudioFavoriteCard(
+                label = "HEADPHONES",
+                favorite = state.favoriteHeadphones,
+                state = state,
+                modifier = Modifier.weight(1f),
+                onSelect = onSelect,
+                onEdit = { editingFavorite = AudioFavoriteSlot.Headphones },
+            )
+            AudioFavoriteCard(
+                label = "TV / DISPLAY",
+                favorite = state.favoriteTvDisplay,
+                state = state,
+                modifier = Modifier.weight(1f),
+                onSelect = onSelect,
+                onEdit = { editingFavorite = AudioFavoriteSlot.TvDisplay },
+            )
+        }
+
         state.audioOutputs.forEach { device ->
             Row(
                 modifier = Modifier
@@ -227,6 +268,105 @@ private fun AudioOutputPanel(
                 )
             }
         }
+    }
+
+    editingFavorite?.let { slot ->
+        AlertDialog(
+            onDismissRequest = { editingFavorite = null },
+            containerColor = Color(0xFF090D11),
+            titleContentColor = TextColor,
+            textContentColor = TextColor,
+            title = {
+                Text(if (slot == AudioFavoriteSlot.Headphones) "Choose Headphones" else "Choose TV / Display")
+            },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    state.audioOutputs.forEach { device ->
+                        Text(
+                            text = compactAudioOutputName(device.name),
+                            color = TextColor,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF05080B), RoundedCornerShape(10.dp))
+                                .border(1.dp, Silver.copy(alpha = 0.20f), RoundedCornerShape(10.dp))
+                                .clickable {
+                                    onSetFavorite(slot, device.id)
+                                    editingFavorite = null
+                                }
+                                .padding(11.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { editingFavorite = null }) { Text("CANCEL", color = Accent) }
+            },
+            dismissButton = {
+                val assigned = if (slot == AudioFavoriteSlot.Headphones) {
+                    state.favoriteHeadphones.assigned
+                } else {
+                    state.favoriteTvDisplay.assigned
+                }
+                if (assigned) {
+                    TextButton(onClick = {
+                        onClearFavorite(slot)
+                        editingFavorite = null
+                    }) { Text("CLEAR", color = Muted) }
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AudioFavoriteCard(
+    label: String,
+    favorite: AudioOutputFavorite,
+    state: LauncherHostState,
+    modifier: Modifier = Modifier,
+    onSelect: (String) -> Unit,
+    onEdit: () -> Unit,
+) {
+    val device = state.audioOutputs.firstOrNull { it.id.equals(favorite.endpointId, ignoreCase = true) }
+    val available = device != null
+    val isDefault = device?.isDefault == true
+    val title = when {
+        !favorite.assigned -> "Not set"
+        favorite.name.isNotBlank() -> compactAudioOutputName(favorite.name)
+        else -> "Saved output"
+    }
+    Column(
+        modifier = modifier
+            .background(if (isDefault) Accent.copy(alpha = 0.12f) else Color(0xFF05080B), RoundedCornerShape(12.dp))
+            .border(1.dp, if (isDefault) Accent else Silver.copy(alpha = 0.20f), RoundedCornerShape(12.dp))
+            .clickable(enabled = favorite.assigned && available && state.connected) { onSelect(favorite.endpointId) }
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(label, color = Accent, fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("EDIT", color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onEdit))
+        }
+        Text(title, color = if (favorite.assigned && !available) Muted else TextColor, fontSize = 10.sp, maxLines = 2)
+        Text(
+            when {
+                !favorite.assigned -> "Choose an output"
+                available && isDefault -> "ACTIVE"
+                available -> "TAP TO SWITCH"
+                else -> "UNAVAILABLE"
+            },
+            color = when {
+                available && isDefault -> Success
+                available -> Silver
+                else -> Muted
+            },
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 

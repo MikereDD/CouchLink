@@ -45,6 +45,7 @@ import dev.typezero.couchlink.remote.hid.MouseAction
 import dev.typezero.couchlink.remote.hid.MouseButton
 import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
+import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
 import dev.typezero.couchlink.remote.model.LauncherId
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
 import dev.typezero.couchlink.remote.ui.components.BottomNav
@@ -290,6 +291,8 @@ private fun CouchLinkApp() {
                         onRetryLauncherHost = launcherHost::retry,
                         onRefreshAudioOutputs = { launcherHost.refreshAudioOutputs() },
                         onAudioOutput = { endpointId -> launcherHost.setAudioOutput(endpointId) },
+                        onSetAudioFavorite = { slot, endpointId -> launcherHost.setAudioFavorite(slot, endpointId) },
+                        onClearAudioFavorite = { slot -> launcherHost.clearAudioFavorite(slot) },
                         onShortcut = { shortcut ->
                             if (hapticsEnabled) {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
