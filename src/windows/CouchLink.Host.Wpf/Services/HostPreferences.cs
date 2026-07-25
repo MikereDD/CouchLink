@@ -55,16 +55,8 @@ public sealed class HostPreferences
 
     private static string ResolveStartupCommand()
     {
-        // Environment.ProcessPath points to dotnet.exe when CouchLink is launched
-        // through `dotnet run`. Register the generated apphost beside the entry
-        // assembly instead so Windows can launch CouchLink directly at sign-in.
-        string entryAssembly = Assembly.GetEntryAssembly()?.Location
-            ?? throw new InvalidOperationException("Unable to resolve CouchLink entry assembly.");
-
-        string appHost = Path.ChangeExtension(entryAssembly, ".exe");
-        if (File.Exists(appHost))
-            return $"\"{appHost}\"";
-
+        // Published and normal apphost builds run from CouchLink.Host.exe,
+        // including single-file publishes. Prefer the actual process path.
         string? processPath = Environment.ProcessPath;
         if (!string.IsNullOrWhiteSpace(processPath) &&
             !Path.GetFileName(processPath).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase))
@@ -72,7 +64,18 @@ public sealed class HostPreferences
             return $"\"{processPath}\"";
         }
 
+        // During `dotnet run`, Environment.ProcessPath is dotnet.exe. Resolve
+        // the apphost or DLL from the application base directory instead of
+        // Assembly.Location, which is empty for single-file applications.
+        string entryName = Assembly.GetEntryAssembly()?.GetName().Name
+            ?? throw new InvalidOperationException("Unable to resolve CouchLink entry assembly name.");
+
+        string appHost = Path.Combine(AppContext.BaseDirectory, entryName + ".exe");
+        if (File.Exists(appHost))
+            return $"\"{appHost}\"";
+
         // Framework-dependent fallback for unusual build layouts without apphost.
+        string entryAssembly = Path.Combine(AppContext.BaseDirectory, entryName + ".dll");
         string dotnet = string.IsNullOrWhiteSpace(processPath) ? "dotnet" : processPath;
         return $"\"{dotnet}\" \"{entryAssembly}\"";
     }

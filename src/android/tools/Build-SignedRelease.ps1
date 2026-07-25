@@ -35,14 +35,14 @@ try {
 
     $releaseDir = Join-Path $projectRoot 'release'
     New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
-    $finalApk = Join-Path $releaseDir 'CouchLink-v1.0.apk'
+    $finalApk = Join-Path $releaseDir 'CouchLink-v1.1.apk'
     Copy-Item -Force $apk $finalApk
     Get-FileHash -Algorithm SHA256 $finalApk |
-        ForEach-Object { "$($_.Hash.ToLower())  CouchLink-v1.0.apk" } |
-        Set-Content -Encoding ascii (Join-Path $releaseDir 'CouchLink-v1.0.apk.sha256')
+        ForEach-Object { "$($_.Hash.ToLower())  CouchLink-v1.1.apk" } |
+        Set-Content -Encoding ascii (Join-Path $releaseDir 'CouchLink-v1.1.apk.sha256')
 
     Write-Host "Signed APK: $finalApk"
-    Write-Host "Checksum: $(Join-Path $releaseDir 'CouchLink-v1.0.apk.sha256')"
+    Write-Host "Checksum: $(Join-Path $releaseDir 'CouchLink-v1.1.apk.sha256')"
 }
 finally {
     Pop-Location -ErrorAction SilentlyContinue

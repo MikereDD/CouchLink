@@ -2,6 +2,36 @@
 
 This changelog tracks the combined Android remote and Windows launcher host. Historical one-build notes are preserved under `docs/history/`.
 
+## 1.1 — Stable-release candidate
+
+### Android 1.1
+
+- Promoted the tested Android 1.1 development line to stable version metadata (`versionCode 106`).
+- Preserved direct Bluetooth HID input for keyboard, mouse, touchpad, shortcuts, media controls, and Windows sign-in.
+- Preserved the process-wide Launcher Host runtime, explicit pairing, trusted reconnect, heartbeat, and single-shot Bluetooth launcher fallback.
+
+### Windows Launcher Host 1.1
+
+- Promoted the optional local Windows Launcher Host to the unified CouchLink 1.1 product version.
+- Preserved protocol version 1, local discovery, six-digit trusted pairing, launcher actions, state feedback, tray behavior, startup preferences, and diagnostics.
+
+### Production release preparation
+
+- Reworked root and component READMEs for a public stable release.
+- Added installation, 1.1 release notes, and final release checklist documents.
+- Added `SECURITY.md`, `CONTRIBUTING.md`, and `NOTICE`.
+- Corrected privacy documentation to cover both Bluetooth HID and local Launcher Host networking.
+- Expanded build and integration validation instructions.
+- No runtime logic was changed from the tested dev.15.6 reliability baseline.
+
+## Documentation update — Trademark and brand policy
+
+- Added a root-level `TRADEMARKS.md` separating Apache-licensed source code from reserved CouchLink branding.
+- Reserved the CouchLink name, CL identity, icons, logos, artwork, screenshots, and official visual identity.
+- Clarified rename-and-rebrand requirements for modified distributions and independent forks.
+- Added third-party trademark attribution and linked the policy from the root, Android, and Windows READMEs.
+- No application behavior or component version changed.
+
 ## 0.1-dev.15.6 — Launcher-host reliability hardening
 
 ### Android 1.1-dev.5

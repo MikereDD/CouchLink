@@ -4,9 +4,9 @@
 
 # CouchLink Android Remote
 
-**Bluetooth HID input plus the local Windows launcher-host client.**
+**Bluetooth HID input plus the local Windows Launcher Host client.**
 
-Version `1.1-dev.1` · Android 9+ · Protocol `1`
+Version `1.1` · Version code `106` · Android 9+ · Protocol `1`
 
 </div>
 
@@ -15,8 +15,8 @@ Version `1.1-dev.1` · Android 9+ · Protocol `1`
 - Present the phone as a real Bluetooth keyboard and mouse.
 - Provide touchpad, keyboard, media, navigation, and Windows shortcut controls.
 - Continue working at the Windows sign-in screen without the host.
-- Discover and pair with the optional Windows launcher host over the LAN.
-- Prefer host-backed launch/focus/close actions with real state feedback.
+- Discover and pair with the optional Windows Launcher Host over the LAN.
+- Prefer host-backed launch/focus/close actions with live state feedback.
 - Fall back to Bluetooth launcher commands when the host is unavailable.
 
 ## Build
@@ -25,19 +25,23 @@ Version `1.1-dev.1` · Android 9+ · Protocol `1`
 .\gradlew.bat clean :app:assembleDebug
 ```
 
-Open this directory directly in Android Studio for normal test builds.
+Open this directory directly in Android Studio for normal test builds. Signed production builds are covered by [ANDROID-SIGNING.md](../../docs/release/ANDROID-SIGNING.md).
 
 ## Connection model
 
-Bluetooth HID and Windows launcher-host connectivity are independent. A host outage must not disable touchpad or keyboard input, and a Bluetooth outage must not be displayed as a host outage.
+Bluetooth HID and Windows Launcher Host connectivity are independent. A host outage must not disable touchpad or keyboard input, and a Bluetooth outage must not be displayed as a host outage.
 
 ## Documentation
 
 - [Repository overview](../../README.md)
+- [Installation and pairing](../../docs/release/INSTALLATION.md)
 - [Architecture](../../docs/architecture/ARCHITECTURE.md)
 - [Integration testing](../../docs/building/TESTING.md)
-- [Android signing](../../docs/release/ANDROID-SIGNING.md)
-- [Current changelog](../../CHANGELOG.md)
-- [Historical Android notes](../../docs/history/android/)
+- [Release notes](../../docs/release/RELEASE-NOTES-v1.1.md)
 - [Privacy](../../PRIVACY.md)
 - [Apache 2.0 license](../../LICENSE)
+- [Trademark and brand policy](../../TRADEMARKS.md)
+
+## License and branding
+
+The Android source is licensed under the [Apache License 2.0](../../LICENSE). CouchLink names, logos, icons, artwork, screenshots, and official branding are covered separately by the [CouchLink Trademark and Brand Policy](../../TRADEMARKS.md).

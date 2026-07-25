@@ -12,8 +12,8 @@ android {
         applicationId = "dev.typezero.couchlink.remote"
         minSdk = 28
         targetSdk = 36
-        versionCode = 105
-        versionName = "1.1-dev.5"
+        versionCode = 106
+        versionName = "1.1"
     }
 
     compileOptions {
