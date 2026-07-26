@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace CouchLink.Host.Core;
 
-internal sealed class AudioOutputController
+public sealed class AudioOutputController
 {
     public AudioOutputListResult List()
     {
@@ -187,6 +187,6 @@ internal sealed class AudioOutputController
     }
 }
 
-internal sealed record AudioOutputDevice(string Id, string Name, bool IsDefault);
-internal sealed record AudioOutputListResult(bool Success, AudioOutputDevice[] Devices, string? Error);
-internal sealed record AudioOutputSetResult(bool Success, string EndpointId, string? Name, string Message);
+public sealed record AudioOutputDevice(string Id, string Name, bool IsDefault);
+public sealed record AudioOutputListResult(bool Success, AudioOutputDevice[] Devices, string? Error);
+public sealed record AudioOutputSetResult(bool Success, string EndpointId, string? Name, string Message);

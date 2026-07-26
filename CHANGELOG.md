@@ -1,3 +1,37 @@
+## 1.3-dev.6.1.2
+
+- Add a custom dark scrollbar that matches the CouchLink popup theme.
+- Tighten audio-device row spacing without changing the approved window proportions.
+- Add bottom viewport breathing room so the final device row is always fully visible.
+- Preserve the v1.3-dev.6.1.1 layout, colors, favorites, and switching behavior.
+
+## 1.3-dev.6.1.1
+
+- Fixed ambiguous `Color` references in the WPF audio-output popup by explicitly using `System.Windows.Media.Color`.
+- No behavior or layout changes from v1.3-dev.6.1.
+
+## 1.3-dev.5.2
+
+- fully qualify WPF Brush and Brushes references in the Audio Output popup
+- resolve remaining System.Drawing / System.Windows.Media compiler ambiguities
+
+## 1.3-dev.6.1
+
+- Redesign the Windows Audio Output popup to mirror the Android modal hierarchy.
+- Add CouchLink custom window chrome and remove the native white title bar.
+- Add compact favorites, premium active-device cards, bottom actions, and tighter spacing.
+- Preserve all switching, refresh, favorites, and unavailable-device behavior.
+
+## 1.3-dev.6
+
+- Added a compact Android Audio Output card with a full device-selection popout.
+- Preserved favorite Headphones and TV / Display shortcuts on the Home screen.
+- Restyled the Windows Audio Output popup to match CouchLink's dark metallic and orange visual language.
+
+## 1.3-dev.5
+
+- Added Windows tray Audio Output popup with favorites, one-click switching, refresh, and unavailable-device handling.
+
 # Changelog
 
 ## 1.3-dev.4

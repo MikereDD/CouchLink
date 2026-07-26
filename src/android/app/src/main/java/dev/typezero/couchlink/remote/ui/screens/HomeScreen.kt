@@ -197,25 +197,35 @@ private fun AudioOutputPanel(
     onClearFavorite: (AudioFavoriteSlot) -> Unit,
 ) {
     var editingFavorite by remember { mutableStateOf<AudioFavoriteSlot?>(null) }
+    var showOutputs by remember { mutableStateOf(false) }
+    val currentOutput = state.audioOutputs.firstOrNull { it.isDefault }
     val shape = RoundedCornerShape(18.dp)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFF090D11), shape)
             .border(1.dp, Accent.copy(alpha = 0.72f), shape)
             .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = state.audioOutputs.firstOrNull { it.isDefault }?.name?.let(::compactAudioOutputName) ?:
-                    if (state.connected) "No active output reported" else "Connect Windows Host",
-                modifier = Modifier.weight(1f),
-                color = TextColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = currentOutput?.name?.let(::compactAudioOutputName) ?:
+                        if (state.connected) "No active output reported" else "Connect Windows Host",
+                    color = TextColor,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                )
+                Text(
+                    text = if (state.connected) "CURRENT WINDOWS OUTPUT" else "WINDOWS HOST OFFLINE",
+                    color = if (state.connected) Success else Muted,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Text(
                 text = if (state.audioLoading) "LOADING" else "REFRESH",
                 color = Accent,
@@ -247,27 +257,77 @@ private fun AudioOutputPanel(
             )
         }
 
-        state.audioOutputs.forEach { device ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (device.isDefault) Accent.copy(alpha = 0.12f) else Color(0xFF05080B), RoundedCornerShape(12.dp))
-                    .border(1.dp, if (device.isDefault) Accent else Silver.copy(alpha = 0.20f), RoundedCornerShape(12.dp))
-                    .clickable(enabled = state.connected && !device.isDefault) { onSelect(device.id) }
-                    .padding(horizontal = 11.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(if (device.isDefault) "●" else "○", color = if (device.isDefault) Success else Muted, fontSize = 11.sp)
-                Spacer(Modifier.width(9.dp))
-                Text(
-                    compactAudioOutputName(device.name),
-                    color = TextColor,
-                    fontSize = 11.sp,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                )
-            }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF05080B), RoundedCornerShape(12.dp))
+                .border(1.dp, Silver.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+                .clickable(enabled = state.connected) {
+                    showOutputs = true
+                    onRefresh()
+                }
+                .padding(horizontal = 12.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("CHOOSE AUDIO OUTPUT", color = TextColor, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("›", color = Accent, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
+    }
+
+    if (showOutputs) {
+        AlertDialog(
+            onDismissRequest = { showOutputs = false },
+            containerColor = Color(0xFF090D11),
+            titleContentColor = TextColor,
+            textContentColor = TextColor,
+            title = {
+                Column {
+                    Text("Audio Output", fontWeight = FontWeight.Bold)
+                    Text(
+                        currentOutput?.name?.let(::compactAudioOutputName) ?: "No active output",
+                        color = Muted,
+                        fontSize = 10.sp,
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    state.audioOutputs.forEach { device ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(if (device.isDefault) Accent.copy(alpha = 0.12f) else Color(0xFF05080B), RoundedCornerShape(11.dp))
+                                .border(1.dp, if (device.isDefault) Accent else Silver.copy(alpha = 0.20f), RoundedCornerShape(11.dp))
+                                .clickable(enabled = state.connected && !device.isDefault) {
+                                    onSelect(device.id)
+                                    showOutputs = false
+                                }
+                                .padding(horizontal = 11.dp, vertical = 11.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(if (device.isDefault) "●" else "○", color = if (device.isDefault) Success else Muted, fontSize = 11.sp)
+                            Spacer(Modifier.width(9.dp))
+                            Text(
+                                compactAudioOutputName(device.name),
+                                color = TextColor,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 2,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onRefresh) { Text("REFRESH", color = Accent) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOutputs = false }) { Text("CLOSE", color = Muted) }
+            },
+        )
     }
 
     editingFavorite?.let { slot ->
