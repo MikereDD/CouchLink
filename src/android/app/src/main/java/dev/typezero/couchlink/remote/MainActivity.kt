@@ -58,6 +58,7 @@ import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
 import dev.typezero.couchlink.remote.ui.screens.TvRemoteScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
+import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
 
 private const val UI_PREFERENCES = "couchlink_ui"
 private const val HAPTICS_PREFERENCE = "haptics"
@@ -99,6 +100,8 @@ private fun CouchLinkApp() {
     val launcherHostState by launcherHost.state.collectAsState()
     val tvDiscovery = remember(context) { TvDiscoveryController(context.applicationContext) }
     val tvState by tvDiscovery.state.collectAsState()
+    val updateManager = remember(context) { CouchLinkUpdateManager.get(context.applicationContext) }
+    val updateState by updateManager.state.collectAsState()
     var pairingCode by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(launcherHost) {
@@ -391,6 +394,11 @@ private fun CouchLinkApp() {
                         onTvCancelPairing = tvDiscovery::cancelPairing,
                         onTvConnect = tvDiscovery::connectRemote,
                         onTvForget = tvDiscovery::forgetTv,
+                        updateState = updateState,
+                        onCheckForUpdates = updateManager::checkForUpdates,
+                        onDownloadUpdate = updateManager::downloadAndInstall,
+                        onContinueInstall = updateManager::continueInstall,
+                        onOpenInstallPermission = updateManager::openInstallPermissionSettings,
                     )
                 }
             }

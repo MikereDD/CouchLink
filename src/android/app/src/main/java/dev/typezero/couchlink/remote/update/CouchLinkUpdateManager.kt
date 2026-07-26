@@ -1,0 +1,316 @@
+package dev.typezero.couchlink.remote.update
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.core.content.FileProvider
+import dev.typezero.couchlink.remote.BuildConfig
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.security.MessageDigest
+import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+
+class CouchLinkUpdateManager private constructor(private val context: Context) {
+    data class State(
+        val checking: Boolean = false,
+        val downloading: Boolean = false,
+        val availableVersion: String? = null,
+        val releaseNotes: String = "",
+        val message: String = "Updates are delivered from the official MikereDD/CouchLink GitHub releases.",
+        val progressPercent: Int? = null,
+        val updateAvailable: Boolean = false,
+        val installPermissionRequired: Boolean = false,
+        val downloadedApk: String? = null,
+    )
+
+    private data class ReleaseAsset(
+        val name: String,
+        val downloadUrl: String,
+        val size: Long,
+        val sha256: String,
+    )
+
+    private data class ReleaseInfo(
+        val version: String,
+        val body: String,
+        val apk: ReleaseAsset,
+    )
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val mutableState = MutableStateFlow(State())
+    val state: StateFlow<State> = mutableState.asStateFlow()
+    private var release: ReleaseInfo? = null
+
+    fun checkForUpdates() {
+        if (mutableState.value.checking || mutableState.value.downloading) return
+        scope.launch {
+            mutableState.value = mutableState.value.copy(
+                checking = true,
+                message = "Checking GitHub Releases…",
+                installPermissionRequired = false,
+            )
+            runCatching { fetchLatestRelease() }
+                .onSuccess { latest ->
+                    release = latest
+                    val newer = compareVersions(latest.version, BuildConfig.VERSION_NAME) > 0
+                    mutableState.value = mutableState.value.copy(
+                        checking = false,
+                        availableVersion = latest.version,
+                        releaseNotes = latest.body,
+                        updateAvailable = newer,
+                        message = if (newer) {
+                            "CouchLink ${latest.version} is available (${formatBytes(latest.apk.size)})."
+                        } else {
+                            "CouchLink ${BuildConfig.VERSION_NAME} is up to date."
+                        },
+                    )
+                }
+                .onFailure { error ->
+                    mutableState.value = mutableState.value.copy(
+                        checking = false,
+                        message = "Update check failed: ${error.message ?: "Unknown error"}",
+                    )
+                }
+        }
+    }
+
+    fun downloadAndInstall() {
+        val current = release ?: run {
+            checkForUpdates()
+            return
+        }
+        if (!mutableState.value.updateAvailable || mutableState.value.downloading) return
+
+        scope.launch {
+            mutableState.value = mutableState.value.copy(
+                downloading = true,
+                progressPercent = 0,
+                message = "Downloading ${current.apk.name}…",
+                installPermissionRequired = false,
+            )
+            runCatching { downloadVerifiedApk(current) }
+                .onSuccess { apk ->
+                    mutableState.value = mutableState.value.copy(
+                        downloading = false,
+                        progressPercent = null,
+                        downloadedApk = apk.absolutePath,
+                        message = "Update verified and ready to install.",
+                    )
+                    requestInstall(apk)
+                }
+                .onFailure { error ->
+                    mutableState.value = mutableState.value.copy(
+                        downloading = false,
+                        progressPercent = null,
+                        message = "Update download failed: ${error.message ?: "Unknown error"}",
+                    )
+                }
+        }
+    }
+
+    fun continueInstall() {
+        val path = mutableState.value.downloadedApk ?: return
+        val apk = File(path)
+        if (!apk.isFile) {
+            mutableState.value = mutableState.value.copy(
+                downloadedApk = null,
+                message = "The downloaded update is no longer available. Download it again.",
+            )
+            return
+        }
+        requestInstall(apk)
+    }
+
+    fun openInstallPermissionSettings() {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+            Uri.parse("package:${context.packageName}"),
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
+
+    private suspend fun fetchLatestRelease(): ReleaseInfo = withContext(Dispatchers.IO) {
+        val connection = openConnection(LATEST_RELEASE_API)
+        try {
+            check(connection.responseCode in 200..299) {
+                "GitHub returned HTTP ${connection.responseCode}"
+            }
+            val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            check(!json.optBoolean("draft", false)) { "Latest release is still a draft" }
+            check(!json.optBoolean("prerelease", false)) { "Latest published release is a prerelease" }
+            val version = json.getString("tag_name").removePrefix("v")
+            val expectedName = "CouchLink-v$version.apk"
+            val assets = json.getJSONArray("assets")
+            var selected: ReleaseAsset? = null
+            for (index in 0 until assets.length()) {
+                val asset = assets.getJSONObject(index)
+                if (asset.getString("name") != expectedName) continue
+                val digest = asset.optString("digest")
+                check(digest.startsWith("sha256:", ignoreCase = true)) {
+                    "$expectedName does not include a GitHub SHA-256 digest"
+                }
+                val url = asset.getString("browser_download_url")
+                check(url.startsWith(OFFICIAL_DOWNLOAD_PREFIX)) { "Unexpected release download host" }
+                selected = ReleaseAsset(
+                    name = expectedName,
+                    downloadUrl = url,
+                    size = asset.getLong("size"),
+                    sha256 = digest.substringAfter(':').lowercase(Locale.US),
+                )
+                break
+            }
+            ReleaseInfo(
+                version = version,
+                body = json.optString("body"),
+                apk = checkNotNull(selected) { "Release asset $expectedName was not found" },
+            )
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private suspend fun downloadVerifiedApk(info: ReleaseInfo): File = withContext(Dispatchers.IO) {
+        val updateDir = File(context.cacheDir, "updates").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        val destination = File(updateDir, info.apk.name)
+        val connection = openConnection(info.apk.downloadUrl)
+        try {
+            check(connection.responseCode in 200..299) {
+                "GitHub download returned HTTP ${connection.responseCode}"
+            }
+            val total = connection.contentLengthLong.takeIf { it > 0 } ?: info.apk.size
+            val digest = MessageDigest.getInstance("SHA-256")
+            connection.inputStream.use { input ->
+                destination.outputStream().use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var copied = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        digest.update(buffer, 0, read)
+                        copied += read
+                        if (total > 0) {
+                            val progress = ((copied * 100) / total).toInt().coerceIn(0, 100)
+                            mutableState.value = mutableState.value.copy(progressPercent = progress)
+                        }
+                    }
+                }
+            }
+            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            check(actual.equals(info.apk.sha256, ignoreCase = true)) {
+                destination.delete()
+                "SHA-256 verification failed"
+            }
+            verifyPackageIdentity(destination)
+            destination
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun verifyPackageIdentity(apk: File) {
+        val manager = context.packageManager
+        val archive = manager.getPackageArchiveInfo(
+            apk.absolutePath,
+            PackageManager.GET_SIGNING_CERTIFICATES,
+        ) ?: error("Android could not read the downloaded APK")
+        check(archive.packageName == context.packageName) { "Downloaded APK package name does not match CouchLink" }
+        val archiveCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            archive.longVersionCode
+        } else {
+            archive.versionCode.toLong()
+        }
+        check(archiveCode > BuildConfig.VERSION_CODE) { "Downloaded APK is not a newer build" }
+
+        val installed = manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+        val currentSigner = installed.signingInfo?.apkContentsSigners?.firstOrNull()
+            ?: error("Installed CouchLink signing certificate was unavailable")
+        val updateSigner = archive.signingInfo?.apkContentsSigners?.firstOrNull()
+            ?: error("Downloaded CouchLink signing certificate was unavailable")
+        check(currentSigner.toByteArray().contentEquals(updateSigner.toByteArray())) {
+            "Downloaded APK signing certificate does not match the installed app"
+        }
+    }
+
+    private fun requestInstall(apk: File) {
+        if (!context.packageManager.canRequestPackageInstalls()) {
+            mutableState.value = mutableState.value.copy(
+                installPermissionRequired = true,
+                message = "Allow CouchLink to install updates, then return and choose Install update again.",
+            )
+            return
+        }
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.updates",
+            apk,
+        )
+        val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+            data = uri
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
+            putExtra(Intent.EXTRA_RETURN_RESULT, false)
+        }
+        context.startActivity(intent)
+    }
+
+    private fun openConnection(rawUrl: String): HttpURLConnection {
+        val url = URL(rawUrl)
+        check(url.protocol.equals("https", ignoreCase = true)) { "Only HTTPS update URLs are allowed" }
+        return (url.openConnection() as HttpURLConnection).apply {
+            connectTimeout = 15_000
+            readTimeout = 45_000
+            instanceFollowRedirects = true
+            setRequestProperty("Accept", "application/vnd.github+json")
+            setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
+            setRequestProperty("User-Agent", "CouchLink-Android/${BuildConfig.VERSION_NAME}")
+        }
+    }
+
+    private fun compareVersions(left: String, right: String): Int {
+        fun parts(value: String) = value.substringBefore('-').split('.').map { it.toIntOrNull() ?: 0 }
+        val a = parts(left)
+        val b = parts(right)
+        for (index in 0 until maxOf(a.size, b.size)) {
+            val difference = a.getOrElse(index) { 0 }.compareTo(b.getOrElse(index) { 0 })
+            if (difference != 0) return difference
+        }
+        return 0
+    }
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes >= 1024L * 1024L -> "%.1f MB".format(Locale.US, bytes / (1024.0 * 1024.0))
+        bytes >= 1024L -> "%.1f KB".format(Locale.US, bytes / 1024.0)
+        else -> "$bytes bytes"
+    }
+
+    companion object {
+        private const val LATEST_RELEASE_API =
+            "https://api.github.com/repos/MikereDD/CouchLink/releases/latest"
+        private const val OFFICIAL_DOWNLOAD_PREFIX =
+            "https://github.com/MikereDD/CouchLink/releases/download/"
+
+        @Volatile private var instance: CouchLinkUpdateManager? = null
+
+        fun get(context: Context): CouchLinkUpdateManager = instance ?: synchronized(this) {
+            instance ?: CouchLinkUpdateManager(context.applicationContext).also { instance = it }
+        }
+    }
+}

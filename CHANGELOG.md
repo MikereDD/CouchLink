@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1-dev.1 — GitHub self-updater foundation
+
+- Added stable GitHub Release checks to Android Settings and the Windows About window.
+- Added exact official asset-name validation and HTTPS-only release downloads.
+- Added GitHub-provided SHA-256 digest verification on both platforms.
+- Added Android APK package, version-code, and signing-certificate verification before installation.
+- Added Android unknown-source permission guidance and system package-installer handoff.
+- Added a separate Windows updater executable with wait, backup, replacement, restart, and rollback behavior.
+- Updated the release builder to publish and checksum both Windows executables.
+- Pinned the update authority to `MikereDD/CouchLink`; no arbitrary update URLs are accepted.
+
 ## 1.3 — Stable Audio Output and unified Windows Host release
 
 - Promoted the tested `1.3-rc.1` feature set to the stable release line.

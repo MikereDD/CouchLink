@@ -47,6 +47,7 @@ import dev.typezero.couchlink.remote.ui.theme.Muted
 import dev.typezero.couchlink.remote.ui.theme.Raised2
 import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
+import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
 
 @Composable
 internal fun SettingsScreen(
@@ -75,6 +76,11 @@ internal fun SettingsScreen(
     onTvCancelPairing: () -> Unit,
     onTvConnect: () -> Unit,
     onTvForget: () -> Unit,
+    updateState: CouchLinkUpdateManager.State,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: () -> Unit,
+    onContinueInstall: () -> Unit,
+    onOpenInstallPermission: () -> Unit,
 ) {
     val context = LocalContext.current
     var diagnosticsCopied by rememberSaveable { mutableStateOf(false) }
@@ -147,6 +153,15 @@ internal fun SettingsScreen(
             onCheckedChange = onNaturalScrollingChanged,
         )
     }
+
+
+    UpdateSettingsPanel(
+        state = updateState,
+        onCheck = onCheckForUpdates,
+        onDownload = onDownloadUpdate,
+        onContinueInstall = onContinueInstall,
+        onOpenInstallPermission = onOpenInstallPermission,
+    )
 
     PremiumPanel {
         Row(
@@ -623,3 +638,79 @@ private fun BluetoothHidPanel(
         }
     }
 }
+
+@Composable
+private fun UpdateSettingsPanel(
+    state: CouchLinkUpdateManager.State,
+    onCheck: () -> Unit,
+    onDownload: () -> Unit,
+    onContinueInstall: () -> Unit,
+    onOpenInstallPermission: () -> Unit,
+) {
+    PremiumPanel {
+        Text(
+            text = "APP UPDATES",
+            color = Muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = state.message,
+            color = if (state.updateAvailable) Accent else TextColor,
+            fontSize = 14.sp,
+        )
+        if (state.availableVersion != null) {
+            AboutDetailRow("Installed", BuildConfig.VERSION_NAME)
+            AboutDetailRow("Available", state.availableVersion)
+        }
+        if (state.progressPercent != null) {
+            Text(
+                text = "DOWNLOAD ${state.progressPercent}%",
+                color = Accent,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+            )
+        }
+        if (state.releaseNotes.isNotBlank() && state.updateAvailable) {
+            Text(
+                text = state.releaseNotes.take(700),
+                color = Muted,
+                fontSize = 11.sp,
+            )
+        }
+        if (state.installPermissionRequired) {
+            Button(
+                onClick = onOpenInstallPermission,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("ALLOW UPDATE INSTALLS", fontWeight = FontWeight.Bold) }
+            OutlinedButton(
+                onClick = onContinueInstall,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("INSTALL UPDATE", fontWeight = FontWeight.Bold) }
+        } else if (state.updateAvailable) {
+            Button(
+                onClick = onDownload,
+                enabled = !state.downloading,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (state.downloading) "DOWNLOADING…" else "DOWNLOAD AND INSTALL",
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+        OutlinedButton(
+            onClick = onCheck,
+            enabled = !state.checking && !state.downloading,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (state.checking) "CHECKING…" else "CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
+        }
+        Text(
+            text = "Stable releases only. Downloads must come from MikereDD/CouchLink and pass GitHub SHA-256 plus APK certificate verification.",
+            color = Muted,
+            fontSize = 10.sp,
+        )
+    }
+}
+
