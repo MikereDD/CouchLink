@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -650,6 +651,7 @@ private fun UpdateSettingsPanel(
     onContinueInstall: () -> Unit,
     onOpenInstallPermission: () -> Unit,
 ) {
+    val updatePanelContext = LocalContext.current
     PremiumPanel {
         Text(
             text = "APP UPDATES",
@@ -690,7 +692,17 @@ private fun UpdateSettingsPanel(
             AboutDetailRow("Installed", BuildConfig.VERSION_NAME)
             AboutDetailRow("Available", state.availableVersion)
         }
+        Text(
+            text = state.stage.uppercase(),
+            color = Accent,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+        )
         if (state.progressPercent != null) {
+            LinearProgressIndicator(
+                progress = { state.progressPercent / 100f },
+                modifier = Modifier.fillMaxWidth(),
+            )
             Text(
                 text = "DOWNLOAD ${state.progressPercent}%",
                 color = Accent,
@@ -726,6 +738,29 @@ private fun UpdateSettingsPanel(
                 )
             }
         }
+        if (state.testChannel) {
+            OutlinedButton(
+                onClick = { onChannelChanged(false) },
+                enabled = !state.checking && !state.downloading,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("RETURN TO STABLE", fontWeight = FontWeight.Bold) }
+        }
+        OutlinedButton(
+            onClick = {
+                val report = buildString {
+                    appendLine("CouchLink Updater Test Report")
+                    appendLine("Remote version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                    appendLine("Channel: ${if (state.testChannel) "Test" else "Stable"}")
+                    appendLine("Available: ${state.availableVersion ?: "None"}")
+                    appendLine("Stage: ${state.stage}")
+                    appendLine("Status: ${state.message}")
+                    appendLine("Progress: ${state.progressPercent ?: 0}%")
+                }
+                val clipboard = updatePanelContext.getSystemService(ClipboardManager::class.java)
+                clipboard?.setPrimaryClip(ClipData.newPlainText("CouchLink updater report", report))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("COPY TEST REPORT", fontWeight = FontWeight.Bold) }
         OutlinedButton(
             onClick = onCheck,
             enabled = !state.checking && !state.downloading,

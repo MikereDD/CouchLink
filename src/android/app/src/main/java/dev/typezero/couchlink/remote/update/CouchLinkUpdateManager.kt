@@ -35,6 +35,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
         val availableVersion: String? = null,
         val releaseNotes: String = "",
         val message: String = "Updates are delivered from the official MikereDD/CouchLink GitHub releases.",
+        val stage: String = "Idle",
         val progressPercent: Int? = null,
         val updateAvailable: Boolean = false,
         val installPermissionRequired: Boolean = false,
@@ -85,6 +86,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
             mutableState.value = mutableState.value.copy(
                 checking = true,
                 message = "Checking GitHub Releases…",
+                stage = "Checking release metadata",
                 installPermissionRequired = false,
             )
             runCatching { fetchLatestRelease(mutableState.value.testChannel) }
@@ -94,7 +96,8 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                     mutableState.value = mutableState.value.copy(
                         checking = false,
                         availableVersion = latest.version,
-                        releaseNotes = latest.body,
+                        releaseNotes = cleanReleaseNotes(latest.body),
+                        stage = if (newer) "Update available" else "Up to date",
                         updateAvailable = newer,
                         message = if (newer) {
                             "CouchLink ${latest.version} is available (${formatBytes(latest.apk.size)})."
@@ -118,6 +121,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                     mutableState.value = mutableState.value.copy(
                         checking = false,
                         updateAvailable = false,
+                        stage = "Check failed",
                         message = message,
                     )
                 }
@@ -136,6 +140,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                 downloading = true,
                 progressPercent = 0,
                 message = "Downloading ${current.apk.name}…",
+                stage = "Downloading APK",
                 installPermissionRequired = false,
             )
             runCatching { downloadVerifiedApk(current) }
@@ -144,6 +149,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                         downloading = false,
                         progressPercent = null,
                         downloadedApk = apk.absolutePath,
+                        stage = "Verified · Ready to install",
                         message = "Update verified and ready to install.",
                     )
                     requestInstall(apk)
@@ -152,6 +158,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                     mutableState.value = mutableState.value.copy(
                         downloading = false,
                         progressPercent = null,
+                        stage = "Download failed",
                         message = "Update download failed: ${error.message ?: "Unknown error"}",
                     )
                 }
@@ -258,7 +265,10 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                         copied += read
                         if (total > 0) {
                             val progress = ((copied * 100) / total).toInt().coerceIn(0, 100)
-                            mutableState.value = mutableState.value.copy(progressPercent = progress)
+                            mutableState.value = mutableState.value.copy(
+                                progressPercent = progress,
+                                stage = "Downloading APK · $progress%",
+                            )
                         }
                     }
                 }
@@ -268,6 +278,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                 destination.delete()
                 "SHA-256 verification failed"
             }
+            mutableState.value = mutableState.value.copy(stage = "Verifying package and certificate")
             verifyPackageIdentity(destination)
             destination
         } finally {
@@ -304,6 +315,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
         if (!context.packageManager.canRequestPackageInstalls()) {
             mutableState.value = mutableState.value.copy(
                 installPermissionRequired = true,
+                stage = "Permission required",
                 message = "Allow CouchLink to install updates, then return and choose Install update again.",
             )
             return
@@ -319,8 +331,21 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
             putExtra(Intent.EXTRA_NOT_UNKNOWN_SOURCE, true)
             putExtra(Intent.EXTRA_RETURN_RESULT, false)
         }
+        mutableState.value = mutableState.value.copy(stage = "Opening Android installer")
         context.startActivity(intent)
     }
+
+    private fun cleanReleaseNotes(markdown: String): String = markdown
+        .lineSequence()
+        .map { line ->
+            line.replace(Regex("^#{1,6}\\s*"), "")
+                .replace(Regex("^\\s*[-*+]\\s+"), "• ")
+                .replace(Regex("`([^`]+)`"), "$1")
+                .replace("**", "")
+                .replace("__", "")
+        }
+        .joinToString("\n")
+        .trim()
 
     private fun openConnection(rawUrl: String): HttpURLConnection {
         val url = URL(rawUrl)
@@ -336,12 +361,32 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
     }
 
     private fun compareVersions(left: String, right: String): Int {
-        fun parts(value: String) = value.substringBefore('-').split('.').map { it.toIntOrNull() ?: 0 }
-        val a = parts(left)
-        val b = parts(right)
-        for (index in 0 until maxOf(a.size, b.size)) {
-            val difference = a.getOrElse(index) { 0 }.compareTo(b.getOrElse(index) { 0 })
-            if (difference != 0) return difference
+        data class Parsed(val core: List<Int>, val rank: Int, val numbers: List<Int>)
+        fun parse(raw: String): Parsed {
+            val value = raw.removePrefix("v").removeSuffix("-debug").removeSuffix("-release")
+            val coreText = value.substringBefore('-')
+            val suffix = value.substringAfter('-', "")
+            val core = coreText.split('.').map { it.toIntOrNull() ?: 0 }
+            if (suffix.isBlank()) return Parsed(core, 4, emptyList())
+            val tokens = suffix.split('.')
+            val rank = when (tokens.firstOrNull()?.lowercase(Locale.US)) {
+                "dev", "alpha" -> 0
+                "beta" -> 1
+                "rc" -> 2
+                else -> 3
+            }
+            return Parsed(core, rank, tokens.drop(1).mapNotNull { it.toIntOrNull() })
+        }
+        val a = parse(left)
+        val b = parse(right)
+        for (index in 0 until maxOf(a.core.size, b.core.size)) {
+            val result = a.core.getOrElse(index) { 0 }.compareTo(b.core.getOrElse(index) { 0 })
+            if (result != 0) return result
+        }
+        if (a.rank != b.rank) return a.rank.compareTo(b.rank)
+        for (index in 0 until maxOf(a.numbers.size, b.numbers.size)) {
+            val result = a.numbers.getOrElse(index) { 0 }.compareTo(b.numbers.getOrElse(index) { 0 })
+            if (result != 0) return result
         }
         return 0
     }

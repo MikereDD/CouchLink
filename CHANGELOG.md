@@ -1,3 +1,15 @@
+# CouchLink v1.3.1-dev.4
+
+## Updater polish
+
+- Adds download progress and visible verification/install stages on Windows and Android.
+- Cleans GitHub Markdown release notes for compact in-app display.
+- Adds Return to Stable for opted-in Test users.
+- Adds Copy Test Report with channel, version, stage, progress, and diagnostics.
+- Improves updater success and failure states while preserving detailed diagnostics.
+- Adds public tester workflow documentation.
+- Bumps Android to versionCode 148 and synchronizes Windows/Android version metadata.
+
 # CouchLink v1.3.1-dev.3.1
 
 ## Android updater version-code repair

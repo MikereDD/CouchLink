@@ -233,6 +233,18 @@
                                    TextTrimming="CharacterEllipsis"
                                    Foreground="{StaticResource MutedTextBrush}"
                                    Visibility="Collapsed" />
+                        <TextBlock x:Name="UpdateStageText"
+                                   Margin="0,10,0,0"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   Visibility="Collapsed" />
+                        <ProgressBar x:Name="UpdateProgressBar"
+                                     Margin="0,6,0,0"
+                                     Height="8"
+                                     Minimum="0"
+                                     Maximum="100"
+                                     Visibility="Collapsed" />
                         <Grid Margin="0,14,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -249,6 +261,22 @@
                                     Content="DOWNLOAD AND INSTALL"
                                     Click="InstallUpdate_Click"
                                     IsEnabled="False" />
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="ReturnStableButton"
+                                    Style="{StaticResource CouchButton}"
+                                    Content="RETURN TO STABLE"
+                                    Visibility="Collapsed"
+                                    Click="ReturnStable_Click" />
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource CouchButton}"
+                                    Content="COPY TEST REPORT"
+                                    Click="CopyTestReport_Click" />
                         </Grid>
                         <TextBlock Margin="0,10,0,0"
                                    Text="Stable is the default. Test builds are opt-in prereleases. Every channel still requires HTTPS, exact CouchLink asset names, and GitHub SHA-256 verification."

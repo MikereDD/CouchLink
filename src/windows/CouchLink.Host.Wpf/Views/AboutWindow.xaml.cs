@@ -4,6 +4,7 @@ using CouchLink.Host.Wpf.ViewModels;
 using CouchLink.Host.Wpf.Services;
 using System.Net.Http;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace CouchLink.Host.Wpf.Views;
 
@@ -50,9 +51,14 @@ public partial class AboutWindow : Window
         UpdateChannelDescription.Text = _testChannel
             ? "Selected prereleases for volunteer testers."
             : "Stable releases only.";
+        ReturnStableButton.Visibility = _testChannel
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         UpdateStatusText.Text = _testChannel
             ? "Test updates are checked against official CouchLink prereleases."
             : "Stable updates are checked against the official MikereDD/CouchLink GitHub releases.";
+        UpdateStageText.Text = "Idle";
+        UpdateProgressBar.Value = 0;
     }
 
 
@@ -62,6 +68,8 @@ public partial class AboutWindow : Window
         CheckUpdatesButton.IsEnabled = false;
         InstallUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = "Checking GitHub Releases…";
+        UpdateStageText.Text = "Checking";
+        UpdateProgressBar.Value = 0;
         _lastUpdateError = null;
         try
         {
@@ -69,11 +77,13 @@ public partial class AboutWindow : Window
             if (_availableUpdate is null)
             {
                 UpdateStatusText.Text = "CouchLink is up to date.";
+                UpdateStageText.Text = "Check complete";
                 UpdateNotesText.Visibility = Visibility.Collapsed;
                 return;
             }
             UpdateStatusText.Text = $"CouchLink {_availableUpdate.Version} is available ({_availableUpdate.HostSize / (1024.0 * 1024.0):0.0} MB).";
-            UpdateNotesText.Text = _availableUpdate.ReleaseNotes;
+            UpdateStageText.Text = "Update available";
+            UpdateNotesText.Text = CleanReleaseNotes(_availableUpdate.ReleaseNotes);
             UpdateNotesText.Visibility = string.IsNullOrWhiteSpace(_availableUpdate.ReleaseNotes)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
@@ -85,18 +95,21 @@ public partial class AboutWindow : Window
             UpdateStatusText.Text = _testChannel
                 ? "No published CouchLink test release is available yet."
                 : "No published CouchLink release is available yet.";
+            UpdateStageText.Text = "Check complete";
             UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         catch (HttpRequestException ex)
         {
             _lastUpdateError = ex.ToString();
             UpdateStatusText.Text = "CouchLink could not reach GitHub. Check your internet connection and try again.";
+            UpdateStageText.Text = "Failed";
             UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         catch (Exception ex)
         {
             _lastUpdateError = ex.ToString();
             UpdateStatusText.Text = "CouchLink could not check for updates. Copy diagnostics for technical details.";
+            UpdateStageText.Text = "Failed";
             UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         finally
@@ -119,9 +132,18 @@ public partial class AboutWindow : Window
         CheckUpdatesButton.IsEnabled = false;
         InstallUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = "Downloading and verifying the Windows update…";
+        UpdateStageText.Text = "Starting secure download";
+        UpdateProgressBar.Value = 0;
+        UpdateProgressBar.Visibility = Visibility.Visible;
+        UpdateStageText.Visibility = Visibility.Visible;
         try
         {
-            await _updateService.DownloadAndLaunchAsync(_availableUpdate);
+            var progress = new Progress<GitHubUpdateService.UpdateProgress>(value =>
+            {
+                UpdateStageText.Text = $"{value.Stage} · {value.Percent}%";
+                UpdateProgressBar.Value = value.Percent;
+            });
+            await _updateService.DownloadAndLaunchAsync(_availableUpdate, progress);
             UpdateStatusText.Text = "Update verified. CouchLink will now close and restart.";
             if (System.Windows.Application.Current is App app)
                 app.BeginUpdateShutdown();
@@ -130,10 +152,61 @@ public partial class AboutWindow : Window
         }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = $"Update installation failed: {ex.Message}";
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = "Update installation failed. Copy the test report for technical details.";
+            UpdateStageText.Text = "Failed";
             CheckUpdatesButton.IsEnabled = true;
             InstallUpdateButton.IsEnabled = true;
         }
+    }
+
+
+    private void ReturnStable_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateChannelComboBox.SelectedIndex = 0;
+        UpdateStatusText.Text = "Stable channel restored. Check again to look for the latest stable release.";
+        UpdateStageText.Text = "Idle";
+        UpdateProgressBar.Value = 0;
+    }
+
+    private void CopyTestReport_Click(object sender, RoutedEventArgs e)
+    {
+        string report = BuildUpdateReport();
+        System.Windows.Clipboard.SetText(report);
+        System.Windows.MessageBox.Show(
+            this,
+            "CouchLink updater test report was copied to the clipboard.",
+            "CouchLink",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    private string BuildUpdateReport()
+    {
+        return string.Join(Environment.NewLine, new[]
+        {
+            "CouchLink Updater Test Report",
+            $"Host version: {CouchLink.Host.Core.HostConstants.HostVersion}",
+            $"Channel: {(_testChannel ? "Test" : "Stable")}",
+            $"Available version: {_availableUpdate?.Version ?? "None"}",
+            $"Status: {UpdateStatusText.Text}",
+            $"Stage: {UpdateStageText.Text}",
+            $"Progress: {(int)UpdateProgressBar.Value}%",
+            $"Timestamp: {DateTimeOffset.Now:O}",
+            string.IsNullOrWhiteSpace(_lastUpdateError) ? "Error: None" : $"Error: {_lastUpdateError}",
+        });
+    }
+
+    private static string CleanReleaseNotes(string markdown)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return string.Empty;
+        string text = markdown.Replace("\r", string.Empty);
+        text = Regex.Replace(text, @"^#{1,6}\s*", string.Empty, RegexOptions.Multiline);
+        text = Regex.Replace(text, @"^\s*[-*+]\s+", "• ", RegexOptions.Multiline);
+        text = Regex.Replace(text, @"`([^`]+)`", "$1");
+        text = Regex.Replace(text, @"\[([^]]+)\]\([^)]+\)", "$1");
+        text = text.Replace("**", string.Empty).Replace("__", string.Empty);
+        return text.Trim();
     }
 
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)

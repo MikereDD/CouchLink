@@ -10,6 +10,7 @@ namespace CouchLink.Host.Wpf.Services;
 
 public sealed class GitHubUpdateService
 {
+    public sealed record UpdateProgress(string Stage, int Percent);
     public sealed record UpdateInfo(
         string Version,
         string ReleaseNotes,
@@ -117,6 +118,7 @@ public sealed class GitHubUpdateService
 
     public async Task DownloadAndLaunchAsync(
         UpdateInfo update,
+        IProgress<UpdateProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         string updateRoot = Path.Combine(
@@ -140,17 +142,27 @@ public sealed class GitHubUpdateService
             updateRoot,
             update.UpdaterAssetName);
 
+        progress?.Report(new UpdateProgress("Downloading Host", 0));
         await DownloadVerifiedAsync(
             update.HostDownloadUri,
             hostPath,
             update.HostSha256,
+            0,
+            75,
+            progress,
             cancellationToken);
 
+        progress?.Report(new UpdateProgress("Downloading updater", 75));
         await DownloadVerifiedAsync(
             update.UpdaterDownloadUri,
             updaterPath,
             update.UpdaterSha256,
+            75,
+            95,
+            progress,
             cancellationToken);
+
+        progress?.Report(new UpdateProgress("Preparing restart", 98));
 
         string target = Environment.ProcessPath
             ?? throw new InvalidOperationException(
@@ -185,6 +197,9 @@ public sealed class GitHubUpdateService
         Uri uri,
         string destination,
         string expectedSha256,
+        int startPercent,
+        int endPercent,
+        IProgress<UpdateProgress>? progress,
         CancellationToken cancellationToken)
     {
         using HttpResponseMessage response =
@@ -207,12 +222,23 @@ public sealed class GitHubUpdateService
                 bufferSize: 81920,
                 useAsync: true);
 
-            await input.CopyToAsync(
-                output,
-                cancellationToken);
+            long total = response.Content.Headers.ContentLength ?? 0;
+            byte[] buffer = new byte[81920];
+            long copied = 0;
+            while (true)
+            {
+                int read = await input.ReadAsync(buffer, cancellationToken);
+                if (read == 0) break;
+                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                copied += read;
+                if (total > 0)
+                {
+                    int percent = startPercent + (int)((endPercent - startPercent) * copied / total);
+                    progress?.Report(new UpdateProgress("Downloading and verifying", Math.Clamp(percent, startPercent, endPercent)));
+                }
+            }
 
-            await output.FlushAsync(
-                cancellationToken);
+            await output.FlushAsync(cancellationToken);
         }
 
         string actual;
@@ -231,6 +257,8 @@ public sealed class GitHubUpdateService
                         cancellationToken))
                 .ToLowerInvariant();
         }
+
+        progress?.Report(new UpdateProgress("Verifying SHA-256", endPercent));
 
         if (!actual.Equals(
             expectedSha256,
