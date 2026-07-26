@@ -175,21 +175,21 @@ A quick look at CouchLink on Android and Windows.
   <tr>
     <td align="center" valign="top">
       <strong>Home</strong><br>
-      <img src="docs/screenshots/home.png" width="360" alt="CouchLink Home">
+      <img src="docs/screenshots/home.png" width="290" alt="CouchLink Home">
     </td>
     <td align="center" valign="top">
-      <strong>Touchpad</strong><br>
-      <img src="docs/screenshots/touchpad.png" width="360" alt="CouchLink Touchpad">
+      <strong>TV Remote</strong><br>
+      <img src="docs/screenshots/tv-remote.png" width="290" alt="CouchLink TV Remote">
     </td>
   </tr>
   <tr>
     <td align="center" valign="top">
-      <strong>Keyboard</strong><br>
-      <img src="docs/screenshots/keyboard.png" width="360" alt="CouchLink Keyboard">
+      <strong>Touchpad</strong><br>
+      <img src="docs/screenshots/touchpad.png" width="320" alt="CouchLink Touchpad">
     </td>
     <td align="center" valign="top">
-      <strong>TV Remote</strong><br>
-      <img src="docs/screenshots/tv-remote.png" width="360" alt="CouchLink TV Remote">
+      <strong>Keyboard</strong><br>
+      <img src="docs/screenshots/keyboard.png" width="320" alt="CouchLink Keyboard">
     </td>
   </tr>
 </table>
