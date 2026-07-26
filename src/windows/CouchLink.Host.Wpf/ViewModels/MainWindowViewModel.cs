@@ -13,10 +13,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
     private readonly CouchLinkHostRuntime _runtime = new();
     private HostSnapshot _snapshot;
     private TrustedDeviceInfo? _selectedTrustedDevice;
-    private readonly HostPreferences _preferences = HostPreferences.Load();
+    private readonly HostPreferences _preferences;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(HostPreferences preferences)
     {
+        _preferences = preferences;
         _snapshot = _runtime.Snapshot;
         _runtime.SnapshotChanged += OnSnapshotChanged;
         PairNewDeviceCommand = new RelayCommand(_runtime.PrepareForPairing);

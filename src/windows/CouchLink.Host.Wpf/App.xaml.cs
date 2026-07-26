@@ -7,11 +7,20 @@ namespace CouchLink.Host.Wpf;
 
 public partial class App : System.Windows.Application
 {
-    private readonly MainWindowViewModel _viewModel = new();
     private readonly HostPreferences _preferences = HostPreferences.Load();
+    private readonly MainWindowViewModel _viewModel;
     private TrayIconService? _tray;
     private MainWindow? _window;
+    private AudioOutputWindow? _audioWindow;
     private bool _exiting;
+
+    public App()
+    {
+        // Single shared preferences instance. The dashboard view model and the
+        // Audio Output popup must read and write the same object so favorites and
+        // startup options never overwrite each other on save.
+        _viewModel = new MainWindowViewModel(_preferences);
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -21,7 +30,7 @@ public partial class App : System.Windows.Application
         // This also updates the entry automatically after moving to a new build.
         _preferences.RepairStartupRegistration();
 
-        _tray = new TrayIconService(ShowDashboard, ExitApplication);
+        _tray = new TrayIconService(ShowDashboard, ShowAudioOutput, ExitApplication);
 
         try
         {
@@ -71,6 +80,23 @@ public partial class App : System.Windows.Application
         });
     }
 
+
+    private void ShowAudioOutput()
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_audioWindow is null)
+            {
+                _audioWindow = new AudioOutputWindow(_preferences);
+                _audioWindow.Closed += (_, _) => _audioWindow = null;
+            }
+            _audioWindow.Show();
+            if (_audioWindow.WindowState == WindowState.Minimized)
+                _audioWindow.WindowState = WindowState.Normal;
+            _audioWindow.Activate();
+        });
+    }
+
     private void HideDashboard()
     {
         Dispatcher.Invoke(() =>
@@ -88,6 +114,12 @@ public partial class App : System.Windows.Application
 
         _tray?.Dispose();
         _tray = null;
+
+        if (_audioWindow is not null)
+        {
+            _audioWindow.Close();
+            _audioWindow = null;
+        }
 
         if (_window is not null)
         {

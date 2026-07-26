@@ -3,6 +3,9 @@ package dev.typezero.couchlink.remote.host
 import android.content.Context
 import android.os.Build
 import dev.typezero.couchlink.remote.BuildConfig
+import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
+import dev.typezero.couchlink.remote.model.AudioOutputDevice
+import dev.typezero.couchlink.remote.model.AudioOutputFavorite
 import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.model.LauncherId
 import java.io.DataInputStream
@@ -42,6 +45,7 @@ internal class LauncherHostClient(context: Context) {
     private var discoveryJob: Job? = null
     private var connectionJob: Job? = null
     private var heartbeatJob: Job? = null
+    private var audioSyncJob: Job? = null
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var activeHostId: String? = null
@@ -96,6 +100,7 @@ internal class LauncherHostClient(context: Context) {
     fun cancelPairing() {
         connectionJob?.cancel()
         heartbeatJob?.cancel()
+        audioSyncJob?.cancel()
         closeSocket()
         _state.value = _state.value.copy(
             connecting = false,
@@ -127,6 +132,50 @@ internal class LauncherHostClient(context: Context) {
                 )
             }
         }
+    }
+
+
+    fun refreshAudioOutputs(): Boolean = requestAudioOutputs(showLoading = true)
+
+    private fun requestAudioOutputs(showLoading: Boolean): Boolean {
+        if (!_state.value.connected) return false
+        if (showLoading) _state.value = _state.value.copy(audioLoading = true)
+        scope.launch {
+            if (!sendEnvelope("audio_output_list", JSONObject()) && showLoading) {
+                _state.value = _state.value.copy(audioLoading = false)
+            }
+        }
+        return true
+    }
+
+    fun setAudioOutput(endpointId: String): Boolean {
+        if (!_state.value.connected || endpointId.isBlank()) return false
+        scope.launch {
+            sendEnvelope("audio_output_set", JSONObject().put("endpointId", endpointId))
+        }
+        return true
+    }
+
+
+    fun setAudioFavorite(slot: AudioFavoriteSlot, endpointId: String): Boolean {
+        val hostId = activeHostId ?: _state.value.hostId.takeIf(String::isNotBlank) ?: return false
+        val device = _state.value.audioOutputs.firstOrNull { it.id.equals(endpointId, ignoreCase = true) } ?: return false
+        preferences.edit()
+            .putString(favoriteIdKey(hostId, slot), device.id)
+            .putString(favoriteNameKey(hostId, slot), device.name)
+            .apply()
+        applyStoredFavorites(hostId)
+        return true
+    }
+
+    fun clearAudioFavorite(slot: AudioFavoriteSlot): Boolean {
+        val hostId = activeHostId ?: _state.value.hostId.takeIf(String::isNotBlank) ?: return false
+        preferences.edit()
+            .remove(favoriteIdKey(hostId, slot))
+            .remove(favoriteNameKey(hostId, slot))
+            .apply()
+        applyStoredFavorites(hostId)
+        return true
     }
 
     fun launch(
@@ -340,7 +389,44 @@ internal class LauncherHostClient(context: Context) {
                     pairingRequired = false,
                     message = "Launcher host connected to ${payload.optString("hostName", hostName)}.",
                 )
+                applyStoredFavorites(activeHostId ?: _state.value.hostId)
                 startHeartbeat(payload.optInt("heartbeatSeconds", 5).coerceIn(2, 15))
+                startAudioSync()
+                refreshAudioOutputs()
+            }
+            "audio_output_list_result" -> {
+                val devicesJson = payload.optJSONArray("devices")
+                val devices = buildList {
+                    if (devicesJson != null) {
+                        for (index in 0 until devicesJson.length()) {
+                            val item = devicesJson.optJSONObject(index) ?: continue
+                            val id = item.optString("id")
+                            if (id.isBlank()) continue
+                            add(AudioOutputDevice(id, item.optString("name", id), item.optBoolean("isDefault")))
+                        }
+                    }
+                }
+                _state.value = _state.value.copy(
+                    audioOutputs = devices,
+                    audioLoading = false,
+                    message = payload.optString("error").takeIf { it.isNotBlank() } ?: _state.value.message,
+                )
+                val currentHostId = activeHostId ?: _state.value.hostId
+                autoAssignFavorites(currentHostId, devices)
+                applyStoredFavorites(currentHostId)
+            }
+            "audio_output_result" -> {
+                val endpointId = payload.optString("endpointId")
+                val success = payload.optBoolean("success")
+                val devices = if (success) {
+                    _state.value.audioOutputs.map { it.copy(isDefault = it.id.equals(endpointId, ignoreCase = true)) }
+                } else _state.value.audioOutputs
+                _state.value = _state.value.copy(
+                    audioOutputs = devices,
+                    audioLoading = false,
+                    message = payload.optString("message", if (success) "Audio output changed." else "Audio switch failed."),
+                )
+                if (success) refreshAudioOutputs()
             }
             "launcher_result" -> {
                 val launcher = launcherIdFromWireName(payload.optString("launcher"))
@@ -351,6 +437,16 @@ internal class LauncherHostClient(context: Context) {
                 _state.value = _state.value.copy(message = resultMessage, launcherStates = states)
             }
             "error" -> _state.value = _state.value.copy(message = payload.optString("message", "Host protocol error."))
+        }
+    }
+
+    private fun startAudioSync() {
+        audioSyncJob?.cancel()
+        audioSyncJob = scope.launch {
+            while (isActive && _state.value.connected) {
+                delay(AUDIO_SYNC_INTERVAL_MS)
+                requestAudioOutputs(showLoading = false)
+            }
         }
     }
 
@@ -410,6 +506,7 @@ internal class LauncherHostClient(context: Context) {
     private fun disconnect(message: String) {
         connectionJob?.cancel()
         heartbeatJob?.cancel()
+        audioSyncJob?.cancel()
         closeSocket()
         _state.value = LauncherHostState(message = message)
     }
@@ -427,6 +524,53 @@ internal class LauncherHostClient(context: Context) {
         lastAttemptHostId == hostId &&
             !_state.value.connected &&
             System.currentTimeMillis() - lastAttemptAtMs < RECONNECT_BACKOFF_MS
+
+
+    private fun autoAssignFavorites(hostId: String, devices: List<AudioOutputDevice>) {
+        if (hostId.isBlank() || devices.isEmpty()) return
+        val editor = preferences.edit()
+        var changed = false
+        if (preferences.getString(favoriteIdKey(hostId, AudioFavoriteSlot.Headphones), null).isNullOrBlank()) {
+            devices.firstOrNull { device ->
+                val name = device.name.lowercase()
+                "headphones" in name || "headset earphone" in name
+            }?.let {
+                editor.putString(favoriteIdKey(hostId, AudioFavoriteSlot.Headphones), it.id)
+                editor.putString(favoriteNameKey(hostId, AudioFavoriteSlot.Headphones), it.name)
+                changed = true
+            }
+        }
+        if (preferences.getString(favoriteIdKey(hostId, AudioFavoriteSlot.TvDisplay), null).isNullOrBlank()) {
+            devices.firstOrNull { device ->
+                val name = device.name.lowercase()
+                "nvidia high definition audio" in name || " hdmi" in name || "tv" in name || "ultragear" in name
+            }?.let {
+                editor.putString(favoriteIdKey(hostId, AudioFavoriteSlot.TvDisplay), it.id)
+                editor.putString(favoriteNameKey(hostId, AudioFavoriteSlot.TvDisplay), it.name)
+                changed = true
+            }
+        }
+        if (changed) editor.apply()
+    }
+
+    private fun applyStoredFavorites(hostId: String) {
+        if (hostId.isBlank()) return
+        _state.value = _state.value.copy(
+            favoriteHeadphones = readFavorite(hostId, AudioFavoriteSlot.Headphones),
+            favoriteTvDisplay = readFavorite(hostId, AudioFavoriteSlot.TvDisplay),
+        )
+    }
+
+    private fun readFavorite(hostId: String, slot: AudioFavoriteSlot): AudioOutputFavorite = AudioOutputFavorite(
+        endpointId = preferences.getString(favoriteIdKey(hostId, slot), "").orEmpty(),
+        name = preferences.getString(favoriteNameKey(hostId, slot), "").orEmpty(),
+    )
+
+    private fun favoriteIdKey(hostId: String, slot: AudioFavoriteSlot) =
+        "audio_favorite_${slot.name.lowercase()}_id_$hostId"
+
+    private fun favoriteNameKey(hostId: String, slot: AudioFavoriteSlot) =
+        "audio_favorite_${slot.name.lowercase()}_name_$hostId"
 
     private fun deviceName(): String = Build.MODEL?.takeIf(String::isNotBlank) ?: "Android device"
     private fun tokenKey(hostId: String) = "pairing_token_$hostId"
@@ -461,6 +605,7 @@ internal class LauncherHostClient(context: Context) {
         const val CONNECT_TIMEOUT_MS = 5000
         const val RECONNECT_BACKOFF_MS = 4000L
         const val MAX_FRAME_BYTES = 1024 * 1024
+        const val AUDIO_SYNC_INTERVAL_MS = 2500L
         const val KEY_CLIENT_ID = "client_id"
     }
 }

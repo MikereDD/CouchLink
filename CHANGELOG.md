@@ -1,3 +1,126 @@
+# Changelog
+
+## 1.3 — Stable Audio Output and unified Windows Host release
+
+- Promoted the tested `1.3-rc.1` feature set to the stable release line.
+- Added live Windows Audio Output discovery, switching, favorites, and synchronization.
+- Added the redesigned CouchLink Host dashboard and themed Audio Output popup.
+- Preserved the complete Android Home, Touchpad, Keyboard, launcher, and Google TV Remote experience.
+- Hardened shared host preferences, atomic persistence, endpoint enumeration, and UI responsiveness.
+- Updated the README screenshot gallery and stable release documentation.
+- Aligned Windows and Android metadata to `1.3` (`versionCode 141`).
+- Regenerated the stable source manifest and prepared the signed release builder for v1.3.
+- Fixed the Windows release builder signing handoff so Gradle receives the private keystore configuration and produces `app-release.apk` instead of an unsigned package.
+
+## 1.3-rc.1 — Feature-complete release candidate
+
+- Promoted the tested v1.3-dev.7 line to the first CouchLink 1.3 release candidate.
+- Froze new features while final Windows and Android regression testing is completed.
+- Aligned Windows and Android metadata to `1.3-rc.1` (`versionCode 140`).
+- Added the refreshed README screenshot gallery for Home, Touchpad, Keyboard, TV Remote, Windows Host, and Audio Output.
+- Added release-candidate notes and the final regression checklist.
+- Regenerated the source manifest for the RC source tree.
+
+## 1.3-dev.7 — Live Audio Output synchronization
+
+- Added automatic Windows popup synchronization for external default-device and endpoint-list changes.
+- Added debounced background audio-output refresh while the popup is visible.
+- Added connected Android background synchronization so Windows-side output changes appear without manual refresh.
+- Preserved manual Refresh as a fallback and stopped synchronization jobs cleanly on disconnect or window close.
+- Kept the approved Audio Output and Host dashboard visual design unchanged.
+
+## 1.3-dev.6.3
+
+### Windows Host
+- Unified the main Host dashboard with the approved Audio Output visual language.
+- Added shared CouchLink dark buttons, accent/destructive actions, custom checkboxes, and dark scrollbars.
+- Reworked trusted-device presentation into rounded selectable device cards while preserving identifiers and paired timestamps.
+- Refined pairing, connected-device, startup, host-status, endpoint, and last-event cards.
+- Preserved all existing commands, bindings, resizing, pairing, persistence, networking, and Audio Output behavior.
+
+### Android
+- No functional changes; version metadata aligned to 1.3-dev.6.3 (versionCode 138).
+
+## 1.3-dev.6.2
+
+Targeted Audio Output reliability patch. No changes to the approved popup: sizing, theme, dark scrollbar, device-row layout, footer, and favorites design are all preserved.
+
+- Share a single host-preferences instance between the dashboard and the Audio Output popup. Previously two independent instances wrote the same file, so saving a favorite and toggling a startup option could silently overwrite each other.
+- Persist host settings atomically: settings are written to a temp file and swapped into place, a rolling backup is kept, a corrupt settings file is preserved for inspection instead of being silently reset, and load/save failures are logged.
+- Fault-isolate audio-endpoint enumeration. A single malfunctioning endpoint or driver is now skipped instead of blanking the entire output list; already-enumerated devices are preserved and COM releases are null-guarded.
+- Run audio enumeration and switching off the WPF UI thread with duplicate-operation guarding, keeping the popup responsive during device changes while preserving all existing success and failure messages.
+- Remove the redundant custom title-bar drag handler that could throw while the window was maximized; dragging now relies on the standard window chrome caption.
+
+Deferred to v1.3-dev.7: live device-change notification (IMMNotificationClient) and Android/Windows state push synchronization.
+
+Android carries no functional changes in this patch; its version is aligned to 1.3-dev.6.2 (versionCode 137) for release consistency.
+
+## 1.3-dev.6.1.2
+
+- Add a custom dark scrollbar that matches the CouchLink popup theme.
+- Tighten audio-device row spacing without changing the approved window proportions.
+- Add bottom viewport breathing room so the final device row is always fully visible.
+- Preserve the v1.3-dev.6.1.1 layout, colors, favorites, and switching behavior.
+
+## 1.3-dev.6.1.1
+
+- Fixed ambiguous `Color` references in the WPF audio-output popup by explicitly using `System.Windows.Media.Color`.
+- No behavior or layout changes from v1.3-dev.6.1.
+
+## 1.3-dev.5.2
+
+- fully qualify WPF Brush and Brushes references in the Audio Output popup
+- resolve remaining System.Drawing / System.Windows.Media compiler ambiguities
+
+## 1.3-dev.6.1
+
+- Redesign the Windows Audio Output popup to mirror the Android modal hierarchy.
+- Add CouchLink custom window chrome and remove the native white title bar.
+- Add compact favorites, premium active-device cards, bottom actions, and tighter spacing.
+- Preserve all switching, refresh, favorites, and unavailable-device behavior.
+
+## 1.3-dev.6
+
+- Added a compact Android Audio Output card with a full device-selection popout.
+- Preserved favorite Headphones and TV / Display shortcuts on the Home screen.
+- Restyled the Windows Audio Output popup to match CouchLink's dark metallic and orange visual language.
+
+## 1.3-dev.5
+
+- Added Windows tray Audio Output popup with favorites, one-click switching, refresh, and unavailable-device handling.
+
+# Changelog
+
+## 1.3-dev.4
+
+- Added per-host Headphones and TV / Display favorite output shortcuts on Android.
+- Added a built-in favorite picker with edit and clear actions.
+- Automatically seeds sensible favorites from active headphone and display endpoints while allowing full user reassignment.
+- Stores favorite endpoint IDs and full names per trusted Windows host.
+- Keeps disconnected HDMI, Bluetooth, USB, and wireless favorites visible as unavailable instead of silently losing them.
+- Restores favorite availability automatically when the saved endpoint returns during refresh.
+- Preserved the complete active-output list, compact labels, stable-ID switching, and native Core Audio implementation.
+
+## 1.3-dev.3
+
+- Preserved useful hardware identity when compacting generic Realtek speaker names.
+- Changed `Speakers (Realtek(R) Audio)` to the clearer `Speakers (Realtek)` in the Android Audio Output picker.
+- Continued shortening bulky display and virtual-driver suffixes while preserving complete endpoint names and stable IDs internally.
+- Preserved the tested native Core Audio enumeration, filtering, current-output detection, and endpoint switching behavior from v1.3-dev.2.
+
+## 1.3-dev.2
+
+- Corrected the Windows Core Audio `IMMDeviceCollection` interface IID used by output enumeration.
+- Hid obvious capture/loopback-labelled render endpoints such as Sonar Microphone, Line, and What U Hear from the normal output picker.
+- Shortened common driver suffixes in Android audio-output cards while preserving complete endpoint names and IDs in the protocol.
+- Kept switching by stable Windows endpoint ID and continued setting Console, Multimedia, and Communications roles together.
+
+## 1.3-dev.1
+
+- Added native Windows audio-output enumeration and default-endpoint switching.
+- Added authenticated `audio_output_list` and `audio_output_set` host protocol messages.
+- Added Android audio-output list, active-output indicator, refresh, and tap-to-switch controls.
+
 # CouchLink Changelog
 
 ## 1.2 — Stable Google TV Remote release

@@ -10,13 +10,16 @@ public sealed class TrayIconService : IDisposable
     private readonly Forms.NotifyIcon _notifyIcon;
     private readonly Action _showWindow;
     private readonly Action _exitApplication;
+    private readonly Action _showAudioOutput;
 
-    public TrayIconService(Action showWindow, Action exitApplication)
+    public TrayIconService(Action showWindow, Action showAudioOutput, Action exitApplication)
     {
         _showWindow = showWindow;
+        _showAudioOutput = showAudioOutput;
         _exitApplication = exitApplication;
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open CouchLink", null, (_, _) => _showWindow());
+        menu.Items.Add("Audio Output", null, (_, _) => _showAudioOutput());
         menu.Items.Add("Launch Steam Big Picture", null, (_, _) => LaunchSteam());
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit CouchLink", null, (_, _) => System.Windows.Application.Current.Dispatcher.Invoke(_exitApplication));
