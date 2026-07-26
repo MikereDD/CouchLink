@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using CouchLink.Host.Core;
 using CouchLink.Host.Wpf.Services;
 
@@ -14,14 +15,23 @@ public partial class AudioOutputWindow : Window
     private readonly ObservableCollection<AudioDeviceItem> _devices = new();
     private AudioOutputDevice[] _activeDevices = Array.Empty<AudioOutputDevice>();
     private bool _busy;
+    private readonly DispatcherTimer _liveSyncTimer;
+    private string _deviceFingerprint = string.Empty;
 
     public AudioOutputWindow(HostPreferences preferences)
     {
         InitializeComponent();
         _preferences = preferences;
         DeviceList.ItemsSource = _devices;
+        _liveSyncTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _liveSyncTimer.Tick += async (_, _) => await RefreshDevicesIfChangedAsync();
         Activated += async (_, _) => await RefreshDevicesAsync();
-        Loaded += async (_, _) => await RefreshDevicesAsync();
+        Loaded += async (_, _) =>
+        {
+            await RefreshDevicesAsync();
+            _liveSyncTimer.Start();
+        };
+        Closed += (_, _) => _liveSyncTimer.Stop();
     }
 
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
@@ -40,6 +50,22 @@ public partial class AudioOutputWindow : Window
         finally { _busy = false; }
     }
 
+
+    private async Task RefreshDevicesIfChangedAsync()
+    {
+        if (_busy || !IsVisible || WindowState == WindowState.Minimized) return;
+        _busy = true;
+        try
+        {
+            AudioOutputListResult result = await Task.Run(() => _audio.List());
+            if (!result.Success) return;
+            string fingerprint = CreateFingerprint(result.Devices);
+            if (!string.Equals(fingerprint, _deviceFingerprint, StringComparison.Ordinal))
+                ApplyDeviceResult(result);
+        }
+        finally { _busy = false; }
+    }
+
     // Enumeration runs on a background thread; the await resumes on the WPF
     // dispatcher, so every control update below is marshaled back to the UI thread.
     private async Task LoadDevicesAsync()
@@ -51,7 +77,13 @@ public partial class AudioOutputWindow : Window
             return;
         }
 
+        ApplyDeviceResult(result);
+    }
+
+    private void ApplyDeviceResult(AudioOutputListResult result)
+    {
         _activeDevices = result.Devices;
+        _deviceFingerprint = CreateFingerprint(_activeDevices);
         SuggestFavoritesIfNeeded();
         _devices.Clear();
         foreach (AudioOutputDevice device in _activeDevices)
@@ -62,6 +94,10 @@ public partial class AudioOutputWindow : Window
         UpdateFavoriteCards();
         StatusText.Text = $"{_activeDevices.Length} active output{(_activeDevices.Length == 1 ? string.Empty : "s")}.";
     }
+
+    private static string CreateFingerprint(IEnumerable<AudioOutputDevice> devices) =>
+        string.Join("\n", devices.OrderBy(d => d.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(d => $"{d.Id}|{d.Name}|{d.IsDefault}"));
 
     private void SuggestFavoritesIfNeeded()
     {

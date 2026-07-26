@@ -1,3 +1,13 @@
+# Changelog
+
+## 1.3-dev.7 — Live Audio Output synchronization
+
+- Added automatic Windows popup synchronization for external default-device and endpoint-list changes.
+- Added debounced background audio-output refresh while the popup is visible.
+- Added connected Android background synchronization so Windows-side output changes appear without manual refresh.
+- Preserved manual Refresh as a fallback and stopped synchronization jobs cleanly on disconnect or window close.
+- Kept the approved Audio Output and Host dashboard visual design unchanged.
+
 ## 1.3-dev.6.3
 
 ### Windows Host

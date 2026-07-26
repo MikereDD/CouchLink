@@ -45,6 +45,7 @@ internal class LauncherHostClient(context: Context) {
     private var discoveryJob: Job? = null
     private var connectionJob: Job? = null
     private var heartbeatJob: Job? = null
+    private var audioSyncJob: Job? = null
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var activeHostId: String? = null
@@ -99,6 +100,7 @@ internal class LauncherHostClient(context: Context) {
     fun cancelPairing() {
         connectionJob?.cancel()
         heartbeatJob?.cancel()
+        audioSyncJob?.cancel()
         closeSocket()
         _state.value = _state.value.copy(
             connecting = false,
@@ -133,11 +135,13 @@ internal class LauncherHostClient(context: Context) {
     }
 
 
-    fun refreshAudioOutputs(): Boolean {
+    fun refreshAudioOutputs(): Boolean = requestAudioOutputs(showLoading = true)
+
+    private fun requestAudioOutputs(showLoading: Boolean): Boolean {
         if (!_state.value.connected) return false
-        _state.value = _state.value.copy(audioLoading = true)
+        if (showLoading) _state.value = _state.value.copy(audioLoading = true)
         scope.launch {
-            if (!sendEnvelope("audio_output_list", JSONObject())) {
+            if (!sendEnvelope("audio_output_list", JSONObject()) && showLoading) {
                 _state.value = _state.value.copy(audioLoading = false)
             }
         }
@@ -387,6 +391,7 @@ internal class LauncherHostClient(context: Context) {
                 )
                 applyStoredFavorites(activeHostId ?: _state.value.hostId)
                 startHeartbeat(payload.optInt("heartbeatSeconds", 5).coerceIn(2, 15))
+                startAudioSync()
                 refreshAudioOutputs()
             }
             "audio_output_list_result" -> {
@@ -432,6 +437,16 @@ internal class LauncherHostClient(context: Context) {
                 _state.value = _state.value.copy(message = resultMessage, launcherStates = states)
             }
             "error" -> _state.value = _state.value.copy(message = payload.optString("message", "Host protocol error."))
+        }
+    }
+
+    private fun startAudioSync() {
+        audioSyncJob?.cancel()
+        audioSyncJob = scope.launch {
+            while (isActive && _state.value.connected) {
+                delay(AUDIO_SYNC_INTERVAL_MS)
+                requestAudioOutputs(showLoading = false)
+            }
         }
     }
 
@@ -491,6 +506,7 @@ internal class LauncherHostClient(context: Context) {
     private fun disconnect(message: String) {
         connectionJob?.cancel()
         heartbeatJob?.cancel()
+        audioSyncJob?.cancel()
         closeSocket()
         _state.value = LauncherHostState(message = message)
     }
@@ -589,6 +605,7 @@ internal class LauncherHostClient(context: Context) {
         const val CONNECT_TIMEOUT_MS = 5000
         const val RECONNECT_BACKOFF_MS = 4000L
         const val MAX_FRAME_BYTES = 1024 * 1024
+        const val AUDIO_SYNC_INTERVAL_MS = 2500L
         const val KEY_CLIENT_ID = "client_id"
     }
 }
