@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3-rc.1 — Feature-complete release candidate
+
+- Promoted the tested v1.3-dev.7 line to the first CouchLink 1.3 release candidate.
+- Froze new features while final Windows and Android regression testing is completed.
+- Aligned Windows and Android metadata to `1.3-rc.1` (`versionCode 140`).
+- Added the refreshed README screenshot gallery for Home, Touchpad, Keyboard, TV Remote, Windows Host, and Audio Output.
+- Added release-candidate notes and the final regression checklist.
+- Regenerated the source manifest for the RC source tree.
+
 ## 1.3-dev.7 — Live Audio Output synchronization
 
 - Added automatic Windows popup synchronization for external default-device and endpoint-list changes.

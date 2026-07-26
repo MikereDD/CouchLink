@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3-dev.7',
+    [string]$Version = '1.3-rc.1',
 
     [string]$RootPath = (Join-Path $PSScriptRoot '..')
 )
