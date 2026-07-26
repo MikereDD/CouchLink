@@ -1,6 +1,8 @@
+using System.Net;
 using System.Windows;
 using CouchLink.Host.Wpf.ViewModels;
 using CouchLink.Host.Wpf.Services;
+using System.Net.Http;
 
 namespace CouchLink.Host.Wpf.Views;
 
@@ -8,6 +10,7 @@ public partial class AboutWindow : Window
 {
     private readonly GitHubUpdateService _updateService = new();
     private GitHubUpdateService.UpdateInfo? _availableUpdate;
+    private string? _lastUpdateError;
     public AboutWindow()
     {
         InitializeComponent();
@@ -20,6 +23,7 @@ public partial class AboutWindow : Window
         CheckUpdatesButton.IsEnabled = false;
         InstallUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = "Checking GitHub Releases…";
+        _lastUpdateError = null;
         try
         {
             _availableUpdate = await _updateService.CheckAsync();
@@ -36,9 +40,23 @@ public partial class AboutWindow : Window
                 : Visibility.Visible;
             InstallUpdateButton.IsEnabled = true;
         }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = "No published CouchLink release is available yet.";
+            UpdateNotesText.Visibility = Visibility.Collapsed;
+        }
+        catch (HttpRequestException ex)
+        {
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = "CouchLink could not reach GitHub. Check your internet connection and try again.";
+            UpdateNotesText.Visibility = Visibility.Collapsed;
+        }
         catch (Exception ex)
         {
-            UpdateStatusText.Text = $"Update check failed: {ex.Message}";
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = "CouchLink could not check for updates. Copy diagnostics for technical details.";
+            UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         finally
         {
@@ -82,7 +100,15 @@ public partial class AboutWindow : Window
         if (DataContext is not MainWindowViewModel viewModel)
             return;
 
-        System.Windows.Clipboard.SetText(viewModel.DiagnosticsText);
+        string diagnostics = viewModel.DiagnosticsText;
+        if (!string.IsNullOrWhiteSpace(_lastUpdateError))
+        {
+            diagnostics += $"{Environment.NewLine}{Environment.NewLine}" +
+                "Updater error:" + Environment.NewLine +
+                _lastUpdateError;
+        }
+
+        System.Windows.Clipboard.SetText(diagnostics);
         System.Windows.MessageBox.Show(
             this,
             "CouchLink diagnostics were copied to the clipboard.",

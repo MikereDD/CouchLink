@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.content.FileProvider
 import dev.typezero.couchlink.remote.BuildConfig
 import java.io.File
@@ -24,6 +25,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class CouchLinkUpdateManager private constructor(private val context: Context) {
+    private class NoPublishedReleaseException : Exception()
+
     data class State(
         val checking: Boolean = false,
         val downloading: Boolean = false,
@@ -79,9 +82,21 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                     )
                 }
                 .onFailure { error ->
+                    Log.e(TAG, "Update check failed", error)
+                    val message = when (error) {
+                        is NoPublishedReleaseException ->
+                            "No published CouchLink release is available yet."
+                        is java.net.UnknownHostException,
+                        is java.net.ConnectException,
+                        is java.net.SocketTimeoutException ->
+                            "CouchLink could not reach GitHub. Check your internet connection and try again."
+                        else ->
+                            "CouchLink could not check for updates. Try again later."
+                    }
                     mutableState.value = mutableState.value.copy(
                         checking = false,
-                        message = "Update check failed: ${error.message ?: "Unknown error"}",
+                        updateAvailable = false,
+                        message = message,
                     )
                 }
         }
@@ -145,6 +160,9 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
     private suspend fun fetchLatestRelease(): ReleaseInfo = withContext(Dispatchers.IO) {
         val connection = openConnection(LATEST_RELEASE_API)
         try {
+            if (connection.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                throw NoPublishedReleaseException()
+            }
             check(connection.responseCode in 200..299) {
                 "GitHub returned HTTP ${connection.responseCode}"
             }
@@ -302,6 +320,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
     }
 
     companion object {
+        private const val TAG = "CouchLinkUpdate"
         private const val LATEST_RELEASE_API =
             "https://api.github.com/repos/MikereDD/CouchLink/releases/latest"
         private const val OFFICIAL_DOWNLOAD_PREFIX =

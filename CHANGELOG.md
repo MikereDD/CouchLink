@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1-dev.1.2 — Friendly updater status handling
+
+- Translate a missing GitHub Release into a friendly no-release message on Android and Windows.
+- Distinguish connectivity failures from missing releases and other updater errors.
+- Keep update installation controls disabled unless a valid newer release is available.
+- Preserve full Windows updater exception details in Copy Diagnostics and Android details in Logcat.
+- Add bottom breathing room to the Windows About window updater content.
+- Align Android and Windows metadata to `1.3.1-dev.1.2` (`versionCode 143`).
+
 ## 1.3.1-dev.1 — GitHub self-updater foundation
 
 - Added stable GitHub Release checks to Android Settings and the Windows About window.

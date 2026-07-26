@@ -115,7 +115,7 @@
         <ScrollViewer Grid.Row="2"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
+            <StackPanel Margin="0,0,0,18">
                 <Border Padding="18"
                         CornerRadius="14"
                         Background="{StaticResource WindowPanelBrush}"
