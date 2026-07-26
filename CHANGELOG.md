@@ -1,3 +1,13 @@
+# CouchLink v1.3.1-dev.3
+
+## Test-channel end-to-end update candidate
+
+- Produces the first selected GitHub prerelease intended for real Stable/Test updater validation.
+- Keeps Stable as the default channel while allowing opted-in testers to discover prereleases.
+- Packages exact Android, Windows Host, Windows Updater, source, and checksum assets.
+- Adds a dedicated release checklist and validation record for the first live updater test.
+- Bumps Windows and Android builds to `1.3.1-dev.3`.
+
 # CouchLink v1.3.1-dev.2.1
 
 - Theme the Windows About update-channel selector and dropdown.

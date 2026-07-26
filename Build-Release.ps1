@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.1-dev.1.2',
+    [string]$Version = '1.3.1-dev.3',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -205,7 +205,7 @@ function Invoke-CouchLinkReleaseBuild {
     New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
     Write-Host ''
-    Write-Host "CouchLink v$Version stable release build" -ForegroundColor Cyan
+    Write-Host "CouchLink v$Version test release build" -ForegroundColor Cyan
     Write-Host "Output: $resolvedOutputDirectory"
     Write-Host ''
 
@@ -303,7 +303,7 @@ function Invoke-CouchLinkReleaseBuild {
     $finalUpdater = Join-Path $resolvedOutputDirectory "CouchLink-Updater-v$Version-$Runtime.exe"
     Copy-Item -LiteralPath $publishedUpdater -Destination $finalUpdater -Force
 
-    Write-Host '[4/5] Packaging stable source and release documents...' -ForegroundColor Cyan
+    Write-Host '[4/5] Packaging source and release documents...' -ForegroundColor Cyan
     & $sourceManifestScript -Version $Version -RootPath $repoRoot
     & $sourceManifestVerifyScript -Version $Version -RootPath $repoRoot
 
@@ -372,7 +372,7 @@ function Invoke-CouchLinkReleaseBuild {
     ) | Set-Content -LiteralPath $releaseInfoPath -Encoding utf8
 
     Write-Host ''
-    Write-Host 'Stable release build complete.' -ForegroundColor Green
+    Write-Host 'Test release build complete.' -ForegroundColor Green
     Write-Host "Signed APK:       $finalApk"
     Write-Host "Windows EXE:      $finalExe"
     Write-Host "Windows updater:  $finalUpdater"
