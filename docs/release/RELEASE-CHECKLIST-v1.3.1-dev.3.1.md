@@ -1,0 +1,22 @@
+# CouchLink v1.3.1-dev.3.1 Release Checklist
+
+- [x] Confirm Android `versionName` is `1.3.1-dev.3.1`.
+- [x] Confirm Android `versionCode` is `147`.
+- [x] Run `dotnet build .\src\windows\CouchLink.sln -c Release`.
+- [x] Run `.\Build-Release.ps1 -Version 1.3.1-dev.3.1`.
+- [x] Verify the signed APK uses the canonical CouchLink certificate.
+- [x] Commit the release source on `dev/add-updater`.
+- [x] Push the release commit to canonical Forgejo.
+- [x] Push the release commit to the GitHub mirror.
+- [x] Create tag `v1.3.1-dev.3.1` from commit `fbb3281`.
+- [x] Push the tag to Forgejo and GitHub.
+- [x] Mark the GitHub release as **Pre-release**.
+- [x] Upload the exact APK, Host, Updater, source ZIP, and SHA256SUMS assets.
+- [x] Confirm the GitHub prerelease tag points to the matching source commit.
+- [x] From Windows Host `1.3.1-dev.2.2`, verify Test detects and installs `1.3.1-dev.3`.
+- [x] Confirm Windows downloads, verifies, replaces, and restarts the Host.
+- [x] Confirm Windows pairing and application state survive the update.
+- [x] From signed Android `1.3.1-dev.2.2`, verify Test detects and installs `1.3.1-dev.3.1`.
+- [x] Confirm Android package, certificate, SHA-256, and `versionCode` checks pass.
+- [x] Confirm Android settings and app data survive the in-place update.
+- [x] Record the successful end-to-end validation.

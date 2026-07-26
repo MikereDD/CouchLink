@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -47,6 +48,7 @@ import dev.typezero.couchlink.remote.ui.theme.Muted
 import dev.typezero.couchlink.remote.ui.theme.Raised2
 import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
+import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
 
 @Composable
 internal fun SettingsScreen(
@@ -75,6 +77,12 @@ internal fun SettingsScreen(
     onTvCancelPairing: () -> Unit,
     onTvConnect: () -> Unit,
     onTvForget: () -> Unit,
+    updateState: CouchLinkUpdateManager.State,
+    onCheckForUpdates: () -> Unit,
+    onUpdateChannelChanged: (Boolean) -> Unit,
+    onDownloadUpdate: () -> Unit,
+    onContinueInstall: () -> Unit,
+    onOpenInstallPermission: () -> Unit,
 ) {
     val context = LocalContext.current
     var diagnosticsCopied by rememberSaveable { mutableStateOf(false) }
@@ -147,6 +155,16 @@ internal fun SettingsScreen(
             onCheckedChange = onNaturalScrollingChanged,
         )
     }
+
+
+    UpdateSettingsPanel(
+        state = updateState,
+        onCheck = onCheckForUpdates,
+        onChannelChanged = onUpdateChannelChanged,
+        onDownload = onDownloadUpdate,
+        onContinueInstall = onContinueInstall,
+        onOpenInstallPermission = onOpenInstallPermission,
+    )
 
     PremiumPanel {
         Row(
@@ -623,3 +641,142 @@ private fun BluetoothHidPanel(
         }
     }
 }
+
+@Composable
+private fun UpdateSettingsPanel(
+    state: CouchLinkUpdateManager.State,
+    onCheck: () -> Unit,
+    onChannelChanged: (Boolean) -> Unit,
+    onDownload: () -> Unit,
+    onContinueInstall: () -> Unit,
+    onOpenInstallPermission: () -> Unit,
+) {
+    val updatePanelContext = LocalContext.current
+    PremiumPanel {
+        Text(
+            text = "APP UPDATES",
+            color = Muted,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = state.message,
+            color = if (state.updateAvailable) Accent else TextColor,
+            fontSize = 14.sp,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "TEST BUILDS",
+                    color = TextColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                )
+                Text(
+                    text = "Opt in to selected prereleases for volunteer testing.",
+                    color = Muted,
+                    fontSize = 10.sp,
+                )
+            }
+            Switch(
+                checked = state.testChannel,
+                onCheckedChange = onChannelChanged,
+                enabled = !state.checking && !state.downloading,
+            )
+        }
+        if (state.availableVersion != null) {
+            AboutDetailRow("Installed", BuildConfig.VERSION_NAME)
+            AboutDetailRow("Available", state.availableVersion)
+        }
+        Text(
+            text = state.stage.uppercase(),
+            color = Accent,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+        )
+        if (state.progressPercent != null) {
+            LinearProgressIndicator(
+                progress = { state.progressPercent / 100f },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = "DOWNLOAD ${state.progressPercent}%",
+                color = Accent,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+            )
+        }
+        if (state.releaseNotes.isNotBlank() && state.updateAvailable) {
+            Text(
+                text = state.releaseNotes.take(700),
+                color = Muted,
+                fontSize = 11.sp,
+            )
+        }
+        if (state.installPermissionRequired) {
+            Button(
+                onClick = onOpenInstallPermission,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("ALLOW UPDATE INSTALLS", fontWeight = FontWeight.Bold) }
+            OutlinedButton(
+                onClick = onContinueInstall,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("INSTALL UPDATE", fontWeight = FontWeight.Bold) }
+        } else if (state.updateAvailable) {
+            Button(
+                onClick = onDownload,
+                enabled = !state.downloading,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (state.downloading) "DOWNLOADING…" else "DOWNLOAD AND INSTALL",
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+        if (state.testChannel) {
+            OutlinedButton(
+                onClick = { onChannelChanged(false) },
+                enabled = !state.checking && !state.downloading,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("RETURN TO STABLE", fontWeight = FontWeight.Bold) }
+        }
+        OutlinedButton(
+            onClick = {
+                val report = buildString {
+                    appendLine("CouchLink Updater Test Report")
+                    appendLine("Remote version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+                    appendLine("Channel: ${if (state.testChannel) "Test" else "Stable"}")
+                    appendLine("Available: ${state.availableVersion ?: "None"}")
+                    appendLine("Stage: ${state.stage}")
+                    appendLine("Status: ${state.message}")
+                    appendLine("Progress: ${state.progressPercent ?: 0}%")
+                }
+                val clipboard = updatePanelContext.getSystemService(ClipboardManager::class.java)
+                clipboard?.setPrimaryClip(ClipData.newPlainText("CouchLink updater report", report))
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("COPY TEST REPORT", fontWeight = FontWeight.Bold) }
+        OutlinedButton(
+            onClick = onCheck,
+            enabled = !state.checking && !state.downloading,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (state.checking) "CHECKING…" else "CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
+        }
+        Text(
+            text = if (state.testChannel) {
+                "Test channel selected. Prereleases still require official assets, GitHub SHA-256, and APK certificate verification."
+            } else {
+                "Stable channel selected. Downloads require official assets, GitHub SHA-256, and APK certificate verification."
+            },
+            color = Muted,
+            fontSize = 10.sp,
+        )
+    }
+}
+

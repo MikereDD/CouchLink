@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3',
+    [string]$Version = '1.3.1-dev.4',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -166,13 +166,15 @@ function Invoke-CouchLinkReleaseBuild {
     $sourceManifestScript = Join-Path $repoRoot 'tools\Update-SourceManifest.ps1'
     $sourceManifestVerifyScript = Join-Path $repoRoot 'tools\Test-SourceManifest.ps1'
     $windowsProject = Join-Path $windowsRoot 'CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj'
+    $updaterProject = Join-Path $windowsRoot 'CouchLink.Updater\CouchLink.Updater.csproj'
 
     foreach ($requiredPath in @(
         $androidBuildScript,
         $androidVerifyScript,
         $sourceManifestScript,
         $sourceManifestVerifyScript,
-        $windowsProject
+        $windowsProject,
+        $updaterProject
     )) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required project file was not found: $requiredPath"
@@ -203,7 +205,7 @@ function Invoke-CouchLinkReleaseBuild {
     New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
     Write-Host ''
-    Write-Host "CouchLink v$Version stable release build" -ForegroundColor Cyan
+    Write-Host "CouchLink v$Version test release build" -ForegroundColor Cyan
     Write-Host "Output: $resolvedOutputDirectory"
     Write-Host ''
 
@@ -278,7 +280,30 @@ function Invoke-CouchLinkReleaseBuild {
     $finalExe = Join-Path $resolvedOutputDirectory "CouchLink-Host-v$Version-$Runtime.exe"
     Copy-Item -LiteralPath $publishedExe -Destination $finalExe -Force
 
-    Write-Host '[4/5] Packaging stable source and release documents...' -ForegroundColor Cyan
+    $updaterPublishDirectory = Join-Path $windowsRoot "publish\CouchLink-Updater-v$Version-$Runtime"
+    if (Test-Path -LiteralPath $updaterPublishDirectory) {
+        Remove-Item -LiteralPath $updaterPublishDirectory -Recurse -Force
+    }
+    $updaterArguments = @(
+        'publish',
+        $updaterProject,
+        '-c', 'Release',
+        '-r', $Runtime,
+        '--self-contained', $selfContainedValue,
+        '-p:PublishSingleFile=true',
+        '-p:DebugType=None',
+        '-p:DebugSymbols=false',
+        '-o', $updaterPublishDirectory
+    )
+    Invoke-NativeCommand -FilePath $dotnet.Source -ArgumentList $updaterArguments -FailureMessage 'Windows updater publish failed.'
+    $publishedUpdater = Join-Path $updaterPublishDirectory 'CouchLink.Updater.exe'
+    if (-not (Test-Path -LiteralPath $publishedUpdater)) {
+        throw "Expected Windows updater executable was not produced: $publishedUpdater"
+    }
+    $finalUpdater = Join-Path $resolvedOutputDirectory "CouchLink-Updater-v$Version-$Runtime.exe"
+    Copy-Item -LiteralPath $publishedUpdater -Destination $finalUpdater -Force
+
+    Write-Host '[4/5] Packaging source and release documents...' -ForegroundColor Cyan
     & $sourceManifestScript -Version $Version -RootPath $repoRoot
     & $sourceManifestVerifyScript -Version $Version -RootPath $repoRoot
 
@@ -326,6 +351,7 @@ function Invoke-CouchLinkReleaseBuild {
     $releaseHashes = [System.Collections.Generic.List[object]]::new()
     $releaseHashes.Add((Write-Sha256File -Path $finalApk))
     $releaseHashes.Add((Write-Sha256File -Path $finalExe))
+    $releaseHashes.Add((Write-Sha256File -Path $finalUpdater))
     if ($sourceArchive) {
         $releaseHashes.Add((Write-Sha256File -Path $sourceArchive))
     }
@@ -346,9 +372,10 @@ function Invoke-CouchLinkReleaseBuild {
     ) | Set-Content -LiteralPath $releaseInfoPath -Encoding utf8
 
     Write-Host ''
-    Write-Host 'Stable release build complete.' -ForegroundColor Green
+    Write-Host 'Test release build complete.' -ForegroundColor Green
     Write-Host "Signed APK:       $finalApk"
     Write-Host "Windows EXE:      $finalExe"
+    Write-Host "Windows updater:  $finalUpdater"
     if ($sourceArchive) {
         Write-Host "Source archive:   $sourceArchive"
     }

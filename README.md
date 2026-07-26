@@ -20,15 +20,6 @@
 
 ---
 
-CouchLink brings the main living-room controls into one consistent Android interface:
-
-- **Home** — launch and manage PC game launchers from the couch.
-- **Touchpad** — move, tap, hold, drag, and scroll with adjustable sensitivity.
-- **Keyboard** — send text and use essential Windows keys and shortcuts.
-- **TV Remote** — securely control a paired Google TV, including navigation, playback, power, volume, channels, settings, Google Live, and verified Hisense input switching.
-
----
-
 ## How CouchLink works
 
 CouchLink uses independent connection paths so each feature remains useful even when another component is unavailable.
@@ -98,6 +89,7 @@ CouchLink/
 │   ├── building/             Build and test instructions
 │   ├── images/               README and release artwork
 │   ├── release/              Installation, signing, notes, and release checklists
+│   ├── screenshots/          Current Android and Windows screenshots
 │   ├── tv-remote/            TV Remote roadmap and validation checklists
 │   └── history/              Preserved development notes and old manifests
 ├── CHANGELOG.md
@@ -156,6 +148,12 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 | Google TV protocol | Remote v2 | Secure local TLS pairing and control |
 
 CouchLink 1.3 is the stable unified Android and Windows release. It adds live Windows Audio Output discovery, favorites, switching, synchronization, and the redesigned CouchLink Host dashboard while preserving the complete Google TV Remote experience from 1.2.
+
+## Self-updating releases
+
+CouchLink 1.3.1 is adding secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, accept stable releases only, require exact official asset names, and verify SHA-256 digests before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows uses a separate updater executable so the running Host can close, be replaced safely, and restart.
+
+The updater never performs a silent Android install or accepts an arbitrary update server.
 
 ## Screenshots
 

@@ -1,4 +1,57 @@
+# CouchLink v1.3.1-dev.4
+
+## Updater polish
+
+- Adds download progress and visible verification/install stages on Windows and Android.
+- Cleans GitHub Markdown release notes for compact in-app display.
+- Adds Return to Stable for opted-in Test users.
+- Adds Copy Test Report with channel, version, stage, progress, and diagnostics.
+- Improves updater success and failure states while preserving detailed diagnostics.
+- Adds public tester workflow documentation.
+- Bumps Android to versionCode 148 and synchronizes Windows/Android version metadata.
+
+# CouchLink v1.3.1-dev.3.1
+
+## Android updater version-code repair
+
+- Raises Android `versionCode` to `147` so the signed test APK is newer than `1.3.1-dev.2.2`.
+- Bumps synchronized Android and Windows metadata to `1.3.1-dev.3.1`.
+- Preserves the Test-channel discovery, verification, Windows updater, and release-asset pipeline already proven in `1.3.1-dev.3`.
+- Prepares a second live Android installation candidate.
+
+# CouchLink v1.3.1-dev.2.1
+
+- Theme the Windows About update-channel selector and dropdown.
+- Add CouchLink dark, orange-accented hover, focus, selected, and open states.
+- Preserve Stable/Test channel behavior and persistence.
+
+# CouchLink v1.3.1-dev.2
+
+- Added persistent Stable/Test update channels on Android and Windows.
+- Test channel consumes selected official GitHub prereleases while Stable remains default.
+- Preserved all updater security verification across both channels.
+
 # Changelog
+
+## 1.3.1-dev.1.2 — Friendly updater status handling
+
+- Translate a missing GitHub Release into a friendly no-release message on Android and Windows.
+- Distinguish connectivity failures from missing releases and other updater errors.
+- Keep update installation controls disabled unless a valid newer release is available.
+- Preserve full Windows updater exception details in Copy Diagnostics and Android details in Logcat.
+- Add bottom breathing room to the Windows About window updater content.
+- Align Android and Windows metadata to `1.3.1-dev.1.2` (`versionCode 143`).
+
+## 1.3.1-dev.1 — GitHub self-updater foundation
+
+- Added stable GitHub Release checks to Android Settings and the Windows About window.
+- Added exact official asset-name validation and HTTPS-only release downloads.
+- Added GitHub-provided SHA-256 digest verification on both platforms.
+- Added Android APK package, version-code, and signing-certificate verification before installation.
+- Added Android unknown-source permission guidance and system package-installer handoff.
+- Added a separate Windows updater executable with wait, backup, replacement, restart, and rollback behavior.
+- Updated the release builder to publish and checksum both Windows executables.
+- Pinned the update authority to `MikereDD/CouchLink`; no arbitrary update URLs are accepted.
 
 ## 1.3 — Stable Audio Output and unified Windows Host release
 

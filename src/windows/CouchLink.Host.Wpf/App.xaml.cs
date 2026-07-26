@@ -107,6 +107,8 @@ public partial class App : System.Windows.Application
         });
     }
 
+    public void BeginUpdateShutdown() => ExitApplication();
+
     private async void ExitApplication()
     {
         if (_exiting) return;

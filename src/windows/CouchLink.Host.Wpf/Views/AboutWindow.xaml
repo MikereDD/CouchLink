@@ -22,14 +22,16 @@
                             UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
 
-    <Grid>
+    <Grid Background="{StaticResource WindowBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="50" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Background="{StaticResource SurfaceBrush}"
+                Background="{StaticResource TitleBarBrush}"
+                BorderBrush="{StaticResource WindowPanelBorderBrush}"
+                BorderThickness="0,0,0,1"
                 MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -53,29 +55,23 @@
                 </StackPanel>
 
                 <Button Grid.Column="1"
+                        Style="{StaticResource ChromeButton}"
                         Content="—"
                         Click="Minimize_Click"
-                        Background="Transparent"
-                        Foreground="{StaticResource TextBrush}"
-                        BorderThickness="0"
                         FontSize="16"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" />
 
                 <Button Grid.Column="2"
+                        Style="{StaticResource ChromeButton}"
                         Content="□"
                         Click="MaximizeRestore_Click"
-                        Background="Transparent"
-                        Foreground="{StaticResource TextBrush}"
-                        BorderThickness="0"
                         FontSize="14"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" />
 
                 <Button Grid.Column="3"
+                        Style="{StaticResource ChromeButton}"
                         Content="×"
                         Click="Close_Click"
-                        Background="Transparent"
-                        Foreground="{StaticResource TextBrush}"
-                        BorderThickness="0"
                         FontSize="20"
                         shell:WindowChrome.IsHitTestVisibleInChrome="True" />
             </Grid>
@@ -119,10 +115,12 @@
         <ScrollViewer Grid.Row="2"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
-            <StackPanel>
+            <StackPanel Margin="0,0,0,18">
                 <Border Padding="18"
                         CornerRadius="14"
-                        Background="{StaticResource PanelBrush}">
+                        Background="{StaticResource WindowPanelBrush}"
+                        BorderBrush="{StaticResource WindowPanelBorderBrush}"
+                        BorderThickness="1">
                     <StackPanel>
                         <TextBlock Text="ABOUT"
                                    FontWeight="Bold"
@@ -141,7 +139,9 @@
                 <Border Margin="0,16,0,0"
                         Padding="18"
                         CornerRadius="14"
-                        Background="{StaticResource PanelBrush}">
+                        Background="{StaticResource WindowPanelBrush}"
+                        BorderBrush="{StaticResource WindowPanelBorderBrush}"
+                        BorderThickness="1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
@@ -185,10 +185,113 @@
                     </Grid>
                 </Border>
 
+
                 <Border Margin="0,16,0,0"
                         Padding="18"
                         CornerRadius="14"
-                        Background="{StaticResource PanelBrush}">
+                        Background="{StaticResource WindowPanelBrush}"
+                        BorderBrush="{StaticResource WindowPanelBorderBrush}"
+                        BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Text="APP UPDATES"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock x:Name="UpdateStatusText"
+                                   Margin="0,10,0,0"
+                                   Text="Stable updates are checked against the official MikereDD/CouchLink GitHub releases."
+                                   TextWrapping="Wrap" />
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="UPDATE CHANNEL"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock x:Name="UpdateChannelDescription"
+                                           Margin="0,4,18,0"
+                                           Text="Stable releases only."
+                                           FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}" />
+                            </StackPanel>
+                            <ComboBox x:Name="UpdateChannelComboBox"
+                                      Grid.Column="1"
+                                      Width="130"
+                                      Style="{StaticResource CouchComboBox}"
+                                      SelectedIndex="0"
+                                      SelectionChanged="UpdateChannel_SelectionChanged">
+                                <ComboBoxItem Content="Stable" />
+                                <ComboBoxItem Content="Test" />
+                            </ComboBox>
+                        </Grid>
+                        <TextBlock x:Name="UpdateNotesText"
+                                   Margin="0,8,0,0"
+                                   MaxHeight="110"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Visibility="Collapsed" />
+                        <TextBlock x:Name="UpdateStageText"
+                                   Margin="0,10,0,0"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource AccentBrush}"
+                                   Visibility="Collapsed" />
+                        <ProgressBar x:Name="UpdateProgressBar"
+                                     Margin="0,6,0,0"
+                                     Height="8"
+                                     Minimum="0"
+                                     Maximum="100"
+                                     Visibility="Collapsed" />
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="CheckUpdatesButton"
+                                    Style="{StaticResource AccentButton}"
+                                    Content="CHECK FOR UPDATES"
+                                    Click="CheckUpdates_Click" />
+                            <Button x:Name="InstallUpdateButton"
+                                    Grid.Column="2"
+                                    Style="{StaticResource CouchButton}"
+                                    Content="DOWNLOAD AND INSTALL"
+                                    Click="InstallUpdate_Click"
+                                    IsEnabled="False" />
+                        </Grid>
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="ReturnStableButton"
+                                    Style="{StaticResource CouchButton}"
+                                    Content="RETURN TO STABLE"
+                                    Visibility="Collapsed"
+                                    Click="ReturnStable_Click" />
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource CouchButton}"
+                                    Content="COPY TEST REPORT"
+                                    Click="CopyTestReport_Click" />
+                        </Grid>
+                        <TextBlock Margin="0,10,0,0"
+                                   Text="Stable is the default. Test builds are opt-in prereleases. Every channel still requires HTTPS, exact CouchLink asset names, and GitHub SHA-256 verification."
+                                   TextWrapping="Wrap"
+                                   FontSize="11"
+                                   Foreground="{StaticResource MutedTextBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,16,0,0"
+                        Padding="18"
+                        CornerRadius="14"
+                        Background="{StaticResource WindowPanelBrush}"
+                        BorderBrush="{StaticResource WindowPanelBorderBrush}"
+                        BorderThickness="1">
                     <StackPanel>
                         <TextBlock Text="DIAGNOSTICS"
                                    FontWeight="Bold"
@@ -216,10 +319,12 @@
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Button Padding="14,10"
+            <Button Style="{StaticResource CouchButton}"
+                    Padding="14,10"
                     Content="COPY DIAGNOSTICS"
                     Click="CopyDiagnostics_Click" />
             <Button Grid.Column="2"
+                    Style="{StaticResource CouchButton}"
                     Padding="14,10"
                     Content="CLOSE"
                     Click="Close_Click" />
