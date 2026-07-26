@@ -3,13 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <Color x:Key="SurfaceColor">#0E1013</Color>
-        <Color x:Key="PanelColor">#171A1F</Color>
-        <Color x:Key="PanelRaisedColor">#1C2026</Color>
+        <Color x:Key="SurfaceColor">#05080B</Color>
+        <Color x:Key="PanelColor">#0A0F14</Color>
+        <Color x:Key="PanelRaisedColor">#111820</Color>
         <Color x:Key="TextColor">#F4F4F5</Color>
-        <Color x:Key="MutedTextColor">#A4AAB3</Color>
-        <Color x:Key="AccentColor">#F28A2A</Color>
-        <Color x:Key="SuccessColor">#65C466</Color>
+        <Color x:Key="MutedTextColor">#A9B8CB</Color>
+        <Color x:Key="AccentColor">#FF8A18</Color>
+        <Color x:Key="SuccessColor">#5DD46A</Color>
+        <Color x:Key="CardBorderColor">#35414C</Color>
 
         <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
         <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" />
@@ -18,5 +19,177 @@
         <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}" />
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
         <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorderColor}" />
+
+        <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#05080B" Offset="0" />
+            <GradientStop Color="#0B1117" Offset="0.52" />
+            <GradientStop Color="#070A0E" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="RaisedCardBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#151D25" Offset="0" />
+            <GradientStop Color="#0D1319" Offset="1" />
+        </LinearGradientBrush>
+
+        <Style x:Key="ChromeButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChromeBorder" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChromeBorder" Property="Background" Value="#1A222B" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ChromeBorder" Property="Background" Value="#2A190E" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CouchButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="{StaticResource RaisedCardBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="14,9" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="11" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Border" Property="Background" Value="#17202A" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#2A190E" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource CouchButton}">
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Background" Value="#17100B" />
+        </Style>
+
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource CouchButton}">
+            <Setter Property="Foreground" Value="#FFB0A8" />
+            <Setter Property="BorderBrush" Value="#7C443E" />
+            <Setter Property="Background" Value="#1B1010" />
+        </Style>
+
+        <Style x:Key="DarkScrollBarThumb" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbBorder" Margin="2,1" Background="#46515C"
+                                BorderBrush="#5C6874" BorderThickness="1" CornerRadius="4" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#687480" />
+                                <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#8D4B19" />
+                                <Setter TargetName="ThumbBorder" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="10" />
+            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Background" Value="#090D11" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                            <Track x:Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                                   Value="{TemplateBinding Value}" ViewportSize="{TemplateBinding ViewportSize}"
+                                   Orientation="{TemplateBinding Orientation}" IsDirectionReversed="True" Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Focusable="False" Opacity="0" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource DarkScrollBarThumb}" MinHeight="34" />
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Focusable="False" Opacity="0" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CouchCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Box" Width="16" Height="16" VerticalAlignment="Center"
+                                    Background="#0B1117" BorderBrush="#5B6976" BorderThickness="1" CornerRadius="4">
+                                <Path x:Name="Check" Visibility="Collapsed" Data="M 3 8 L 7 12 L 14 4"
+                                      Stroke="{StaticResource AccentBrush}" StrokeThickness="2.2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            </Border>
+                            <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                <Setter TargetName="Box" Property="Background" Value="#21150D" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Application.Resources>
 </Application>

@@ -1,3 +1,15 @@
+## 1.3-dev.6.3
+
+### Windows Host
+- Unified the main Host dashboard with the approved Audio Output visual language.
+- Added shared CouchLink dark buttons, accent/destructive actions, custom checkboxes, and dark scrollbars.
+- Reworked trusted-device presentation into rounded selectable device cards while preserving identifiers and paired timestamps.
+- Refined pairing, connected-device, startup, host-status, endpoint, and last-event cards.
+- Preserved all existing commands, bindings, resizing, pairing, persistence, networking, and Audio Output behavior.
+
+### Android
+- No functional changes; version metadata aligned to 1.3-dev.6.3 (versionCode 138).
+
 ## 1.3-dev.6.2
 
 Targeted Audio Output reliability patch. No changes to the approved popup: sizing, theme, dark scrollbar, device-row layout, footer, and favorites design are all preserved.

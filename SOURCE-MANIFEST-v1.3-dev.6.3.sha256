@@ -1,4 +1,3 @@
-003b1ecd78709dbfe0b6d717e929341ce2ae8d22b890203777c3a931cd1d8606  ./src/windows/CouchLink.Host.Core/HostConstants.cs
 0157abfad74e0c1d288e8bc42099a7b6a0a1f557e583d535c0280c70cf27e74f  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/hid/BluetoothHidController.kt
 02e15117b5ee26052b7847e7eaa9bb64c399e057857a21b68b1cb1db7d31548f  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/KeyboardScreen.kt
 041f543a24748bab97a434de6152223c90226cc500fcaa26b19d6840c74e7b21  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/model/AppModels.kt
@@ -40,7 +39,6 @@
 353b7087ffdebf5a861c3a6cb002e38d7eb5ada4ff39441e9b883a3636deeca0  ./src/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
 353b7087ffdebf5a861c3a6cb002e38d7eb5ada4ff39441e9b883a3636deeca0  ./src/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
 3785755faa3c31739c6fd0feaf661acbfbfb260ae2f810c7537d5a4c471bb990  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/host/LauncherHostClient.kt
-38697ebae1ef712a808236f5c5f7a6fb52cf821585447485542437e0ed4afec3  ./tools/Update-SourceManifest.ps1
 3a9773f726a652be37cbef92a435387a73eec988298b0a49757532e78b3146c6  ./docs/audio-output-v1.3-dev.5.md
 3d0033e0a8c3a778caf0240e86caa6a3f22304c121dc07da5c7c9ea9b95145b8  ./src/windows/CouchLink.Host.Core/Networking/FrameCodec.cs
 3d158bde6223e3d1e5b61d5b0507ed38f4264e6d81b403927c058e59d001012d  ./src/windows/CouchLink.Host.Wpf/Views/AudioOutputWindow.xaml.cs
@@ -51,16 +49,19 @@
 430579dab89037b6795fb4a8dfad556206b034f10a41802dfc10379a45222207  ./docs/history/integration/BUILD-NOTES-v0.1-dev.15.3.md
 4839960c125b5a7f315d2cd81d0752e8b96dd3543cc8b973f463b228e2d7484e  ./src/windows/CouchLink.Host.Wpf/Services/TrayIconService.cs
 48b4856c596f3148dbaf41ed9321be52e7ac59e6bb05f0f0e15d7198d2dae116  ./docs/history/android/CHANGELOG-v1.1-dev.1.md
+4a63407d77fda8d9b2d3e078eedf308d7fe3cacc90057635e016386b0713fc56  ./tools/Test-SourceManifest.ps1
 4adb83985dce74a824b4b51f3c2250b86abb62faf42969a8f23fe471628da403  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/hid/BluetoothHidRuntime.kt
 4b7aa35b055de6747692f946e58528d17f6134d535aee3bc305b2d51ad51aee8  ./docs/images/couchlink-feature-overview-v1.2.png
 4c51540ca267bc43f7b8af9bd7110148345e75a3f4158d78e2a217e89c8ebf62  ./docs/history/tv-remote/v1.2-dev.7-release-cleanup-checklist.md
 4ce511ec305fbba4f518f9c7ca2bbbea01b1a12dfbcc30a972604d759fd6fc2c  ./src/windows/CouchLink.Host.Core/Networking/SessionServer.cs
+4dc59c4fadaafb60b0998231b4ca4f2511626bb658a03b95573b3a81e3f4e25e  ./src/windows/CouchLink.Host.Core/HostConstants.cs
 4e059b72ecd694e4ffa44f46b3c438b2f3ee4dbba1d345e599f80dac6530e9b9  ./src/windows/CouchLink.Protocol/Messages.cs
 4e13bd1f114eecbbc015c2b7b3e514a38abcfe911cab66e550778a96b0f04c9c  ./docs/architecture/ARCHITECTURE.md
-4fc5052a04c6028bf4c612ea2e9df277c988a4cfd45abf9cce6427321b4dcc01  ./CHANGELOG.md
+4ecc5d554b1c08906cee310ab0934a11b60c1d643b2a199a38cdf2719f1d1408  ./CHANGELOG.md
 50f092d6772c557fed0b2a455d3e3d4665c49fc97e327bcf21ce600bccf4b776  ./docs/history/android/BUILD-FIX-v0.2-dev.11.1.md
 51a31a600ccddf54e52b431a91eb385b8127d774bff6f36c6836668072de4886  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/TvRemoteScreen.kt
 53083cb2eeeb7b78816dca178cd057a9f9e6cab17d7cdac251fe9a7da04aa68a  ./Build-Release.ps1
+54501bd50b492f5a408d11683e16227eb07ab1d4cdf9c645970dc81917d4f608  ./docs/release/RELEASE-NOTES-v1.3-dev.6.3.md
 5470919d025b9f9ae66ee8abd6df6a3951237ebc2c587a731350f3b32ac73f30  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/SettingsScreen.kt
 55a8a84041b50fedb99dcb9068a62aba8ddf7079c95b2322d4b82368ac288a33  ./PRIVACY.md
 56ae761d512daa6db97916cb1e6f91ed32eab347241d2f7cb58ce2cbe5e35a37  ./src/android/app/src/main/proto/polo.proto
@@ -80,10 +81,12 @@
 6cc7dd09edec0aad3004b60544e0acbcb662fdccc4477afd072c819108cd8f1c  ./docs/history/android/TEST-CHECKLIST-v0.2-dev.10.1.md
 6e7c8c81317d8a33bb4ae331a70d52d022490c6f75b5b621602ea55307555a75  ./docs/history/android/TEST-CHECKLIST-v0.2-dev.9.md
 71e9162816066358c51454c7aae9e4ff7c336404fb9e00f884e06d57562647b1  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/tv/TvModels.kt
+74f829cbdea3dd176199a2ace4222eb86f012196d7f4e6912f2bcc56d6e535a2  ./docs/release/TEST-NOTES-v1.3-dev.6.3.md
 7568cdc253cfb1e56143ec11296623a80dd57ce32775b8da99b4e35de934ccf1  ./src/windows/CouchLink.Host.Wpf/CouchLink.Host.Wpf.csproj
 75bad45148a74c1b6019d471106cb780f10c6c0e5946fbb562465bea822b8224  ./src/android/app/src/debug/AndroidManifest.xml
 760317ac9f6b9c6b0733cf30146b6339b916650b36ab0135112cb01c5bbf60b0  ./SECURITY.md
 76b5cabfbe6142ed8e31c341fce149ab6e9169f868ad5c26eccb67351da4a11d  ./docs/history/android/CLEANUP-v0.2-dev.8.md
+77a7cc4e3bc43c7c12db8982ee9458e0c07f3969398def8ae69562668ae658b6  ./src/windows/CouchLink.Host.Wpf/Views/MainWindow.xaml
 79b72ae024a9b3c9ecd91bce63f951ad7be2a56f24f76eda9196ec45c50ebbe8  ./src/android/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png
 79d52e9d4fd12a2d5d9489ca9e2f8cc08968fb5517517a75be002204b814c38c  ./docs/building/TESTING.md
 7b68e6fd9e63cb23cda6c6e0ee6b62d5d97a8da3edd238877f2dd95c943f5f45  ./src/android/app/src/main/res/drawable-nodpi/launcher_xbox.png
@@ -132,8 +135,9 @@ bb3c8c595de2d0fe3bbd7430f272881d4cc0c2b0c74d1c5868a8ba3ef3762c28  ./src/android/
 bb8494a1a490261c58f43c62b0b7530a6f20c10ad52721a7218379c3e9ca2e65  ./docs/history/android/BUILD-VALIDATION-v0.2-dev.9.md
 beb85c5a59c91a80cc6e6e3496401b0e8eb2a1b9e5a900b794017790c7fae674  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/components/PremiumComponents.kt
 bee611cf05119bafe79214d659adb2085aff9a000441a7bfc8e1e7a02cc93782  ./.gitignore
-bef60f57aee5eb9bfe7aacffbbbfff1839a0e9bd4f9078d211d82cec53c5ee90  ./src/windows/CouchLink.Host.Wpf/App.xaml
+bf00c73441b309a8e77b32650eb0bd3c9649c27cd23c4c9062fda1a89c2a1dae  ./src/windows/CouchLink.Host.Wpf/App.xaml
 c09deb891c8f17110833ca022689bd5203d9ce74b10cc84eabb87b07fa824528  ./src/android/.editorconfig
+c3ece8bb6b7307951e3cf2e7ccab6782ce5efc4cc69fcab8036e59538da46d2a  ./src/android/app/build.gradle.kts
 c680267f33feb7cbdd99876c060206e1aee4f5ce2402f736aea3986db7843c64  ./docs/history/android/BUILD-FIX-v0.2-dev.12.1.md
 c7329877da979682201b013d7ce320eb97f4dd91e9c8a6443c5911a6e2bc497b  ./docs/building/BUILDING.md
 c7379a8f5389689d5dd3d642267bcf567e228deb9db76ad53dc5f547164cf63a  ./docs/TV-REMOTE-WIRE-DIAGNOSTICS-v1.2-dev.3.3.md
@@ -150,7 +154,7 @@ ce55287b8c19b9928c6649c7538c8b2cb43a31561b5411ff91f96608abad648d  ./docs/tv-remo
 d18749f0c5d870774ccddb61c4f4f783b7716591f3273fb09e9bfddbaa3f8fdc  ./src/android/app/src/main/res/drawable/ic_launcher_background.xml
 d18ecfd2523cddf87bce219b3a3904cd26565589e106794ef78c3d71cfe1c4c3  ./src/android/app/src/main/AndroidManifest.xml
 d1f338bc50452d95c459766696d8d5355024a3c56b85f4fdd9df57c2bf19ce46  ./src/windows/CouchLink.Host.Core/AudioOutputController.cs
-da2cd48c0e6f7b94c0bd65082330f78b71b4450975aea5de33fe41b92c7337e8  ./src/windows/CouchLink.Host.Wpf/Views/MainWindow.xaml
+d25e30f38e8caa5e98bcacfe630917b563607f59d1c80add23ba56a34954ea7a  ./tools/Update-SourceManifest.ps1
 dd1fe108d92e3908ed0c729648d465c9da2b9c066e6d2da894f0f3fea04386a4  ./docs/history/android/TEST-CHECKLIST-v0.2-dev.10.md
 e1b6d8a1f574145f2b3e115a10bdae6502afa2c182a1dfcf7ad3a9ba23adb5cd  ./src/windows/README.md
 e3702e60fe5816b56209a81cfaef715a7fc7342a82d37f51d016387a99b6a3f0  ./docs/history/android/BLUETOOTH-LAUNCHER-FALLBACK-v0.2-dev.4.md
@@ -162,7 +166,6 @@ e87b312b5c45463569c457d336c6999f36632ab78f94cb32537e9f3315e8ee56  ./docs/release
 ec81aa904219dcda51cc78bb288cb7a01ffde942f0cb0db66abe32c58cd8d627  ./docs/release/RELEASE-VALIDATION-v1.1.md
 ef499795d3fc05ffbe8d64d5801d6fe96fc7c233ecd76669912f1e0ef0032eff  ./docs/history/integration/BUILD-NOTES-v0.1-dev.15.6.md
 efeb252cfdcf1b24434510f303dd36223d781ec2aae643895bcc36d3a1b18f01  ./src/windows/CouchLink.Host.Core/CouchLinkHostRuntime.cs
-f00d9ef878ecf0060b38c1181898baf7ab3e5d5c34d0866207165572d4fc5915  ./tools/Test-SourceManifest.ps1
 f44ef2b054becf0aa17ed9e636ac50981a1a2bf45ef9717a065f9d783ff315b5  ./src/android/README.md
 fa078c27c9e4bde28a029d673875b028884505efa436b68cf60e1ac0be5b679b  ./src/android/gradle.properties
 fa5415801b046d6ee92324319ab9d9457762130751257c153d89802df94ba8b4  ./docs/release/RELEASE-NOTES-v1.1.md
@@ -170,7 +173,6 @@ fb68debc1b1acf8ec55dc0d5e5495e1dedd0bd6b61f304bee61613eeb2bd9b92  ./src/android/
 fb8227947da56e28c8fa51e2c6223fe7e51bfa2698c8e80ec8bee92bf6bd9541  ./src/android/app/src/main/res/drawable-nodpi/launcher_ea.png
 fbad3777f434f3bc4900a77d9cfd9d32b6cedbf92b01ee55e1e2cbbdf348d4ed  ./CONTRIBUTING.md
 fc6b9b9628d1038576aa17f96c106028354f06d3714513c5451c79e1a1e7ebea  ./docs/audio-output-v1.3-dev.4.md
-fd2b8b2950965fc838a187b4e6dd96016cf5d89bf0a8bdd07f564c26ff216d1c  ./src/android/app/build.gradle.kts
 fdf49f8cfcf6205006b9d486ebd28961c7a682df38b8701cf43ba0d040f99d2b  ./src/windows/CouchLink.Host.Wpf/Views/MainWindow.xaml.cs
 fe084575a44e116ca483a3f6c785f28bf1763252c697f7ab938a9b1c9e48afc9  ./docs/history/integration/TEST-v1.1-dev.1.md
 fe35602f5f11eae6b3a8d9469c40369cde51badc599d1028575e61f9b4051afb  ./docs/history/android/BUILD-FIX-v0.2-dev.8.md
