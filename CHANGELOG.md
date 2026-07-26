@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3 — Stable Audio Output and unified Windows Host release
+
+- Promoted the tested `1.3-rc.1` feature set to the stable release line.
+- Added live Windows Audio Output discovery, switching, favorites, and synchronization.
+- Added the redesigned CouchLink Host dashboard and themed Audio Output popup.
+- Preserved the complete Android Home, Touchpad, Keyboard, launcher, and Google TV Remote experience.
+- Hardened shared host preferences, atomic persistence, endpoint enumeration, and UI responsiveness.
+- Updated the README screenshot gallery and stable release documentation.
+- Aligned Windows and Android metadata to `1.3` (`versionCode 141`).
+- Regenerated the stable source manifest and prepared the signed release builder for v1.3.
+- Fixed the Windows release builder signing handoff so Gradle receives the private keystore configuration and produces `app-release.apk` instead of an unsigned package.
+
 ## 1.3-rc.1 — Feature-complete release candidate
 
 - Promoted the tested v1.3-dev.7 line to the first CouchLink 1.3 release candidate.

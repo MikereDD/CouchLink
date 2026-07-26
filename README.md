@@ -6,8 +6,8 @@
 
 ### A premium Android couch remote for Windows gaming and Google TV control.
 
-![Android RC](https://img.shields.io/badge/Android-1.3--rc.1-ff8617?style=for-the-badge&logo=android&logoColor=white)
-![Windows Host RC](https://img.shields.io/badge/Windows_Host-1.3--rc.1-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
+![Android RC](https://img.shields.io/badge/Android-1.3-ff8617?style=for-the-badge&logo=android&logoColor=white)
+![Windows Host RC](https://img.shields.io/badge/Windows_Host-1.3-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
 ![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
 ![Branding](https://img.shields.io/badge/Branding-Reserved-18181B?style=for-the-badge)
@@ -160,12 +160,12 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 | Component | Version | Status |
 |---|---:|---|
-| Android remote | `1.3-rc.1` (`versionCode 140`) | Release candidate |
-| Windows Launcher Host | `1.3-rc.1` | Release candidate |
+| Android remote | `1.3` (`versionCode 141`) | Stable |
+| Windows Launcher Host | `1.3` | Stable |
 | Shared launcher protocol | `1` | UDP discovery + framed TCP session |
 | Google TV protocol | Remote v2 | Secure local TLS pairing and control |
 
-CouchLink 1.3-rc.1 is the feature-complete release candidate for the unified Android and Windows release line. It adds live Windows Audio Output discovery, favorites, switching, synchronization, and the redesigned CouchLink Host dashboard while preserving the complete Google TV Remote experience from 1.2.
+CouchLink 1.3 is the stable unified Android and Windows release. It adds live Windows Audio Output discovery, favorites, switching, synchronization, and the redesigned CouchLink Host dashboard while preserving the complete Google TV Remote experience from 1.2.
 
 ## Screenshots
 
@@ -211,8 +211,9 @@ A quick look at CouchLink on Android and Windows.
 - [Integration testing](docs/building/TESTING.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
-- [Release notes for 1.3-rc.1](docs/release/RELEASE-NOTES-v1.3-rc.1.md)
-- [Release checklist for 1.3-rc.1](docs/release/RELEASE-CHECKLIST-v1.3-rc.1.md)
+- [Release notes for 1.3](docs/release/RELEASE-NOTES-v1.3.md)
+- [Release checklist for 1.3](docs/release/RELEASE-CHECKLIST-v1.3.md)
+- [Release validation for 1.3](docs/release/RELEASE-VALIDATION-v1.3.md)
 - [Release notes for 1.2](docs/release/RELEASE-NOTES-v1.2.md)
 - [Release checklist for 1.2](docs/release/RELEASE-CHECKLIST-v1.2.md)
 - [Release validation for 1.2](docs/release/RELEASE-VALIDATION-v1.2.md)

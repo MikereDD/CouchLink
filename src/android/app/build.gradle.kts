@@ -1,3 +1,6 @@
+import java.util.Base64
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,8 +16,8 @@ android {
         applicationId = "dev.typezero.couchlink.remote"
         minSdk = 28
         targetSdk = 36
-        versionCode = 140
-        versionName = "1.3-rc.1"
+        versionCode = 141
+        versionName = "1.3"
     }
 
     compileOptions {
@@ -28,10 +31,27 @@ android {
     }
 
     signingConfigs {
-        val keystoreFile = providers.environmentVariable("COUCHLINK_KEYSTORE_FILE").orNull
-        val keystorePassword = providers.environmentVariable("COUCHLINK_KEYSTORE_PASSWORD").orNull
-        val keyAliasValue = providers.environmentVariable("COUCHLINK_KEY_ALIAS").orNull
-        val keyPasswordValue = providers.environmentVariable("COUCHLINK_KEY_PASSWORD").orNull
+        val signingPropertiesFile = rootProject.file("keystore.properties")
+        val signingProperties = Properties()
+
+        if (signingPropertiesFile.isFile) {
+            signingPropertiesFile.inputStream().use(signingProperties::load)
+        }
+
+        fun decodeSigningValue(name: String): String? {
+            val encoded = signingProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+                ?: return null
+            return String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+        }
+
+        val keystoreFile = decodeSigningValue("storeFileB64")
+            ?: providers.environmentVariable("COUCHLINK_KEYSTORE_FILE").orNull
+        val keystorePassword = decodeSigningValue("storePasswordB64")
+            ?: providers.environmentVariable("COUCHLINK_KEYSTORE_PASSWORD").orNull
+        val keyAliasValue = decodeSigningValue("keyAliasB64")
+            ?: providers.environmentVariable("COUCHLINK_KEY_ALIAS").orNull
+        val keyPasswordValue = decodeSigningValue("keyPasswordB64")
+            ?: providers.environmentVariable("COUCHLINK_KEY_PASSWORD").orNull
 
         if (!keystoreFile.isNullOrBlank() &&
             !keystorePassword.isNullOrBlank() &&
