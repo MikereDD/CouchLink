@@ -21,8 +21,11 @@ public sealed class GitHubUpdateService
         Uri UpdaterDownloadUri,
         string UpdaterSha256);
 
-    private static readonly Uri LatestReleaseUri = new(
+    private static readonly Uri LatestStableReleaseUri = new(
         "https://api.github.com/repos/MikereDD/CouchLink/releases/latest");
+
+    private static readonly Uri TestReleasesUri = new(
+        "https://api.github.com/repos/MikereDD/CouchLink/releases?per_page=20");
 
     private const string DownloadPrefix =
         "https://github.com/MikereDD/CouchLink/releases/download/";
@@ -49,20 +52,25 @@ public sealed class GitHubUpdateService
     }
 
     public async Task<UpdateInfo?> CheckAsync(
+        bool testChannel = false,
         CancellationToken cancellationToken = default)
     {
+        Uri releaseUri = testChannel ? TestReleasesUri : LatestStableReleaseUri;
+
         using Stream response = await _httpClient.GetStreamAsync(
-            LatestReleaseUri,
+            releaseUri,
             cancellationToken);
 
         using JsonDocument document = await JsonDocument.ParseAsync(
             response,
             cancellationToken: cancellationToken);
 
-        JsonElement root = document.RootElement;
+        JsonElement root = testChannel
+            ? FindLatestTestRelease(document.RootElement)
+            : document.RootElement;
 
         if (root.GetProperty("draft").GetBoolean() ||
-            root.GetProperty("prerelease").GetBoolean())
+            (!testChannel && root.GetProperty("prerelease").GetBoolean()))
         {
             return null;
         }
@@ -234,6 +242,21 @@ public sealed class GitHubUpdateService
                 $"SHA-256 verification failed for " +
                 $"{Path.GetFileName(destination)}.");
         }
+    }
+
+    private static JsonElement FindLatestTestRelease(JsonElement releases)
+    {
+        foreach (JsonElement release in releases.EnumerateArray())
+        {
+            if (!release.GetProperty("draft").GetBoolean() &&
+                release.GetProperty("prerelease").GetBoolean())
+            {
+                return release;
+            }
+        }
+
+        throw new FileNotFoundException(
+            "No published CouchLink test release is available yet.");
     }
 
     private static JsonElement FindAsset(

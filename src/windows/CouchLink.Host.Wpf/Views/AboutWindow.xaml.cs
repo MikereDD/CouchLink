@@ -3,6 +3,7 @@ using System.Windows;
 using CouchLink.Host.Wpf.ViewModels;
 using CouchLink.Host.Wpf.Services;
 using System.Net.Http;
+using System.IO;
 
 namespace CouchLink.Host.Wpf.Views;
 
@@ -11,9 +12,47 @@ public partial class AboutWindow : Window
     private readonly GitHubUpdateService _updateService = new();
     private GitHubUpdateService.UpdateInfo? _availableUpdate;
     private string? _lastUpdateError;
+    private bool _testChannel;
+    private static readonly string ChannelPreferencePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "CouchLink",
+        "update-channel.txt");
     public AboutWindow()
     {
         InitializeComponent();
+        LoadUpdateChannel();
+    }
+
+    private void LoadUpdateChannel()
+    {
+        _testChannel = File.Exists(ChannelPreferencePath) &&
+            File.ReadAllText(ChannelPreferencePath).Trim()
+                .Equals("test", StringComparison.OrdinalIgnoreCase);
+        UpdateChannelComboBox.SelectedIndex = _testChannel ? 1 : 0;
+        ApplyUpdateChannelText();
+    }
+
+    private void UpdateChannel_SelectionChanged(
+        object sender,
+        System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!IsInitialized) return;
+        _testChannel = UpdateChannelComboBox.SelectedIndex == 1;
+        Directory.CreateDirectory(Path.GetDirectoryName(ChannelPreferencePath)!);
+        File.WriteAllText(ChannelPreferencePath, _testChannel ? "test" : "stable");
+        _availableUpdate = null;
+        InstallUpdateButton.IsEnabled = false;
+        ApplyUpdateChannelText();
+    }
+
+    private void ApplyUpdateChannelText()
+    {
+        UpdateChannelDescription.Text = _testChannel
+            ? "Selected prereleases for volunteer testers."
+            : "Stable releases only.";
+        UpdateStatusText.Text = _testChannel
+            ? "Test updates are checked against official CouchLink prereleases."
+            : "Stable updates are checked against the official MikereDD/CouchLink GitHub releases.";
     }
 
 
@@ -26,7 +65,7 @@ public partial class AboutWindow : Window
         _lastUpdateError = null;
         try
         {
-            _availableUpdate = await _updateService.CheckAsync();
+            _availableUpdate = await _updateService.CheckAsync(_testChannel);
             if (_availableUpdate is null)
             {
                 UpdateStatusText.Text = "CouchLink is up to date.";
@@ -43,7 +82,9 @@ public partial class AboutWindow : Window
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             _lastUpdateError = ex.ToString();
-            UpdateStatusText.Text = "No published CouchLink release is available yet.";
+            UpdateStatusText.Text = _testChannel
+                ? "No published CouchLink test release is available yet."
+                : "No published CouchLink release is available yet.";
             UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         catch (HttpRequestException ex)
@@ -100,7 +141,8 @@ public partial class AboutWindow : Window
         if (DataContext is not MainWindowViewModel viewModel)
             return;
 
-        string diagnostics = viewModel.DiagnosticsText;
+        string diagnostics = viewModel.DiagnosticsText + Environment.NewLine +
+            $"Update channel: {(_testChannel ? "Test" : "Stable")}";
         if (!string.IsNullOrWhiteSpace(_lastUpdateError))
         {
             diagnostics += $"{Environment.NewLine}{Environment.NewLine}" +

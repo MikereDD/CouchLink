@@ -200,6 +200,31 @@
                                    Margin="0,10,0,0"
                                    Text="Stable updates are checked against the official MikereDD/CouchLink GitHub releases."
                                    TextWrapping="Wrap" />
+                        <Grid Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="UPDATE CHANNEL"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock x:Name="UpdateChannelDescription"
+                                           Margin="0,4,18,0"
+                                           Text="Stable releases only."
+                                           FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}" />
+                            </StackPanel>
+                            <ComboBox x:Name="UpdateChannelComboBox"
+                                      Grid.Column="1"
+                                      Width="130"
+                                      SelectedIndex="0"
+                                      SelectionChanged="UpdateChannel_SelectionChanged">
+                                <ComboBoxItem Content="Stable" />
+                                <ComboBoxItem Content="Test" />
+                            </ComboBox>
+                        </Grid>
                         <TextBlock x:Name="UpdateNotesText"
                                    Margin="0,8,0,0"
                                    MaxHeight="110"
@@ -225,7 +250,7 @@
                                     IsEnabled="False" />
                         </Grid>
                         <TextBlock Margin="0,10,0,0"
-                                   Text="Downloads must use HTTPS, exact CouchLink asset names, and GitHub-provided SHA-256 digests. Installation always requires your confirmation."
+                                   Text="Stable is the default. Test builds are opt-in prereleases. Every channel still requires HTTPS, exact CouchLink asset names, and GitHub SHA-256 verification."
                                    TextWrapping="Wrap"
                                    FontSize="11"
                                    Foreground="{StaticResource MutedTextBrush}" />

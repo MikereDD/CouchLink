@@ -1,3 +1,9 @@
+# CouchLink v1.3.1-dev.2
+
+- Added persistent Stable/Test update channels on Android and Windows.
+- Test channel consumes selected official GitHub prereleases while Stable remains default.
+- Preserved all updater security verification across both channels.
+
 # Changelog
 
 ## 1.3.1-dev.1.2 — Friendly updater status handling

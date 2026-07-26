@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 
 class CouchLinkUpdateManager private constructor(private val context: Context) {
@@ -29,6 +30,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
 
     data class State(
         val checking: Boolean = false,
+        val testChannel: Boolean = false,
         val downloading: Boolean = false,
         val availableVersion: String? = null,
         val releaseNotes: String = "",
@@ -53,9 +55,29 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val mutableState = MutableStateFlow(State())
+    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val mutableState = MutableStateFlow(
+        State(testChannel = preferences.getBoolean(TEST_CHANNEL_KEY, false))
+    )
     val state: StateFlow<State> = mutableState.asStateFlow()
     private var release: ReleaseInfo? = null
+
+    fun setTestChannel(enabled: Boolean) {
+        preferences.edit().putBoolean(TEST_CHANNEL_KEY, enabled).apply()
+        release = null
+        mutableState.value = mutableState.value.copy(
+            testChannel = enabled,
+            availableVersion = null,
+            releaseNotes = "",
+            updateAvailable = false,
+            downloadedApk = null,
+            message = if (enabled) {
+                "Test updates are checked against official CouchLink prereleases."
+            } else {
+                "Stable updates are checked against official CouchLink releases."
+            },
+        )
+    }
 
     fun checkForUpdates() {
         if (mutableState.value.checking || mutableState.value.downloading) return
@@ -65,7 +87,7 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
                 message = "Checking GitHub Releases…",
                 installPermissionRequired = false,
             )
-            runCatching { fetchLatestRelease() }
+            runCatching { fetchLatestRelease(mutableState.value.testChannel) }
                 .onSuccess { latest ->
                     release = latest
                     val newer = compareVersions(latest.version, BuildConfig.VERSION_NAME) > 0
@@ -157,8 +179,8 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
         context.startActivity(intent)
     }
 
-    private suspend fun fetchLatestRelease(): ReleaseInfo = withContext(Dispatchers.IO) {
-        val connection = openConnection(LATEST_RELEASE_API)
+    private suspend fun fetchLatestRelease(testChannel: Boolean): ReleaseInfo = withContext(Dispatchers.IO) {
+        val connection = openConnection(if (testChannel) TEST_RELEASES_API else LATEST_RELEASE_API)
         try {
             if (connection.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
                 throw NoPublishedReleaseException()
@@ -166,9 +188,20 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
             check(connection.responseCode in 200..299) {
                 "GitHub returned HTTP ${connection.responseCode}"
             }
-            val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+            val responseText = connection.inputStream.bufferedReader().use { it.readText() }
+            val json = if (testChannel) {
+                val releases = JSONArray(responseText)
+                (0 until releases.length())
+                    .map { releases.getJSONObject(it) }
+                    .firstOrNull { !it.optBoolean("draft", false) && it.optBoolean("prerelease", false) }
+                    ?: throw NoPublishedReleaseException()
+            } else {
+                JSONObject(responseText)
+            }
             check(!json.optBoolean("draft", false)) { "Latest release is still a draft" }
-            check(!json.optBoolean("prerelease", false)) { "Latest published release is a prerelease" }
+            check(testChannel || !json.optBoolean("prerelease", false)) {
+                "Latest published release is a prerelease"
+            }
             val version = json.getString("tag_name").removePrefix("v")
             val expectedName = "CouchLink-v$version.apk"
             val assets = json.getJSONArray("assets")
@@ -323,6 +356,10 @@ class CouchLinkUpdateManager private constructor(private val context: Context) {
         private const val TAG = "CouchLinkUpdate"
         private const val LATEST_RELEASE_API =
             "https://api.github.com/repos/MikereDD/CouchLink/releases/latest"
+        private const val TEST_RELEASES_API =
+            "https://api.github.com/repos/MikereDD/CouchLink/releases?per_page=20"
+        private const val PREFERENCES = "couchlink_updates"
+        private const val TEST_CHANNEL_KEY = "test_channel"
         private const val OFFICIAL_DOWNLOAD_PREFIX =
             "https://github.com/MikereDD/CouchLink/releases/download/"
 

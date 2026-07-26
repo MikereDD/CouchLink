@@ -396,6 +396,7 @@ private fun CouchLinkApp() {
                         onTvForget = tvDiscovery::forgetTv,
                         updateState = updateState,
                         onCheckForUpdates = updateManager::checkForUpdates,
+                        onUpdateChannelChanged = updateManager::setTestChannel,
                         onDownloadUpdate = updateManager::downloadAndInstall,
                         onContinueInstall = updateManager::continueInstall,
                         onOpenInstallPermission = updateManager::openInstallPermissionSettings,

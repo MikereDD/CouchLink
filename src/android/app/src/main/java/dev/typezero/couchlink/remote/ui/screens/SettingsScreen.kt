@@ -78,6 +78,7 @@ internal fun SettingsScreen(
     onTvForget: () -> Unit,
     updateState: CouchLinkUpdateManager.State,
     onCheckForUpdates: () -> Unit,
+    onUpdateChannelChanged: (Boolean) -> Unit,
     onDownloadUpdate: () -> Unit,
     onContinueInstall: () -> Unit,
     onOpenInstallPermission: () -> Unit,
@@ -158,6 +159,7 @@ internal fun SettingsScreen(
     UpdateSettingsPanel(
         state = updateState,
         onCheck = onCheckForUpdates,
+        onChannelChanged = onUpdateChannelChanged,
         onDownload = onDownloadUpdate,
         onContinueInstall = onContinueInstall,
         onOpenInstallPermission = onOpenInstallPermission,
@@ -643,6 +645,7 @@ private fun BluetoothHidPanel(
 private fun UpdateSettingsPanel(
     state: CouchLinkUpdateManager.State,
     onCheck: () -> Unit,
+    onChannelChanged: (Boolean) -> Unit,
     onDownload: () -> Unit,
     onContinueInstall: () -> Unit,
     onOpenInstallPermission: () -> Unit,
@@ -659,6 +662,30 @@ private fun UpdateSettingsPanel(
             color = if (state.updateAvailable) Accent else TextColor,
             fontSize = 14.sp,
         )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "TEST BUILDS",
+                    color = TextColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                )
+                Text(
+                    text = "Opt in to selected prereleases for volunteer testing.",
+                    color = Muted,
+                    fontSize = 10.sp,
+                )
+            }
+            Switch(
+                checked = state.testChannel,
+                onCheckedChange = onChannelChanged,
+                enabled = !state.checking && !state.downloading,
+            )
+        }
         if (state.availableVersion != null) {
             AboutDetailRow("Installed", BuildConfig.VERSION_NAME)
             AboutDetailRow("Available", state.availableVersion)
@@ -707,7 +734,11 @@ private fun UpdateSettingsPanel(
             Text(if (state.checking) "CHECKING…" else "CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
         }
         Text(
-            text = "Stable releases only. Downloads must come from MikereDD/CouchLink and pass GitHub SHA-256 plus APK certificate verification.",
+            text = if (state.testChannel) {
+                "Test channel selected. Prereleases still require official assets, GitHub SHA-256, and APK certificate verification."
+            } else {
+                "Stable channel selected. Downloads require official assets, GitHub SHA-256, and APK certificate verification."
+            },
             color = Muted,
             fontSize = 10.sp,
         )
