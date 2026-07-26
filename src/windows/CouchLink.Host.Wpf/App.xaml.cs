@@ -7,12 +7,20 @@ namespace CouchLink.Host.Wpf;
 
 public partial class App : System.Windows.Application
 {
-    private readonly MainWindowViewModel _viewModel = new();
     private readonly HostPreferences _preferences = HostPreferences.Load();
+    private readonly MainWindowViewModel _viewModel;
     private TrayIconService? _tray;
     private MainWindow? _window;
     private AudioOutputWindow? _audioWindow;
     private bool _exiting;
+
+    public App()
+    {
+        // Single shared preferences instance. The dashboard view model and the
+        // Audio Output popup must read and write the same object so favorites and
+        // startup options never overwrite each other on save.
+        _viewModel = new MainWindowViewModel(_preferences);
+    }
 
     protected override async void OnStartup(StartupEventArgs e)
     {

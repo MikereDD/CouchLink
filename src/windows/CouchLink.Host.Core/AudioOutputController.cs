@@ -21,9 +21,13 @@ public sealed class AudioOutputController
             collection.GetCount(out uint count);
             for (uint i = 0; i < count; i++)
             {
-                collection.Item(i, out IMMDevice device);
+                IMMDevice? device = null;
                 try
                 {
+                    int itemHr = collection.Item(i, out device);
+                    if (itemHr != 0 || device is null)
+                        continue;
+
                     device.GetId(out string id);
                     string name = ReadFriendlyName(device) ?? id;
                     if (ShouldHideFromOutputPicker(name))
@@ -31,7 +35,15 @@ public sealed class AudioOutputController
 
                     devices.Add(new AudioOutputDevice(id, name, string.Equals(id, defaultId, StringComparison.OrdinalIgnoreCase)));
                 }
-                finally { Marshal.ReleaseComObject(device); }
+                catch
+                {
+                    // Skip a single malfunctioning endpoint rather than failing the
+                    // whole enumeration; already-collected devices are preserved.
+                }
+                finally
+                {
+                    if (device is not null) Marshal.ReleaseComObject(device);
+                }
             }
 
             return new AudioOutputListResult(true, devices.OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase).ToArray(), null);
@@ -88,11 +100,13 @@ public sealed class AudioOutputController
 
     private static string? ReadFriendlyName(IMMDevice device)
     {
-        device.OpenPropertyStore(0, out IPropertyStore store);
+        if (device.OpenPropertyStore(0, out IPropertyStore store) != 0 || store is null)
+            return null;
         try
         {
             var key = PropertyKey.DeviceFriendlyName;
-            store.GetValue(ref key, out PropVariant value);
+            if (store.GetValue(ref key, out PropVariant value) != 0)
+                return null;
             try { return value.GetString(); }
             finally { value.Clear(); }
         }

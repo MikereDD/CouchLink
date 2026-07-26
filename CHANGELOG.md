@@ -1,3 +1,17 @@
+## 1.3-dev.6.2
+
+Targeted Audio Output reliability patch. No changes to the approved popup: sizing, theme, dark scrollbar, device-row layout, footer, and favorites design are all preserved.
+
+- Share a single host-preferences instance between the dashboard and the Audio Output popup. Previously two independent instances wrote the same file, so saving a favorite and toggling a startup option could silently overwrite each other.
+- Persist host settings atomically: settings are written to a temp file and swapped into place, a rolling backup is kept, a corrupt settings file is preserved for inspection instead of being silently reset, and load/save failures are logged.
+- Fault-isolate audio-endpoint enumeration. A single malfunctioning endpoint or driver is now skipped instead of blanking the entire output list; already-enumerated devices are preserved and COM releases are null-guarded.
+- Run audio enumeration and switching off the WPF UI thread with duplicate-operation guarding, keeping the popup responsive during device changes while preserving all existing success and failure messages.
+- Remove the redundant custom title-bar drag handler that could throw while the window was maximized; dragging now relies on the standard window chrome caption.
+
+Deferred to v1.3-dev.7: live device-change notification (IMMNotificationClient) and Android/Windows state push synchronization.
+
+Android carries no functional changes in this patch; its version is aligned to 1.3-dev.6.2 (versionCode 137) for release consistency.
+
 ## 1.3-dev.6.1.2
 
 - Add a custom dark scrollbar that matches the CouchLink popup theme.

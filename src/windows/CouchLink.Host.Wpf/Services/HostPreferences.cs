@@ -10,6 +10,9 @@ public sealed class HostPreferences
     private static readonly string Folder = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CouchLink");
     private static readonly string FilePath = Path.Combine(Folder, "host-settings.json");
+    private static readonly string BackupPath = Path.Combine(Folder, "host-settings.backup.json");
+    private static readonly string CorruptPath = Path.Combine(Folder, "host-settings.corrupt.json");
+    private static readonly string LogPath = Path.Combine(Folder, "host-settings.log");
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "CouchLink Host";
 
@@ -26,17 +29,84 @@ public sealed class HostPreferences
         try
         {
             if (File.Exists(FilePath))
-                return JsonSerializer.Deserialize<HostPreferences>(File.ReadAllText(FilePath)) ?? new();
+            {
+                HostPreferences? loaded = JsonSerializer.Deserialize<HostPreferences>(File.ReadAllText(FilePath));
+                if (loaded is not null)
+                    return loaded;
+
+                LogFailure("Preferences file deserialized to null; preserving it and using defaults.", null);
+                PreserveCorruptFile();
+            }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // Never silently reset settings: keep the unreadable file for inspection.
+            LogFailure("Failed to load preferences; preserving the file and using defaults.", ex);
+            PreserveCorruptFile();
+        }
         return new HostPreferences();
     }
 
     public void Save()
     {
-        Directory.CreateDirectory(Folder);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
-        ApplyStartupRegistration();
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            string json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write to a sibling temp file first, then swap it into place so a crash
+            // or power loss mid-write can never truncate the live settings file.
+            string tempPath = Path.Combine(Folder, $"host-settings.{Guid.NewGuid():N}.tmp");
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(FilePath))
+                File.Replace(tempPath, FilePath, BackupPath, ignoreMetadataErrors: true);
+            else
+                File.Move(tempPath, FilePath);
+        }
+        catch (Exception ex)
+        {
+            LogFailure("Failed to save preferences.", ex);
+        }
+
+        try
+        {
+            ApplyStartupRegistration();
+        }
+        catch (Exception ex)
+        {
+            LogFailure("Failed to update startup registration.", ex);
+        }
+    }
+
+    private static void PreserveCorruptFile()
+    {
+        try
+        {
+            if (!File.Exists(FilePath))
+                return;
+            if (File.Exists(CorruptPath))
+                File.Delete(CorruptPath);
+            File.Move(FilePath, CorruptPath);
+        }
+        catch (Exception ex)
+        {
+            LogFailure("Failed to preserve corrupt preferences file.", ex);
+        }
+    }
+
+    private static void LogFailure(string message, Exception? ex)
+    {
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            string detail = ex is null ? string.Empty : $" :: {ex.GetType().Name}: {ex.Message}";
+            File.AppendAllText(LogPath, $"{DateTimeOffset.Now:O}  {message}{detail}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Logging must never take down preference handling.
+        }
     }
 
     public void RepairStartupRegistration()

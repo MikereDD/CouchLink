@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Input;
 using CouchLink.Host.Core;
 using CouchLink.Host.Wpf.Services;
 
@@ -14,29 +13,38 @@ public partial class AudioOutputWindow : Window
     private readonly HostPreferences _preferences;
     private readonly ObservableCollection<AudioDeviceItem> _devices = new();
     private AudioOutputDevice[] _activeDevices = Array.Empty<AudioOutputDevice>();
+    private bool _busy;
 
     public AudioOutputWindow(HostPreferences preferences)
     {
         InitializeComponent();
         _preferences = preferences;
         DeviceList.ItemsSource = _devices;
-        Activated += (_, _) => RefreshDevices();
-        Loaded += (_, _) => RefreshDevices();
+        Activated += async (_, _) => await RefreshDevicesAsync();
+        Loaded += async (_, _) => await RefreshDevicesAsync();
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e) => RefreshDevices();
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshDevicesAsync();
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
-    }
+    // Window dragging is handled by the WindowChrome caption region (CaptionHeight);
+    // no manual DragMove handler is required.
 
     private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void RefreshDevices()
+    private async Task RefreshDevicesAsync()
     {
-        AudioOutputListResult result = _audio.List();
+        if (_busy) return;
+        _busy = true;
+        try { await LoadDevicesAsync(); }
+        finally { _busy = false; }
+    }
+
+    // Enumeration runs on a background thread; the await resumes on the WPF
+    // dispatcher, so every control update below is marshaled back to the UI thread.
+    private async Task LoadDevicesAsync()
+    {
+        AudioOutputListResult result = await Task.Run(() => _audio.List());
         if (!result.Success)
         {
             StatusText.Text = result.Error ?? "Unable to enumerate audio outputs.";
@@ -110,27 +118,31 @@ public partial class AudioOutputWindow : Window
         button.IsEnabled = active is not null;
     }
 
-    private void Headphones_Click(object sender, RoutedEventArgs e) => SwitchTo(_preferences.FavoriteHeadphonesEndpointId);
-    private void Display_Click(object sender, RoutedEventArgs e) => SwitchTo(_preferences.FavoriteDisplayEndpointId);
+    private async void Headphones_Click(object sender, RoutedEventArgs e) => await SwitchToAsync(_preferences.FavoriteHeadphonesEndpointId);
+    private async void Display_Click(object sender, RoutedEventArgs e) => await SwitchToAsync(_preferences.FavoriteDisplayEndpointId);
 
-    private void Device_Click(object sender, RoutedEventArgs e)
+    private async void Device_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is System.Windows.Controls.Button button && button.Tag is string id) SwitchTo(id);
+        if (sender is System.Windows.Controls.Button button && button.Tag is string id) await SwitchToAsync(id);
     }
 
-    private void SwitchTo(string? endpointId)
+    private async Task SwitchToAsync(string? endpointId)
     {
         if (string.IsNullOrWhiteSpace(endpointId)) return;
+        if (_busy) return;
+        _busy = true;
         IsEnabled = false;
         try
         {
-            AudioOutputSetResult result = _audio.SetDefault(endpointId);
+            // Switching (and its internal re-enumeration) runs off the UI thread.
+            AudioOutputSetResult result = await Task.Run(() => _audio.SetDefault(endpointId));
             StatusText.Text = result.Message;
+            await LoadDevicesAsync();
         }
         finally
         {
             IsEnabled = true;
-            RefreshDevices();
+            _busy = false;
         }
     }
 
