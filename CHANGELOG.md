@@ -1,3 +1,9 @@
+# CouchLink v1.3.1-dev.2.1
+
+- Theme the Windows About update-channel selector and dropdown.
+- Add CouchLink dark, orange-accented hover, focus, selected, and open states.
+- Preserve Stable/Test channel behavior and persistence.
+
 # CouchLink v1.3.1-dev.2
 
 - Added persistent Stable/Test update channels on Android and Windows.

@@ -219,6 +219,7 @@
                             <ComboBox x:Name="UpdateChannelComboBox"
                                       Grid.Column="1"
                                       Width="130"
+                                      Style="{StaticResource CouchComboBox}"
                                       SelectedIndex="0"
                                       SelectionChanged="UpdateChannel_SelectionChanged">
                                 <ComboBoxItem Content="Stable" />
