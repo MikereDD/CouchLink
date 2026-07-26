@@ -20,6 +20,9 @@
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
         <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}" />
         <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorderColor}" />
+        <SolidColorBrush x:Key="TitleBarBrush" Color="#090D11" />
+        <SolidColorBrush x:Key="WindowPanelBrush" Color="#080D12" />
+        <SolidColorBrush x:Key="WindowPanelBorderBrush" Color="#26313B" />
 
         <LinearGradientBrush x:Key="WindowBackgroundBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#05080B" Offset="0" />

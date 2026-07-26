@@ -17,7 +17,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#090D11" BorderBrush="#25303A" BorderThickness="0,0,0,1"
+        <Border Grid.Row="0" Background="{StaticResource TitleBarBrush}" BorderBrush="{StaticResource WindowPanelBorderBrush}" BorderThickness="0,0,0,1"
                 MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -80,7 +80,7 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Padding="22" Background="#080D12" BorderBrush="#26313B" BorderThickness="1" CornerRadius="20">
+                <Border Padding="22" Background="{StaticResource WindowPanelBrush}" BorderBrush="{StaticResource WindowPanelBorderBrush}" BorderThickness="1" CornerRadius="20">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -154,7 +154,7 @@
                     </Grid>
                 </Border>
 
-                <Border Grid.Column="2" Padding="20" Background="#080D12" BorderBrush="#26313B" BorderThickness="1" CornerRadius="20">
+                <Border Grid.Column="2" Padding="20" Background="{StaticResource WindowPanelBrush}" BorderBrush="{StaticResource WindowPanelBorderBrush}" BorderThickness="1" CornerRadius="20">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,5,0">
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="Devices &amp; pairing" FontSize="20" FontWeight="SemiBold" />
