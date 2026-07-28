@@ -1,3 +1,15 @@
+# CouchLink v1.3.1-dev.6.4
+
+## Installed-target SHA-256 proof build
+
+- Add a success receipt at `%TEMP%\CouchLink-Updater-success.log`.
+- Record whether installed-target SHA-256 verification was active for the completed update.
+- Record downloaded-payload verification, replacement completion, and restart request.
+- Preserve legacy Host compatibility: older Hosts may still omit the target-hash argument.
+- Preserve trusted randomized staging, matching target/restart paths, rollback, and restart-on-failure.
+- Add version tests for `dev.6.4 > dev.6.3`.
+- Bump Android to versionCode 154.
+
 # CouchLink v1.3.1-dev.6.3
 
 ## Windows updater legacy-Host compatibility fix

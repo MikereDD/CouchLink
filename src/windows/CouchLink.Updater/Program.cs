@@ -73,6 +73,10 @@ internal static class Program
             {
                 File.Move(source, target, overwrite: true);
                 StartHost(restart);
+                WriteSuccessReceipt(
+                    source,
+                    target,
+                    !string.IsNullOrWhiteSpace(expectedTargetSha256));
 
                 // Keep the previous executable for manual rollback and for the next
                 // updater run to replace. A future health-handshake can safely remove it.
@@ -197,6 +201,34 @@ internal static class Program
         catch
         {
             // The error log remains the final recovery path.
+        }
+    }
+
+    private static void WriteSuccessReceipt(
+        string source,
+        string target,
+        bool installedTargetSha256Verified)
+    {
+        try
+        {
+            string path = Path.Combine(
+                Path.GetTempPath(),
+                "CouchLink-Updater-success.log");
+
+            string content =
+                $"{DateTimeOffset.UtcNow:O}{Environment.NewLine}" +
+                $"Source: {source}{Environment.NewLine}" +
+                $"Target: {target}{Environment.NewLine}" +
+                $"Downloaded payload SHA-256 verified: true{Environment.NewLine}" +
+                $"Installed target SHA-256 verified: {installedTargetSha256Verified.ToString().ToLowerInvariant()}{Environment.NewLine}" +
+                $"Replacement completed: true{Environment.NewLine}" +
+                $"Restart requested: true{Environment.NewLine}";
+
+            File.WriteAllText(path, content);
+        }
+        catch
+        {
+            // A diagnostic receipt must never turn a successful update into a failure.
         }
     }
 

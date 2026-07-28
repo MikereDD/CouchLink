@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.1-dev.6.3',
+    [string]$Version = '1.3.1-dev.6.4',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
