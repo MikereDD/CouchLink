@@ -1,6 +1,6 @@
 bee611cf05119bafe79214d659adb2085aff9a000441a7bfc8e1e7a02cc93782  ./.gitignore
-33ab6c4422a5fcde9cdc24e0b9dbfb1186403c2fd54bde2b994a97f57292762e  ./Build-Release.ps1
-cfa7b3114db3ca27b31a6a9fad9a0b7dfed366eb1dc6127f603d81041ec08d7c  ./CHANGELOG.md
+fdfc9c7f8454f1de53c064dcabd6d2e1f951dac1d30e8d33608147a09277c80b  ./Build-Release.ps1
+376cf9ae9c8d124ca968c64362aa4c0d371278ef6311235589f6cfdbc3f299a9  ./CHANGELOG.md
 fbad3777f434f3bc4900a77d9cfd9d32b6cedbf92b01ee55e1e2cbbdf348d4ed  ./CONTRIBUTING.md
 6a6236277c2d48839d5dca83eb49d0b1ac808a19f3bd145b041a7d8db2b65110  ./LICENSE
 08a9bdc64285b87759274c1828e1049104919a569f3ace4143d1754fa46d31e7  ./Legacy-CouchLink-v0.1-dev.13/.gitignore
@@ -214,6 +214,7 @@ e64964a07ea523a8c902efc4a638c63811cb92be35364bbcd612485fc8a9a65b  ./docs/release
 83c96b10286fd6f53c09ca8c333e568b79764d73c624af18bb2e8ae8e68407bb  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.3.1.md
 e4290286c1d27359c4a2467cd23c05691167dccdfb365b5f6d7146f1c96fd1db  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.4.md
 2f109a97c58de3704c7a03b0a19cab1b40d33dd0c7ec35c4bb9b687eaba24c98  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.5.md
+ae00e6a64ce84800686ca74287fd99a49676c369fa887170bb8ff268e845fdeb  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.6.1.md
 d1f4c3a786083e2c5d66df0cfad14a865337d7b5823a4790dc1e3627421309af  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.6.md
 5503e02b1eab373fc60de77c7c0fd3d52e6dcafa2c27af87a1d31a921dd473fb  ./docs/release/RELEASE-CHECKLIST-v1.3.md
 fa5415801b046d6ee92324319ab9d9457762130751257c153d89802df94ba8b4  ./docs/release/RELEASE-NOTES-v1.1.md
@@ -225,6 +226,7 @@ c8043d76b1a0d96848d15c374ebb1e55c68089e18e44ef3a0d3e127156fa3609  ./docs/release
 e89d0630c2a1f35fc643e4763f73a3502fba1d783fdc11e923885dfbd3c82ad3  ./docs/release/RELEASE-NOTES-v1.3.1-dev.3.1.md
 50df251e1de5a50db4ae1056cab696534ffc1607745c7318fe1342a37243334c  ./docs/release/RELEASE-NOTES-v1.3.1-dev.4.md
 74739ab9f4a8974d558a7a657c5a0749fbd92f02e9396b66ed43a46444c825ad  ./docs/release/RELEASE-NOTES-v1.3.1-dev.5.md
+c3ad8cf57ea886d83ef77ef66261950208551bbaf91b73899db07828b091a9b9  ./docs/release/RELEASE-NOTES-v1.3.1-dev.6.1.md
 ddf2ab42c819921b90ba5bc9e3e34251b4d764492816c15144da9f31b3c0ea00  ./docs/release/RELEASE-NOTES-v1.3.1-dev.6.md
 25a1d818f4c3782ca9040289b7b59bae07ff195cd543ec25ede6975f738cee9b  ./docs/release/RELEASE-NOTES-v1.3.md
 ec81aa904219dcda51cc78bb288cb7a01ffde942f0cb0db66abe32c58cd8d627  ./docs/release/RELEASE-VALIDATION-v1.1.md
@@ -232,6 +234,7 @@ a200bcde2cd4d9b0c25bad25e6410ba15122859083a8f7a7ad677b4b264af052  ./docs/release
 9322d19bc3148221dd50a1f0060ce9f802bfcf2867403830c7e25823109124b1  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.3.1.md
 f47bc0f1de66bc49dfa98bab70bc6d67dc4e46df0092e75a8c0a598aecd88c05  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.4.md
 e448452d4760d6469d8b6cadc8477b2cbdf7ef641715e9cc17301d24128b3724  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.5.md
+0779a0e980ae0f745318581deb58d9aa54190c0a679136e8b6a9221ba48729ca  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.6.1.md
 e2d829465e9bd290be16f1695dd5f958528b25ff3b07a73ee6a4be2866f27eb8  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.6.md
 9a431f431f65f3187bcdc2664d2014fcfb88da70de5922e1cdc658f329e7113e  ./docs/release/RELEASE-VALIDATION-v1.3.md
 e87b312b5c45463569c457d336c6999f36632ab78f94cb32537e9f3315e8ee56  ./docs/release/TEST-NOTES-v1.3-dev.6.2.md
@@ -253,7 +256,7 @@ c09deb891c8f17110833ca022689bd5203d9ce74b10cc84eabb87b07fa824528  ./src/android/
 9a0ad1a231fa7c73156f9a5a51ab25f665a5b4263740532e14eef8159b005110  ./src/android/.gitignore
 9bc70193b9f5c5a1cadfbd61b0343c3ba4b4609341f728a217c6600f9762cb3f  ./src/android/PREMIUM-UI-REFERENCE.png
 f44ef2b054becf0aa17ed9e636ac50981a1a2bf45ef9717a065f9d783ff315b5  ./src/android/README.md
-2ab0cfb368546675966f57f27a651901df53d79204c74eea0e635322fad1f339  ./src/android/app/build.gradle.kts
+686ba73a264882802e7b7e8b44c07fdeeab7923e475887831e65cbdda90c9f37  ./src/android/app/build.gradle.kts
 75bad45148a74c1b6019d471106cb780f10c6c0e5946fbb562465bea822b8224  ./src/android/app/src/debug/AndroidManifest.xml
 7b8bc0ff34b0bff74fb051e25d3906498a1dd619b08c205dec98801876a40581  ./src/android/app/src/main/AndroidManifest.xml
 dc5647ac3d527dcd7026054a117f7dd8986b50302d09d460fe02279ba17150be  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/MainActivity.kt
@@ -322,7 +325,7 @@ d1f338bc50452d95c459766696d8d5355024a3c56b85f4fdd9df57c2bf19ce46  ./src/windows/
 61b601dd4ed546e374a3badcc738bb349f5a588794bb3e2b85faddc856bd2a6f  ./src/windows/CouchLink.Host.Core/CouchLink.Host.Core.csproj
 efeb252cfdcf1b24434510f303dd36223d781ec2aae643895bcc36d3a1b18f01  ./src/windows/CouchLink.Host.Core/CouchLinkHostRuntime.cs
 8d241437432877e95bf06d03fb0a6085c64b2a962a646c10851fb607c5ee8a1b  ./src/windows/CouchLink.Host.Core/CouchLinkVersion.cs
-9552a000eb595376795806e748f27c11f6e71d6777675926070461c038079ff2  ./src/windows/CouchLink.Host.Core/HostConstants.cs
+9290ad5f2652ab7fa08166da1100007fb6d3f67baac55fcd4249d6dfb49ac936  ./src/windows/CouchLink.Host.Core/HostConstants.cs
 6abc2784a1f678476280d888f781bffd9b05ca72995baf183641519412d329eb  ./src/windows/CouchLink.Host.Core/HostSnapshot.cs
 588798929bd8f48c887aa98a90388f05b40348a028ecf25dd37737aad1f71fbf  ./src/windows/CouchLink.Host.Core/LauncherController.cs
 89429f1d2af45e11c9965e273a249c6dbc41bad0209d9417592d648ec0625188  ./src/windows/CouchLink.Host.Core/Networking/DiscoveryAdvertiser.cs
@@ -335,7 +338,7 @@ efeb252cfdcf1b24434510f303dd36223d781ec2aae643895bcc36d3a1b18f01  ./src/windows/
 63e0775d9c0d5ae867b334c64847dca95b033555a4d3bac409b874633df1b6df  ./src/windows/CouchLink.Host.Wpf/App.xaml.cs
 6160a477e1133a4c1dae8ea68af8f6bfec6a855e825aa81385f1fbfc173fcd19  ./src/windows/CouchLink.Host.Wpf/Assets/couchlink.ico
 1d3cd4508fa73bc33918d0fd2aa9de96fafc133ca581d528f37919c3212a1e87  ./src/windows/CouchLink.Host.Wpf/Assets/couchlink.png
-d42416fcadefcbb3411171ef90fd1a8d9ee649b641d6b64f44416d89d1d0df79  ./src/windows/CouchLink.Host.Wpf/CouchLink.Host.Wpf.csproj
+ef63190705fd77e07799f47d847ac8fa0d520318a0f202dcbb51c99033f914fc  ./src/windows/CouchLink.Host.Wpf/CouchLink.Host.Wpf.csproj
 96f654f303dae84a009eea7a8e68028d0ad7e957a41cbd31cb8f3781accf8795  ./src/windows/CouchLink.Host.Wpf/Services/GitHubUpdateService.cs
 a190d1d7167c3b17629609523b08de08c616ec345f73683c24c01814402a07c6  ./src/windows/CouchLink.Host.Wpf/Services/HostPreferences.cs
 4839960c125b5a7f315d2cd81d0752e8b96dd3543cc8b973f463b228e2d7484e  ./src/windows/CouchLink.Host.Wpf/Services/TrayIconService.cs
@@ -351,10 +354,10 @@ d75f116b16c9859de7de650ec84f8b18aeefacb356adb01fee001783359cd98e  ./src/windows/
 4e059b72ecd694e4ffa44f46b3c438b2f3ee4dbba1d345e599f80dac6530e9b9  ./src/windows/CouchLink.Protocol/Messages.cs
 1a6780cdaab2f0deabcd95b4067013a2bfebba1a5a3891f989a7386ee52b49aa  ./src/windows/CouchLink.Protocol/ProtocolEnvelope.cs
 a4dc7bb077285247e70d22fd48d74e4b290dea5085e04dee7ba47ffb6c192e08  ./src/windows/CouchLink.Updater/CouchLink.Updater.csproj
-64e6b494c1c02baa484824cc2c305791a8dca736511cb6a3f137e80c14c514db  ./src/windows/CouchLink.Updater/Program.cs
+6e030d9ebf93e63d17959835947378ff917719dc90b8b9f3c16377d0528bde80  ./src/windows/CouchLink.Updater/Program.cs
 57c140edf953db7c6395a2f2633506b42b40f0210197ed2e89e7a69c556b8d75  ./src/windows/CouchLink.Versioning.Tests/CouchLink.Versioning.Tests.csproj
-c86d24ca0c8a9db9e7048505a26e37850acde4eae26bb97bf66a9288a433cc8f  ./src/windows/CouchLink.Versioning.Tests/Program.cs
+49873b6503bcd4b6189df17a2504822906a0936507fb2d9df243786a7f8307c7  ./src/windows/CouchLink.Versioning.Tests/Program.cs
 12594a5c8668f47878b44a58d2a2869043468137d4e245c505d2177ab736f9c5  ./src/windows/CouchLink.sln
 e1b6d8a1f574145f2b3e115a10bdae6502afa2c182a1dfcf7ad3a9ba23adb5cd  ./src/windows/README.md
-4f18fe177e5105be07b22afdcd104548a7a66725fd700129733eb84eef2402e4  ./tools/Test-SourceManifest.ps1
-b9ad6490c272a58c043b4c7bc55faa2fa406182ca557efaa6b7bfcf03da6cbb5  ./tools/Update-SourceManifest.ps1
+c9b7aae92b79d27524c1182635eaf8f28b897e26be265997188ba7a809ef6d78  ./tools/Test-SourceManifest.ps1
+2dc750294104b82748148337fde8104561770af9ecce0709c172d02ed552084b  ./tools/Update-SourceManifest.ps1

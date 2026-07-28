@@ -1,3 +1,15 @@
+# CouchLink v1.3.1-dev.6.1
+
+## Windows updater target-validation fix
+
+- Replace the hard-coded `CouchLink.Host.exe` target-name requirement.
+- Bind the updater target to the executable path of the actual running Host process.
+- Continue requiring target and restart paths to match.
+- Continue requiring the staged Host to be an executable inside CouchLink's randomized trusted update directory.
+- Preserve updater-side SHA-256 verification, rollback, and restart-on-failure behavior.
+- Add version tests for `dev.6.1 > dev.6`.
+- Bump Android to versionCode 151.
+
 # CouchLink v1.3.1-dev.6
 
 ## Windows updater proof build

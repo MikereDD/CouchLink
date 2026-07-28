@@ -5,8 +5,6 @@ namespace CouchLink.Updater;
 
 internal static class Program
 {
-    private const string HostFileName = "CouchLink.Host.exe";
-
     private static int Main(string[] args)
     {
         string? restart = null;
@@ -22,7 +20,7 @@ internal static class Program
             restart = Path.GetFullPath(GetRequired(options, "restart"));
             string expectedSha256 = NormalizeSha256(GetRequired(options, "expected-sha256"));
 
-            ValidatePaths(source, target, restart);
+            ValidatePaths(source, target, restart, processId);
             WaitForExit(processId);
 
             if (!File.Exists(source))
@@ -87,16 +85,34 @@ internal static class Program
         }
     }
 
-    private static void ValidatePaths(string source, string target, string restart)
+    private static void ValidatePaths(
+        string source,
+        string target,
+        string restart,
+        int processId)
     {
         if (!target.Equals(restart, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("The restart path must match the Host target path.");
         }
 
-        if (!Path.GetFileName(target).Equals(HostFileName, StringComparison.OrdinalIgnoreCase))
+        if (!Path.GetExtension(target).Equals(".exe", StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidDataException($"The updater target must be {HostFileName}.");
+            throw new InvalidDataException("The updater target must be a Windows executable.");
+        }
+
+        using (Process hostProcess = Process.GetProcessById(processId))
+        {
+            string runningHostPath = Path.GetFullPath(
+                hostProcess.MainModule?.FileName
+                ?? throw new InvalidDataException(
+                    "The running CouchLink Host executable path is unavailable."));
+
+            if (!target.Equals(runningHostPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "The updater target does not match the running CouchLink Host executable.");
+            }
         }
 
         if (!Path.GetExtension(source).Equals(".exe", StringComparison.OrdinalIgnoreCase))
