@@ -1,0 +1,22 @@
+# CouchLink v1.3.1-dev.7.1 Release Checklist
+
+- [ ] Version-comparison tests pass.
+- [ ] Windows signing key matches the pinned public key.
+- [ ] Signed Android APK builds and certificate verification passes.
+- [ ] Windows Host and Updater publish successfully.
+- [ ] Host and Updater detached `.sig` files are generated.
+- [ ] Valid Host signature is accepted.
+- [ ] Modified Host payload is rejected.
+- [ ] Modified Host signature is rejected.
+- [ ] Malformed Host signature is rejected.
+- [ ] Valid Updater signature is accepted.
+- [ ] Modified Updater payload is rejected.
+- [ ] Modified Updater signature is rejected.
+- [ ] Malformed Updater signature is rejected.
+- [ ] Source manifest regenerates and verifies.
+- [ ] GitHub prerelease contains both executables and both `.sig` files.
+- [ ] Windows `dev.7` detects `dev.7.1`.
+- [ ] Signed-to-signed replacement and automatic restart pass.
+- [ ] Success receipt reports detached signature verification as `true`.
+- [ ] No updater error log is written.
+- [ ] Android signed update reaches versionCode 156.

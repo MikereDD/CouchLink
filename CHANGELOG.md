@@ -1,3 +1,16 @@
+# CouchLink v1.3.1-dev.7.1
+
+## Signed-to-signed updater proof build
+
+- Preserve the canonical CouchLink ECDSA P-256 release-signing public key.
+- Exercise the complete `dev.7 → dev.7.1` signed Windows update path.
+- Require detached signatures for both downloaded Windows release executables.
+- Re-verify the Host signature inside the external updater immediately before replacement.
+- Preserve downloaded-payload SHA-256 and installed-target SHA-256 verification.
+- Keep valid-signature, modified-payload, modified-signature, and malformed-signature tests.
+- Add version tests for `dev.7.1 > dev.7`.
+- Bump Android to versionCode 156.
+
 # CouchLink v1.3.1-dev.7
 
 ## Independent Windows release authenticity
