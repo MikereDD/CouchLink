@@ -10,6 +10,8 @@ internal static class Program
     {
         VersionCase[] cases =
         [
+            new("1.3.1-dev.6", "1.3.1-dev.5", 1),
+            new("1.3.1-dev.5", "1.3.1-dev.6", -1),
             new("1.3.1-dev.5", "1.3.1-dev.4", 1),
             new("1.3.1-dev.4", "1.3.1-dev.5", -1),
             new("1.3.1-dev.4", "1.3.1-dev.4", 0),

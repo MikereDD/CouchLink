@@ -1,3 +1,12 @@
+# CouchLink v1.3.1-dev.6
+
+## Windows updater proof build
+
+- Bump Windows and Android metadata for the live `1.3.1-dev.5 → 1.3.1-dev.6` updater regression test.
+- Add explicit version-comparison coverage for `dev.6 > dev.5` and `dev.5 < dev.6`.
+- Preserve the `dev.5` audit hardening unchanged so the real update exercises prerelease ordering, randomized staging, updater-side SHA-256 re-verification, constrained paths, rollback, restart-on-failure, and cancellation handling.
+- Bump Android to versionCode 150.
+
 # CouchLink v1.3.1-dev.5
 
 ## Audit-fix hardening
