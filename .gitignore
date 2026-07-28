@@ -12,6 +12,7 @@ release/
 *.keystore
 *.pfx
 *.p12
+*.pem
 keystore.properties
 
 # .NET / Visual Studio

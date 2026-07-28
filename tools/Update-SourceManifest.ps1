@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.1-dev.4',
+    [string]$Version = '1.3.1-dev.7.1',
 
     [string]$RootPath = (Join-Path $PSScriptRoot '..')
 )
@@ -36,7 +36,7 @@ function Test-ManifestFileExcluded {
     if ($name -in @('local.properties', 'keystore.properties', 'Build-Release-error.log', 'Thumbs.db', '.DS_Store')) {
         return $true
     }
-    foreach ($pattern in @('*.apk', '*.aab', '*.jks', '*.keystore', '*.pfx', '*.p12', '*.user', '*.suo', '*.zip')) {
+    foreach ($pattern in @('*.apk', '*.aab', '*.jks', '*.keystore', '*.pfx', '*.p12', '*.user', '*.suo', '*.zip', '*.pem')) {
         if ($name -like $pattern) {
             return $true
         }

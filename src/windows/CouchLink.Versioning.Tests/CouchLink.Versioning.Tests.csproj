@@ -4,10 +4,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>CouchLink.Updater</AssemblyName>
-    <RootNamespace>CouchLink.Updater</RootNamespace>
+    <AssemblyName>CouchLink.Versioning.Tests</AssemblyName>
+    <RootNamespace>CouchLink.Versioning.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CouchLink.ReleaseSecurity\CouchLink.ReleaseSecurity.csproj" />
+    <ProjectReference Include="..\CouchLink.Host.Core\CouchLink.Host.Core.csproj" />
   </ItemGroup>
 </Project>

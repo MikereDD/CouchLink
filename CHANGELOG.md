@@ -1,3 +1,107 @@
+# CouchLink v1.3.1-dev.7.1
+
+## Signed-to-signed updater proof build
+
+- Preserve the canonical CouchLink ECDSA P-256 release-signing public key.
+- Exercise the complete `dev.7 → dev.7.1` signed Windows update path.
+- Require detached signatures for both downloaded Windows release executables.
+- Re-verify the Host signature inside the external updater immediately before replacement.
+- Preserve downloaded-payload SHA-256 and installed-target SHA-256 verification.
+- Keep valid-signature, modified-payload, modified-signature, and malformed-signature tests.
+- Add version tests for `dev.7.1 > dev.7`.
+- Bump Android to versionCode 156.
+
+# CouchLink v1.3.1-dev.7
+
+## Independent Windows release authenticity
+
+- Add detached ECDSA P-256 signatures for Windows Host and Updater release assets.
+- Pin the release public key inside both Windows executables.
+- Verify the Host and Updater signatures before the updater is launched.
+- Re-verify the downloaded Host signature inside the external updater immediately before replacement.
+- Keep SHA-256 verification as an independent corruption and release-metadata check.
+- Add local key-generation and release-signing scripts without storing the private key in the repository.
+- Make key generation fail loudly, verify both output files, and run a signing self-test.
+- Create the P-256 curve through `ECCurve.CreateFromFriendlyName` for PowerShell/.NET compatibility.
+- Add a reusable private/public key match test script.
+- Add tamper-test documentation and signed-updater bootstrap guidance.
+- Add automated valid-signature, modified-payload, modified-signature, and malformed-signature tests for both Windows executables.
+- Record and validate the canonical public-key SHA-256 fingerprint.
+- Keep the new `--signature` updater argument optional only for the `dev.6.4 → dev.7` bootstrap path.
+- Record whether detached-signature verification was enforced in the updater success receipt.
+- Exclude private `.pem` files from Git, source archives, and source manifests.
+- Bump Android to versionCode 155.
+
+# CouchLink v1.3.1-dev.6.4
+
+## Installed-target SHA-256 proof build
+
+- Add a success receipt at `%TEMP%\CouchLink-Updater-success.log`.
+- Record whether installed-target SHA-256 verification was active for the completed update.
+- Record downloaded-payload verification, replacement completion, and restart request.
+- Preserve legacy Host compatibility: older Hosts may still omit the target-hash argument.
+- Preserve trusted randomized staging, matching target/restart paths, rollback, and restart-on-failure.
+- Add version tests for `dev.6.4 > dev.6.3`.
+- Bump Android to versionCode 154.
+
+# CouchLink v1.3.1-dev.6.3
+
+## Windows updater legacy-Host compatibility fix
+
+- Make `--expected-target-sha256` optional in the external updater.
+- Preserve installed-target hash verification whenever the launching Host supports the new argument.
+- Allow older Hosts such as `1.3.1-dev.5` to launch the hardened updater without failing argument parsing.
+- Continue requiring downloaded-payload SHA-256 verification, trusted randomized staging, matching target/restart paths, rollback, and restart-on-failure.
+- Add version tests for `dev.6.3 > dev.6.2`.
+- Bump Android to versionCode 153.
+
+# CouchLink v1.3.1-dev.6.2
+
+## Windows updater process-exit race fix
+
+- Remove the updater's dependency on reopening the Host process after launch.
+- Have the running Host hash its installed executable before starting the updater.
+- Pass that installed-target SHA-256 to the external updater.
+- After the Host exits, verify the target file still matches the expected installed Host before replacement.
+- Preserve matching target/restart paths, trusted randomized staging, downloaded-payload SHA-256 verification, rollback, and restart-on-failure.
+- Add version tests for `dev.6.2 > dev.6.1`.
+- Bump Android to versionCode 152.
+
+# CouchLink v1.3.1-dev.6.1
+
+## Windows updater target-validation fix
+
+- Replace the hard-coded `CouchLink.Host.exe` target-name requirement.
+- Bind the updater target to the executable path of the actual running Host process.
+- Continue requiring target and restart paths to match.
+- Continue requiring the staged Host to be an executable inside CouchLink's randomized trusted update directory.
+- Preserve updater-side SHA-256 verification, rollback, and restart-on-failure behavior.
+- Add version tests for `dev.6.1 > dev.6`.
+- Bump Android to versionCode 151.
+
+# CouchLink v1.3.1-dev.6
+
+## Windows updater proof build
+
+- Bump Windows and Android metadata for the live `1.3.1-dev.5 → 1.3.1-dev.6` updater regression test.
+- Add explicit version-comparison coverage for `dev.6 > dev.5` and `dev.5 < dev.6`.
+- Preserve the `dev.5` audit hardening unchanged so the real update exercises prerelease ordering, randomized staging, updater-side SHA-256 re-verification, constrained paths, rollback, restart-on-failure, and cancellation handling.
+- Bump Android to versionCode 150.
+
+# CouchLink v1.3.1-dev.5
+
+## Audit-fix hardening
+
+- Fix Windows prerelease-aware version comparison so same-base `dev`, `beta`, `rc`, and stable updates are ordered correctly.
+- Add a dedicated Windows version-comparison test runner covering dev-to-dev and dev-to-stable transitions.
+- Re-verify the Host SHA-256 inside the external updater immediately before replacement.
+- Restrict updater source, target, and restart paths and use randomized staging directories.
+- Preserve `.previous` for rollback and restart the prior Host when replacement fails.
+- Add cancellable Windows update checks/downloads and lock channel controls during active operations.
+- Improve missing-prerelease, preference-file, and clipboard error handling.
+- Add release-build version consistency checks and an optional clean tagged-source gate.
+- Bump Android to versionCode 149 and synchronize Windows/Android version metadata.
+
 # CouchLink v1.3.1-dev.4
 
 ## Updater polish
