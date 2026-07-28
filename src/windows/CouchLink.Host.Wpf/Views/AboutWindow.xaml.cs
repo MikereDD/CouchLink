@@ -1,10 +1,10 @@
-using System.Net;
-using System.Windows;
-using CouchLink.Host.Wpf.ViewModels;
-using CouchLink.Host.Wpf.Services;
-using System.Net.Http;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Windows;
+using CouchLink.Host.Wpf.Services;
+using CouchLink.Host.Wpf.ViewModels;
 
 namespace CouchLink.Host.Wpf.Views;
 
@@ -12,23 +12,37 @@ public partial class AboutWindow : Window
 {
     private readonly GitHubUpdateService _updateService = new();
     private GitHubUpdateService.UpdateInfo? _availableUpdate;
+    private CancellationTokenSource? _operationCts;
     private string? _lastUpdateError;
     private bool _testChannel;
+    private bool _operationRunning;
+
     private static readonly string ChannelPreferencePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "CouchLink",
         "update-channel.txt");
+
     public AboutWindow()
     {
         InitializeComponent();
+        Closing += (_, _) => _operationCts?.Cancel();
         LoadUpdateChannel();
     }
 
     private void LoadUpdateChannel()
     {
-        _testChannel = File.Exists(ChannelPreferencePath) &&
-            File.ReadAllText(ChannelPreferencePath).Trim()
-                .Equals("test", StringComparison.OrdinalIgnoreCase);
+        try
+        {
+            _testChannel = File.Exists(ChannelPreferencePath) &&
+                File.ReadAllText(ChannelPreferencePath).Trim()
+                    .Equals("test", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            _testChannel = false;
+            _lastUpdateError = ex.ToString();
+        }
+
         UpdateChannelComboBox.SelectedIndex = _testChannel ? 1 : 0;
         ApplyUpdateChannelText();
     }
@@ -37,10 +51,23 @@ public partial class AboutWindow : Window
         object sender,
         System.Windows.Controls.SelectionChangedEventArgs e)
     {
-        if (!IsInitialized) return;
+        if (!IsInitialized || _operationRunning)
+        {
+            return;
+        }
+
         _testChannel = UpdateChannelComboBox.SelectedIndex == 1;
-        Directory.CreateDirectory(Path.GetDirectoryName(ChannelPreferencePath)!);
-        File.WriteAllText(ChannelPreferencePath, _testChannel ? "test" : "stable");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ChannelPreferencePath)!);
+            File.WriteAllText(ChannelPreferencePath, _testChannel ? "test" : "stable");
+        }
+        catch (Exception ex)
+        {
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = "The update channel could not be saved. CouchLink will continue using it for this session.";
+        }
+
         _availableUpdate = null;
         InstallUpdateButton.IsEnabled = false;
         ApplyUpdateChannelText();
@@ -61,19 +88,27 @@ public partial class AboutWindow : Window
         UpdateProgressBar.Value = 0;
     }
 
-
-
     private async void CheckUpdates_Click(object sender, RoutedEventArgs e)
     {
-        CheckUpdatesButton.IsEnabled = false;
+        if (_operationRunning)
+        {
+            _operationCts?.Cancel();
+            return;
+        }
+
+        BeginOperation("CANCEL CHECK");
         InstallUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = "Checking GitHub Releases…";
         UpdateStageText.Text = "Checking";
         UpdateProgressBar.Value = 0;
         _lastUpdateError = null;
+
         try
         {
-            _availableUpdate = await _updateService.CheckAsync(_testChannel);
+            _availableUpdate = await _updateService.CheckAsync(
+                _testChannel,
+                _operationCts!.Token);
+
             if (_availableUpdate is null)
             {
                 UpdateStatusText.Text = "CouchLink is up to date.";
@@ -81,13 +116,30 @@ public partial class AboutWindow : Window
                 UpdateNotesText.Visibility = Visibility.Collapsed;
                 return;
             }
-            UpdateStatusText.Text = $"CouchLink {_availableUpdate.Version} is available ({_availableUpdate.HostSize / (1024.0 * 1024.0):0.0} MB).";
+
+            UpdateStatusText.Text =
+                $"CouchLink {_availableUpdate.Version} is available " +
+                $"({_availableUpdate.HostSize / (1024.0 * 1024.0):0.0} MB).";
             UpdateStageText.Text = "Update available";
             UpdateNotesText.Text = CleanReleaseNotes(_availableUpdate.ReleaseNotes);
             UpdateNotesText.Visibility = string.IsNullOrWhiteSpace(_availableUpdate.ReleaseNotes)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
             InstallUpdateButton.IsEnabled = true;
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatusText.Text = "Update check cancelled.";
+            UpdateStageText.Text = "Cancelled";
+        }
+        catch (FileNotFoundException ex)
+        {
+            _lastUpdateError = ex.ToString();
+            UpdateStatusText.Text = _testChannel
+                ? "No published CouchLink test release is available yet."
+                : "No published CouchLink release is available yet.";
+            UpdateStageText.Text = "Check complete";
+            UpdateNotesText.Visibility = Visibility.Collapsed;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -114,28 +166,38 @@ public partial class AboutWindow : Window
         }
         finally
         {
-            CheckUpdatesButton.IsEnabled = true;
+            EndOperation();
         }
     }
 
     private async void InstallUpdate_Click(object sender, RoutedEventArgs e)
     {
-        if (_availableUpdate is null) return;
-        MessageBoxResult answer = System.Windows.MessageBox.Show(
-            this,
-            $"Download and install CouchLink {_availableUpdate.Version}?\n\nThe Host will close briefly and restart after the verified update is installed.",
-            "CouchLink update",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Information);
-        if (answer != MessageBoxResult.Yes) return;
+        if (_availableUpdate is null || _operationRunning)
+        {
+            return;
+        }
 
-        CheckUpdatesButton.IsEnabled = false;
+        System.Windows.MessageBoxResult answer = System.Windows.MessageBox.Show(
+            this,
+            $"Download and install CouchLink {_availableUpdate.Version}?\n\n" +
+            "The Host will close briefly and restart after the verified update is installed.",
+            "CouchLink update",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Information);
+
+        if (answer != System.Windows.MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        BeginOperation("CANCEL DOWNLOAD");
         InstallUpdateButton.IsEnabled = false;
         UpdateStatusText.Text = "Downloading and verifying the Windows update…";
         UpdateStageText.Text = "Starting secure download";
         UpdateProgressBar.Value = 0;
         UpdateProgressBar.Visibility = Visibility.Visible;
         UpdateStageText.Visibility = Visibility.Visible;
+
         try
         {
             var progress = new Progress<GitHubUpdateService.UpdateProgress>(value =>
@@ -143,43 +205,78 @@ public partial class AboutWindow : Window
                 UpdateStageText.Text = $"{value.Stage} · {value.Percent}%";
                 UpdateProgressBar.Value = value.Percent;
             });
-            await _updateService.DownloadAndLaunchAsync(_availableUpdate, progress);
+
+            await _updateService.DownloadAndLaunchAsync(
+                _availableUpdate,
+                progress,
+                _operationCts!.Token);
+
             UpdateStatusText.Text = "Update verified. CouchLink will now close and restart.";
             if (System.Windows.Application.Current is App app)
+            {
                 app.BeginUpdateShutdown();
+            }
             else
+            {
                 System.Windows.Application.Current.Shutdown();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatusText.Text = "Update download cancelled.";
+            UpdateStageText.Text = "Cancelled";
+            InstallUpdateButton.IsEnabled = _availableUpdate is not null;
         }
         catch (Exception ex)
         {
             _lastUpdateError = ex.ToString();
             UpdateStatusText.Text = "Update installation failed. Copy the test report for technical details.";
             UpdateStageText.Text = "Failed";
-            CheckUpdatesButton.IsEnabled = true;
             InstallUpdateButton.IsEnabled = true;
+        }
+        finally
+        {
+            EndOperation();
         }
     }
 
+    private void BeginOperation(string cancelText)
+    {
+        _operationCts?.Dispose();
+        _operationCts = new CancellationTokenSource();
+        _operationRunning = true;
+        CheckUpdatesButton.Content = cancelText;
+        CheckUpdatesButton.IsEnabled = true;
+        UpdateChannelComboBox.IsEnabled = false;
+        ReturnStableButton.IsEnabled = false;
+    }
+
+    private void EndOperation()
+    {
+        _operationRunning = false;
+        CheckUpdatesButton.Content = "CHECK FOR UPDATES";
+        CheckUpdatesButton.IsEnabled = true;
+        UpdateChannelComboBox.IsEnabled = true;
+        ReturnStableButton.IsEnabled = true;
+        _operationCts?.Dispose();
+        _operationCts = null;
+    }
 
     private void ReturnStable_Click(object sender, RoutedEventArgs e)
     {
+        if (_operationRunning)
+        {
+            return;
+        }
+
         UpdateChannelComboBox.SelectedIndex = 0;
         UpdateStatusText.Text = "Stable channel restored. Check again to look for the latest stable release.";
         UpdateStageText.Text = "Idle";
         UpdateProgressBar.Value = 0;
     }
 
-    private void CopyTestReport_Click(object sender, RoutedEventArgs e)
-    {
-        string report = BuildUpdateReport();
-        System.Windows.Clipboard.SetText(report);
-        System.Windows.MessageBox.Show(
-            this,
-            "CouchLink updater test report was copied to the clipboard.",
-            "CouchLink",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
-    }
+    private void CopyTestReport_Click(object sender, RoutedEventArgs e) =>
+        CopyTextToClipboard(BuildUpdateReport(), "CouchLink updater test report");
 
     private string BuildUpdateReport()
     {
@@ -199,7 +296,11 @@ public partial class AboutWindow : Window
 
     private static string CleanReleaseNotes(string markdown)
     {
-        if (string.IsNullOrWhiteSpace(markdown)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            return string.Empty;
+        }
+
         string text = markdown.Replace("\r", string.Empty);
         text = Regex.Replace(text, @"^#{1,6}\s*", string.Empty, RegexOptions.Multiline);
         text = Regex.Replace(text, @"^\s*[-*+]\s+", "• ", RegexOptions.Multiline);
@@ -212,7 +313,9 @@ public partial class AboutWindow : Window
     private void CopyDiagnostics_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
+        {
             return;
+        }
 
         string diagnostics = viewModel.DiagnosticsText + Environment.NewLine +
             $"Update channel: {(_testChannel ? "Test" : "Stable")}";
@@ -223,13 +326,31 @@ public partial class AboutWindow : Window
                 _lastUpdateError;
         }
 
-        System.Windows.Clipboard.SetText(diagnostics);
-        System.Windows.MessageBox.Show(
-            this,
-            "CouchLink diagnostics were copied to the clipboard.",
-            "CouchLink",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        CopyTextToClipboard(diagnostics, "CouchLink diagnostics");
+    }
+
+    private void CopyTextToClipboard(string text, string description)
+    {
+        try
+        {
+            System.Windows.Clipboard.SetText(text);
+            System.Windows.MessageBox.Show(
+                this,
+                $"{description} were copied to the clipboard.",
+                "CouchLink",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            _lastUpdateError = ex.ToString();
+            System.Windows.MessageBox.Show(
+                this,
+                "Windows could not access the clipboard. Try again after closing other clipboard tools.",
+                "CouchLink",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(
@@ -243,7 +364,9 @@ public partial class AboutWindow : Window
         }
 
         if (e.LeftButton == System.Windows.Input.MouseButtonState.Pressed)
+        {
             DragMove();
+        }
     }
 
     private void Minimize_Click(object sender, RoutedEventArgs e) =>
@@ -257,5 +380,9 @@ public partial class AboutWindow : Window
             ? WindowState.Normal
             : WindowState.Maximized;
 
-    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+    private void Close_Click(object sender, RoutedEventArgs e)
+    {
+        _operationCts?.Cancel();
+        Close();
+    }
 }

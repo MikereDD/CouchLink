@@ -1,3 +1,17 @@
+# CouchLink v1.3.1-dev.5
+
+## Audit-fix hardening
+
+- Fix Windows prerelease-aware version comparison so same-base `dev`, `beta`, `rc`, and stable updates are ordered correctly.
+- Add a dedicated Windows version-comparison test runner covering dev-to-dev and dev-to-stable transitions.
+- Re-verify the Host SHA-256 inside the external updater immediately before replacement.
+- Restrict updater source, target, and restart paths and use randomized staging directories.
+- Preserve `.previous` for rollback and restart the prior Host when replacement fails.
+- Add cancellable Windows update checks/downloads and lock channel controls during active operations.
+- Improve missing-prerelease, preference-file, and clipboard error handling.
+- Add release-build version consistency checks and an optional clean tagged-source gate.
+- Bump Android to versionCode 149 and synchronize Windows/Android version metadata.
+
 # CouchLink v1.3.1-dev.4
 
 ## Updater polish

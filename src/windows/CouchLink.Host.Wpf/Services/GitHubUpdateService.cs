@@ -125,12 +125,7 @@ public sealed class GitHubUpdateService
             Path.GetTempPath(),
             "CouchLink",
             "updates",
-            update.Version);
-
-        if (Directory.Exists(updateRoot))
-        {
-            Directory.Delete(updateRoot, recursive: true);
-        }
+            $"{update.Version}-{Guid.NewGuid():N}");
 
         Directory.CreateDirectory(updateRoot);
 
@@ -187,6 +182,9 @@ public sealed class GitHubUpdateService
 
         startInfo.ArgumentList.Add("--restart");
         startInfo.ArgumentList.Add(target);
+
+        startInfo.ArgumentList.Add("--expected-sha256");
+        startInfo.ArgumentList.Add(update.HostSha256);
 
         _ = Process.Start(startInfo)
             ?? throw new InvalidOperationException(
@@ -351,37 +349,6 @@ public sealed class GitHubUpdateService
 
     private static int CompareVersions(
         string left,
-        string right)
-    {
-        static int[] Parts(string value) =>
-            value.Split('-', 2)[0]
-                .Split('.')
-                .Select(
-                    part => int.TryParse(
-                        part,
-                        out int number)
-                        ? number
-                        : 0)
-                .ToArray();
-
-        int[] a = Parts(left);
-        int[] b = Parts(right);
-
-        for (int index = 0;
-             index < Math.Max(a.Length, b.Length);
-             index++)
-        {
-            int result = a
-                .ElementAtOrDefault(index)
-                .CompareTo(
-                    b.ElementAtOrDefault(index));
-
-            if (result != 0)
-            {
-                return result;
-            }
-        }
-
-        return 0;
-    }
+        string right) =>
+        CouchLinkVersion.Compare(left, right);
 }

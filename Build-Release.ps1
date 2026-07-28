@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.1-dev.4',
+    [string]$Version = '1.3.1-dev.5',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -19,6 +19,8 @@ param(
     [switch]$SkipAndroidSignatureVerification,
 
     [switch]$SkipSourceArchive,
+
+    [switch]$RequireCleanTaggedSource,
 
     [string]$OutputDirectory
 )
@@ -157,6 +159,63 @@ function Copy-ReleaseDocument {
     Copy-Item -LiteralPath $Source -Destination $Destination -Force
 }
 
+
+function Assert-CouchLinkVersionConsistency {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepoRoot,
+
+        [Parameter(Mandatory)]
+        [string]$ReleaseVersion,
+
+        [switch]$RequireCleanTag
+    )
+
+    $hostConstants = Get-Content -LiteralPath (Join-Path $RepoRoot 'src\windows\CouchLink.Host.Core\HostConstants.cs') -Raw
+    $hostProject = Get-Content -LiteralPath (Join-Path $RepoRoot 'src\windows\CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj') -Raw
+    $androidGradle = Get-Content -LiteralPath (Join-Path $RepoRoot 'src\android\app\build.gradle.kts') -Raw
+
+    foreach ($check in @(
+        @{ Name = 'HostConstants.HostVersion'; Pattern = [regex]::Escape('HostVersion = "' + $ReleaseVersion + '"') },
+        @{ Name = 'Windows project Version'; Pattern = [regex]::Escape('<Version>' + $ReleaseVersion + '</Version>') },
+        @{ Name = 'Windows InformationalVersion'; Pattern = [regex]::Escape('<InformationalVersion>' + $ReleaseVersion + '</InformationalVersion>') },
+        @{ Name = 'Android versionName'; Pattern = [regex]::Escape('versionName = "' + $ReleaseVersion + '"') }
+    )) {
+        $source = switch ($check.Name) {
+            'HostConstants.HostVersion' { $hostConstants }
+            'Android versionName' { $androidGradle }
+            default { $hostProject }
+        }
+        if ($source -notmatch $check.Pattern) {
+            throw "$($check.Name) does not match release version $ReleaseVersion."
+        }
+    }
+
+    if (-not $RequireCleanTag) {
+        return
+    }
+
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git -or -not (Test-Path -LiteralPath (Join-Path $RepoRoot '.git'))) {
+        throw 'A Git working tree is required when -RequireCleanTaggedSource is used.'
+    }
+
+    $status = & $git.Source -C $RepoRoot status --porcelain
+    if ($LASTEXITCODE -ne 0 -or $status) {
+        throw 'The Git working tree must be clean for a tagged release build.'
+    }
+
+    $tag = "v$ReleaseVersion"
+    $head = (& $git.Source -C $RepoRoot rev-parse HEAD).Trim()
+    $tagCommit = (& $git.Source -C $RepoRoot rev-list -n 1 $tag 2>$null).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($tagCommit)) {
+        throw "Required release tag $tag was not found."
+    }
+    if ($head -ne $tagCommit) {
+        throw "HEAD $head does not match release tag $tag ($tagCommit)."
+    }
+}
+
 function Invoke-CouchLinkReleaseBuild {
     $repoRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
     $androidRoot = Join-Path $repoRoot 'src\android'
@@ -167,6 +226,7 @@ function Invoke-CouchLinkReleaseBuild {
     $sourceManifestVerifyScript = Join-Path $repoRoot 'tools\Test-SourceManifest.ps1'
     $windowsProject = Join-Path $windowsRoot 'CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj'
     $updaterProject = Join-Path $windowsRoot 'CouchLink.Updater\CouchLink.Updater.csproj'
+    $versionTestsProject = Join-Path $windowsRoot 'CouchLink.Versioning.Tests\CouchLink.Versioning.Tests.csproj'
 
     foreach ($requiredPath in @(
         $androidBuildScript,
@@ -174,7 +234,8 @@ function Invoke-CouchLinkReleaseBuild {
         $sourceManifestScript,
         $sourceManifestVerifyScript,
         $windowsProject,
-        $updaterProject
+        $updaterProject,
+        $versionTestsProject
     )) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required project file was not found: $requiredPath"
@@ -204,6 +265,8 @@ function Invoke-CouchLinkReleaseBuild {
 
     New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
+    Assert-CouchLinkVersionConsistency -RepoRoot $repoRoot -ReleaseVersion $Version -RequireCleanTag:$RequireCleanTaggedSource
+
     Write-Host ''
     Write-Host "CouchLink v$Version test release build" -ForegroundColor Cyan
     Write-Host "Output: $resolvedOutputDirectory"
@@ -228,6 +291,9 @@ function Invoke-CouchLinkReleaseBuild {
     }
 
     Write-Host ''
+    Write-Host '[0/5] Running Windows version-comparison tests...' -ForegroundColor Cyan
+    Invoke-NativeCommand -FilePath $dotnet.Source -ArgumentList @('run', '--project', $versionTestsProject, '-c', 'Release') -FailureMessage 'Windows version-comparison tests failed.'
+
     Write-Host '[1/5] Building signed Android APK...' -ForegroundColor Cyan
     $androidParameters = @{
         Version = $Version
