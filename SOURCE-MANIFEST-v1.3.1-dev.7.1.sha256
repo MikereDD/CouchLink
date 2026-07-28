@@ -63,6 +63,7 @@
 1f7f707069ff60b659e033c0def20f8e2da9b557c8bb0c0453b7c94b848f3f05  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/MachinePermissionStore.cs
 1fc5880b9eecfeed3f1674e2e4c32ba8a5f0fa35b6320eceb038224fd70781f8  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.11.2.1.md
 1fd56c7fe377444e2f069ebee820a133b7f81e52a03f968e60cb33c93afc76e5  ./docs/screenshots/windows-host-audio-output.png
+21a8840d84e11b42b670edcdc493be16d5b6e45c277def58c05d385d4dcf61f0  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.7.1.md
 223ee4946af4c27d5be28f8d3c5fa08580d655f1868c7dfaf0e9345a1c449e20  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.7.md
 22622c02db3dc4dd8e10d8a583a2e4c04c9c6be91dfeb7578954f9e19739704a  ./Legacy-CouchLink-v0.1-dev.13/tools/Install-CouchLinkBootService.ps1
 229180ebb3e55d2ec611f46f34ec3298b31f780e427385279cc36f7a3eb7780d  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.VirtualHid/Driver.c
@@ -306,7 +307,6 @@ c7329877da979682201b013d7ce320eb97f4dd91e9c8a6443c5911a6e2bc497b  ./docs/buildin
 c7379a8f5389689d5dd3d642267bcf567e228deb9db76ad53dc5f547164cf63a  ./docs/TV-REMOTE-WIRE-DIAGNOSTICS-v1.2-dev.3.3.md
 c780e61ceb3744d33a55791735deb8129bbcf02859784523c25520a0d6d93042  ./Legacy-CouchLink-v0.1-dev.13/src/android/settings.gradle.kts
 c789e15eb2cd13b91a87b53e9d4b6479042e3518dc268101caadc1b1d657a618  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/java/dev/typezero/couchlink/remote/network/DiscoveryClient.kt
-c7df560766dc2bc00da8dcbd4b6d3ff1cc8ec29d6a79f06007793172c8998d90  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.7.1.md
 c7efccb80b332253292e01479d946c76e2f96c93e334fb50c1967c990458c5af  ./docs/history/integration/BUILD-NOTES-v0.1-dev.15.4.md
 c8043d76b1a0d96848d15c374ebb1e55c68089e18e44ef3a0d3e127156fa3609  ./docs/release/RELEASE-NOTES-v1.2.md
 c8623263ed48567b5d800d5545ac899a27221d02405d8b0698b703b55908050b  ./src/android/tools/Verify-SignedRelease.ps1
