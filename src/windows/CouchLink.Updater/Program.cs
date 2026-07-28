@@ -19,8 +19,11 @@ internal static class Program
             target = Path.GetFullPath(GetRequired(options, "target"));
             restart = Path.GetFullPath(GetRequired(options, "restart"));
             string expectedSha256 = NormalizeSha256(GetRequired(options, "expected-sha256"));
-            string expectedTargetSha256 = NormalizeSha256(
-                GetRequired(options, "expected-target-sha256"));
+            string? expectedTargetSha256 = GetOptional(options, "expected-target-sha256");
+            if (!string.IsNullOrWhiteSpace(expectedTargetSha256))
+            {
+                expectedTargetSha256 = NormalizeSha256(expectedTargetSha256);
+            }
 
             ValidatePaths(source, target, restart);
             WaitForExit(processId);
@@ -37,13 +40,16 @@ internal static class Program
                     target);
             }
 
-            string actualTargetSha256 = ComputeSha256(target);
-            if (!actualTargetSha256.Equals(
-                    expectedTargetSha256,
-                    StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(expectedTargetSha256))
             {
-                throw new InvalidDataException(
-                    "The installed CouchLink Host changed before replacement.");
+                string actualTargetSha256 = ComputeSha256(target);
+                if (!actualTargetSha256.Equals(
+                        expectedTargetSha256,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException(
+                        "The installed CouchLink Host changed before replacement.");
+                }
             }
 
             string actualSha256 = ComputeSha256(source);
@@ -238,6 +244,11 @@ internal static class Program
 
         return result;
     }
+
+    private static string? GetOptional(
+        IReadOnlyDictionary<string, string> values,
+        string name) =>
+        values.TryGetValue(name, out string? value) ? value : null;
 
     private static string GetRequired(IReadOnlyDictionary<string, string> values, string name) =>
         values.TryGetValue(name, out string? value) && !string.IsNullOrWhiteSpace(value)

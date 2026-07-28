@@ -1,3 +1,14 @@
+# CouchLink v1.3.1-dev.6.3
+
+## Windows updater legacy-Host compatibility fix
+
+- Make `--expected-target-sha256` optional in the external updater.
+- Preserve installed-target hash verification whenever the launching Host supports the new argument.
+- Allow older Hosts such as `1.3.1-dev.5` to launch the hardened updater without failing argument parsing.
+- Continue requiring downloaded-payload SHA-256 verification, trusted randomized staging, matching target/restart paths, rollback, and restart-on-failure.
+- Add version tests for `dev.6.3 > dev.6.2`.
+- Bump Android to versionCode 153.
+
 # CouchLink v1.3.1-dev.6.2
 
 ## Windows updater process-exit race fix
