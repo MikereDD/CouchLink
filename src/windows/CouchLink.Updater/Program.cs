@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
+using CouchLink.ReleaseSecurity;
 
 namespace CouchLink.Updater;
 
@@ -19,13 +20,18 @@ internal static class Program
             target = Path.GetFullPath(GetRequired(options, "target"));
             restart = Path.GetFullPath(GetRequired(options, "restart"));
             string expectedSha256 = NormalizeSha256(GetRequired(options, "expected-sha256"));
+            string? signature = GetOptional(options, "signature");
+            if (!string.IsNullOrWhiteSpace(signature))
+            {
+                signature = Path.GetFullPath(signature);
+            }
             string? expectedTargetSha256 = GetOptional(options, "expected-target-sha256");
             if (!string.IsNullOrWhiteSpace(expectedTargetSha256))
             {
                 expectedTargetSha256 = NormalizeSha256(expectedTargetSha256);
             }
 
-            ValidatePaths(source, target, restart);
+            ValidatePaths(source, signature, target, restart);
             WaitForExit(processId);
 
             if (!File.Exists(source))
@@ -58,6 +64,13 @@ internal static class Program
                 throw new InvalidDataException("The downloaded Host failed updater-side SHA-256 verification.");
             }
 
+            bool detachedSignatureVerified = false;
+            if (!string.IsNullOrWhiteSpace(signature))
+            {
+                ReleaseSignatureVerifier.VerifyFile(source, signature);
+                detachedSignatureVerified = true;
+            }
+
             backup = target + ".previous";
             if (File.Exists(backup))
             {
@@ -76,7 +89,8 @@ internal static class Program
                 WriteSuccessReceipt(
                     source,
                     target,
-                    !string.IsNullOrWhiteSpace(expectedTargetSha256));
+                    !string.IsNullOrWhiteSpace(expectedTargetSha256),
+                    detachedSignatureVerified);
 
                 // Keep the previous executable for manual rollback and for the next
                 // updater run to replace. A future health-handshake can safely remove it.
@@ -115,6 +129,7 @@ internal static class Program
 
     private static void ValidatePaths(
         string source,
+        string? signature,
         string target,
         string restart)
     {
@@ -138,12 +153,28 @@ internal static class Program
             "CouchLink",
             "updates"));
 
-        string relative = Path.GetRelativePath(trustedRoot, source);
+        EnsureUnderTrustedRoot(trustedRoot, source, "updater source");
+        if (!string.IsNullOrWhiteSpace(signature))
+        {
+            EnsureUnderTrustedRoot(
+                trustedRoot,
+                signature,
+                "detached signature");
+        }
+    }
+
+    private static void EnsureUnderTrustedRoot(
+        string trustedRoot,
+        string path,
+        string description)
+    {
+        string relative = Path.GetRelativePath(trustedRoot, path);
         if (relative.Equals("..", StringComparison.Ordinal) ||
             relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal) ||
             Path.IsPathRooted(relative))
         {
-            throw new InvalidDataException("The updater source is outside CouchLink's trusted staging directory.");
+            throw new InvalidDataException(
+                $"The {description} is outside CouchLink's trusted staging directory.");
         }
     }
 
@@ -207,7 +238,8 @@ internal static class Program
     private static void WriteSuccessReceipt(
         string source,
         string target,
-        bool installedTargetSha256Verified)
+        bool installedTargetSha256Verified,
+        bool detachedSignatureVerified)
     {
         try
         {
@@ -221,6 +253,7 @@ internal static class Program
                 $"Target: {target}{Environment.NewLine}" +
                 $"Downloaded payload SHA-256 verified: true{Environment.NewLine}" +
                 $"Installed target SHA-256 verified: {installedTargetSha256Verified.ToString().ToLowerInvariant()}{Environment.NewLine}" +
+                $"Detached release signature verified: {detachedSignatureVerified.ToString().ToLowerInvariant()}{Environment.NewLine}" +
                 $"Replacement completed: true{Environment.NewLine}" +
                 $"Restart requested: true{Environment.NewLine}";
 

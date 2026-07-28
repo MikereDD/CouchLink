@@ -1,3 +1,24 @@
+# CouchLink v1.3.1-dev.7
+
+## Independent Windows release authenticity
+
+- Add detached ECDSA P-256 signatures for Windows Host and Updater release assets.
+- Pin the release public key inside both Windows executables.
+- Verify the Host and Updater signatures before the updater is launched.
+- Re-verify the downloaded Host signature inside the external updater immediately before replacement.
+- Keep SHA-256 verification as an independent corruption and release-metadata check.
+- Add local key-generation and release-signing scripts without storing the private key in the repository.
+- Make key generation fail loudly, verify both output files, and run a signing self-test.
+- Create the P-256 curve through `ECCurve.CreateFromFriendlyName` for PowerShell/.NET compatibility.
+- Add a reusable private/public key match test script.
+- Add tamper-test documentation and signed-updater bootstrap guidance.
+- Add automated valid-signature, modified-payload, modified-signature, and malformed-signature tests for both Windows executables.
+- Record and validate the canonical public-key SHA-256 fingerprint.
+- Keep the new `--signature` updater argument optional only for the `dev.6.4 → dev.7` bootstrap path.
+- Record whether detached-signature verification was enforced in the updater success receipt.
+- Exclude private `.pem` files from Git, source archives, and source manifests.
+- Bump Android to versionCode 155.
+
 # CouchLink v1.3.1-dev.6.4
 
 ## Installed-target SHA-256 proof build

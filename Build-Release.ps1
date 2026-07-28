@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.1-dev.6.4',
+    [string]$Version = '1.3.1-dev.7',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -21,6 +21,10 @@ param(
     [switch]$SkipSourceArchive,
 
     [switch]$RequireCleanTaggedSource,
+
+    [string]$WindowsSigningPrivateKeyPath = (Join-Path $HOME 'Documents\CouchLink\Keys\windows-release-private.pem'),
+
+    [switch]$SkipWindowsReleaseSigning,
 
     [string]$OutputDirectory
 )
@@ -93,7 +97,7 @@ function Test-SourceFileExcluded {
         return $true
     }
 
-    foreach ($pattern in @('*.apk', '*.aab', '*.jks', '*.keystore', '*.pfx', '*.p12', '*.user', '*.suo', '*.zip')) {
+    foreach ($pattern in @('*.apk', '*.aab', '*.jks', '*.keystore', '*.pfx', '*.p12', '*.user', '*.suo', '*.zip', '*.pem')) {
         if ($name -like $pattern) {
             return $true
         }
@@ -227,6 +231,10 @@ function Invoke-CouchLinkReleaseBuild {
     $windowsProject = Join-Path $windowsRoot 'CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj'
     $updaterProject = Join-Path $windowsRoot 'CouchLink.Updater\CouchLink.Updater.csproj'
     $versionTestsProject = Join-Path $windowsRoot 'CouchLink.Versioning.Tests\CouchLink.Versioning.Tests.csproj'
+    $releaseSecurityProject = Join-Path $windowsRoot 'CouchLink.ReleaseSecurity\CouchLink.ReleaseSecurity.csproj'
+    $releaseSecurityTestsProject = Join-Path $windowsRoot 'CouchLink.ReleaseSecurity.Tests\CouchLink.ReleaseSecurity.Tests.csproj'
+    $windowsSignScript = Join-Path $repoRoot 'scripts\Sign-WindowsReleaseAsset.ps1'
+    $pinnedKeySource = Join-Path $windowsRoot 'CouchLink.ReleaseSecurity\PinnedReleaseKey.cs'
 
     foreach ($requiredPath in @(
         $androidBuildScript,
@@ -235,7 +243,11 @@ function Invoke-CouchLinkReleaseBuild {
         $sourceManifestVerifyScript,
         $windowsProject,
         $updaterProject,
-        $versionTestsProject
+        $versionTestsProject,
+        $releaseSecurityProject,
+        $releaseSecurityTestsProject,
+        $windowsSignScript,
+        $pinnedKeySource
     )) {
         if (-not (Test-Path -LiteralPath $requiredPath)) {
             throw "Required project file was not found: $requiredPath"
@@ -288,6 +300,31 @@ function Invoke-CouchLinkReleaseBuild {
     $resolvedKeystorePath = [System.IO.Path]::GetFullPath($resolvedKeystorePath)
     if (-not (Test-Path -LiteralPath $resolvedKeystorePath -PathType Leaf)) {
         throw "Keystore not found: $resolvedKeystorePath"
+    }
+
+    $pinnedKeyText = Get-Content -LiteralPath $pinnedKeySource -Raw
+    $windowsReleasePublicKeyFingerprint = 'not configured'
+    if (-not $SkipWindowsReleaseSigning) {
+        if ($pinnedKeyText -match 'UNCONFIGURED') {
+            throw 'Windows release signing is not configured. Run scripts\New-WindowsReleaseSigningKey.ps1 first.'
+        }
+
+        $resolvedWindowsSigningPrivateKeyPath =
+            [System.IO.Path]::GetFullPath($WindowsSigningPrivateKeyPath)
+
+        if (-not (Test-Path -LiteralPath $resolvedWindowsSigningPrivateKeyPath -PathType Leaf)) {
+            throw "Windows release-signing private key not found: $resolvedWindowsSigningPrivateKeyPath"
+        }
+
+        $fingerprintMatch = [regex]::Match(
+            $pinnedKeyText,
+            'PublicKeySha256Fingerprint\s*=\s*"(?<fingerprint>[0-9a-fA-F]{64})"'
+        )
+        if (-not $fingerprintMatch.Success) {
+            throw 'The pinned Windows release public-key fingerprint is missing or invalid.'
+        }
+        $windowsReleasePublicKeyFingerprint =
+            $fingerprintMatch.Groups['fingerprint'].Value.ToLowerInvariant()
     }
 
     Write-Host ''
@@ -369,6 +406,40 @@ function Invoke-CouchLinkReleaseBuild {
     $finalUpdater = Join-Path $resolvedOutputDirectory "CouchLink-Updater-v$Version-$Runtime.exe"
     Copy-Item -LiteralPath $publishedUpdater -Destination $finalUpdater -Force
 
+    $finalHostSignature = $null
+    $finalUpdaterSignature = $null
+    if (-not $SkipWindowsReleaseSigning) {
+        Write-Host '[3.5/5] Signing Windows release assets...' -ForegroundColor Cyan
+        $finalHostSignature = & $windowsSignScript `
+            -PayloadPath $finalExe `
+            -PrivateKeyPath $resolvedWindowsSigningPrivateKeyPath
+        $finalUpdaterSignature = & $windowsSignScript `
+            -PayloadPath $finalUpdater `
+            -PrivateKeyPath $resolvedWindowsSigningPrivateKeyPath
+
+        Write-Host '[3.6/5] Testing valid and tampered Windows signatures...' -ForegroundColor Cyan
+        foreach ($signatureTest in @(
+            @{ Label = 'Windows Host'; Payload = $finalExe; Signature = $finalHostSignature },
+            @{ Label = 'Windows Updater'; Payload = $finalUpdater; Signature = $finalUpdaterSignature }
+        )) {
+            Invoke-NativeCommand `
+                -FilePath $dotnet.Source `
+                -ArgumentList @(
+                    'run',
+                    '--project', $releaseSecurityTestsProject,
+                    '-c', 'Release',
+                    '--',
+                    '--payload', $signatureTest.Payload,
+                    '--signature', $signatureTest.Signature,
+                    '--label', $signatureTest.Label
+                ) `
+                -FailureMessage "$($signatureTest.Label) signature tests failed."
+        }
+    }
+    else {
+        Write-Host '[3.5/5] Windows release signing skipped by request.' -ForegroundColor Yellow
+    }
+
     Write-Host '[4/5] Packaging source and release documents...' -ForegroundColor Cyan
     & $sourceManifestScript -Version $Version -RootPath $repoRoot
     & $sourceManifestVerifyScript -Version $Version -RootPath $repoRoot
@@ -418,6 +489,12 @@ function Invoke-CouchLinkReleaseBuild {
     $releaseHashes.Add((Write-Sha256File -Path $finalApk))
     $releaseHashes.Add((Write-Sha256File -Path $finalExe))
     $releaseHashes.Add((Write-Sha256File -Path $finalUpdater))
+    if ($finalHostSignature) {
+        $releaseHashes.Add((Write-Sha256File -Path $finalHostSignature))
+    }
+    if ($finalUpdaterSignature) {
+        $releaseHashes.Add((Write-Sha256File -Path $finalUpdaterSignature))
+    }
     if ($sourceArchive) {
         $releaseHashes.Add((Write-Sha256File -Path $sourceArchive))
     }
@@ -434,6 +511,9 @@ function Invoke-CouchLinkReleaseBuild {
         "Runtime: $Runtime"
         "Windows self-contained: $($SelfContained.IsPresent)"
         "Android signing certificate SHA-256: $($ExpectedAndroidCertificateSha256.ToLowerInvariant())"
+        "Windows detached signatures: $((-not $SkipWindowsReleaseSigning).ToString().ToLowerInvariant())"
+        "Windows signature algorithm: ECDSA P-256 with SHA-256"
+        "Windows release public-key SHA-256: $windowsReleasePublicKeyFingerprint"
         "Checksums: $([System.IO.Path]::GetFileName($combinedChecksumPath))"
     ) | Set-Content -LiteralPath $releaseInfoPath -Encoding utf8
 
@@ -442,6 +522,12 @@ function Invoke-CouchLinkReleaseBuild {
     Write-Host "Signed APK:       $finalApk"
     Write-Host "Windows EXE:      $finalExe"
     Write-Host "Windows updater:  $finalUpdater"
+    if ($finalHostSignature) {
+        Write-Host "Host signature:   $finalHostSignature"
+    }
+    if ($finalUpdaterSignature) {
+        Write-Host "Updater signature:$finalUpdaterSignature"
+    }
     if ($sourceArchive) {
         Write-Host "Source archive:   $sourceArchive"
     }

@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CouchLink.Host.Core;
+using CouchLink.ReleaseSecurity;
 
 namespace CouchLink.Host.Wpf.Services;
 
@@ -18,9 +19,13 @@ public sealed class GitHubUpdateService
         Uri HostDownloadUri,
         long HostSize,
         string HostSha256,
+        string HostSignatureAssetName,
+        Uri HostSignatureDownloadUri,
         string UpdaterAssetName,
         Uri UpdaterDownloadUri,
-        string UpdaterSha256);
+        string UpdaterSha256,
+        string UpdaterSignatureAssetName,
+        Uri UpdaterSignatureDownloadUri);
 
     private static readonly Uri LatestStableReleaseUri = new(
         "https://api.github.com/repos/MikereDD/CouchLink/releases/latest");
@@ -92,9 +97,14 @@ public sealed class GitHubUpdateService
         string updaterName =
             $"CouchLink-Updater-v{version}-win-x64.exe";
 
+        string hostSignatureName = hostName + ".sig";
+        string updaterSignatureName = updaterName + ".sig";
+
         JsonElement assets = root.GetProperty("assets");
         JsonElement host = FindAsset(assets, hostName);
+        JsonElement hostSignature = FindAsset(assets, hostSignatureName);
         JsonElement updater = FindAsset(assets, updaterName);
+        JsonElement updaterSignature = FindAsset(assets, updaterSignatureName);
 
         return new UpdateInfo(
             version,
@@ -109,11 +119,19 @@ public sealed class GitHubUpdateService
                     "browser_download_url").GetString()),
             host.GetProperty("size").GetInt64(),
             ReadDigest(host),
+            hostSignatureName,
+            ValidateDownloadUri(
+                hostSignature.GetProperty(
+                    "browser_download_url").GetString()),
             updaterName,
             ValidateDownloadUri(
                 updater.GetProperty(
                     "browser_download_url").GetString()),
-            ReadDigest(updater));
+            ReadDigest(updater),
+            updaterSignatureName,
+            ValidateDownloadUri(
+                updaterSignature.GetProperty(
+                    "browser_download_url").GetString()));
     }
 
     public async Task DownloadAndLaunchAsync(
@@ -137,6 +155,14 @@ public sealed class GitHubUpdateService
             updateRoot,
             update.UpdaterAssetName);
 
+        string hostSignaturePath = Path.Combine(
+            updateRoot,
+            update.HostSignatureAssetName);
+
+        string updaterSignaturePath = Path.Combine(
+            updateRoot,
+            update.UpdaterSignatureAssetName);
+
         progress?.Report(new UpdateProgress("Downloading Host", 0));
         await DownloadVerifiedAsync(
             update.HostDownloadUri,
@@ -156,6 +182,22 @@ public sealed class GitHubUpdateService
             95,
             progress,
             cancellationToken);
+
+        progress?.Report(new UpdateProgress("Downloading signatures", 95));
+
+        await DownloadFileAsync(
+            update.HostSignatureDownloadUri,
+            hostSignaturePath,
+            cancellationToken);
+
+        await DownloadFileAsync(
+            update.UpdaterSignatureDownloadUri,
+            updaterSignaturePath,
+            cancellationToken);
+
+        progress?.Report(new UpdateProgress("Verifying release signatures", 97));
+        ReleaseSignatureVerifier.VerifyFile(hostPath, hostSignaturePath);
+        ReleaseSignatureVerifier.VerifyFile(updaterPath, updaterSignaturePath);
 
         progress?.Report(new UpdateProgress("Preparing restart", 98));
 
@@ -205,9 +247,38 @@ public sealed class GitHubUpdateService
         startInfo.ArgumentList.Add("--expected-target-sha256");
         startInfo.ArgumentList.Add(installedHostSha256);
 
+        startInfo.ArgumentList.Add("--signature");
+        startInfo.ArgumentList.Add(hostSignaturePath);
+
         _ = Process.Start(startInfo)
             ?? throw new InvalidOperationException(
                 "CouchLink Updater could not be started.");
+    }
+
+    private async Task DownloadFileAsync(
+        Uri uri,
+        string destination,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await _httpClient.GetAsync(
+            uri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        await using Stream input =
+            await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using FileStream output = new(
+            destination,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            bufferSize: 81920,
+            useAsync: true);
+
+        await input.CopyToAsync(output, cancellationToken);
+        await output.FlushAsync(cancellationToken);
     }
 
     private async Task DownloadVerifiedAsync(
