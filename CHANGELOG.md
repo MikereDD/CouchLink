@@ -1,3 +1,15 @@
+# CouchLink v1.3.1-dev.6.2
+
+## Windows updater process-exit race fix
+
+- Remove the updater's dependency on reopening the Host process after launch.
+- Have the running Host hash its installed executable before starting the updater.
+- Pass that installed-target SHA-256 to the external updater.
+- After the Host exits, verify the target file still matches the expected installed Host before replacement.
+- Preserve matching target/restart paths, trusted randomized staging, downloaded-payload SHA-256 verification, rollback, and restart-on-failure.
+- Add version tests for `dev.6.2 > dev.6.1`.
+- Bump Android to versionCode 152.
+
 # CouchLink v1.3.1-dev.6.1
 
 ## Windows updater target-validation fix

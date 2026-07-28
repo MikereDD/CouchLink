@@ -19,13 +19,31 @@ internal static class Program
             target = Path.GetFullPath(GetRequired(options, "target"));
             restart = Path.GetFullPath(GetRequired(options, "restart"));
             string expectedSha256 = NormalizeSha256(GetRequired(options, "expected-sha256"));
+            string expectedTargetSha256 = NormalizeSha256(
+                GetRequired(options, "expected-target-sha256"));
 
-            ValidatePaths(source, target, restart, processId);
+            ValidatePaths(source, target, restart);
             WaitForExit(processId);
 
             if (!File.Exists(source))
             {
                 throw new FileNotFoundException("Downloaded update was not found.", source);
+            }
+
+            if (!File.Exists(target))
+            {
+                throw new FileNotFoundException(
+                    "The installed CouchLink Host was not found.",
+                    target);
+            }
+
+            string actualTargetSha256 = ComputeSha256(target);
+            if (!actualTargetSha256.Equals(
+                    expectedTargetSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "The installed CouchLink Host changed before replacement.");
             }
 
             string actualSha256 = ComputeSha256(source);
@@ -88,8 +106,7 @@ internal static class Program
     private static void ValidatePaths(
         string source,
         string target,
-        string restart,
-        int processId)
+        string restart)
     {
         if (!target.Equals(restart, StringComparison.OrdinalIgnoreCase))
         {
@@ -99,20 +116,6 @@ internal static class Program
         if (!Path.GetExtension(target).Equals(".exe", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("The updater target must be a Windows executable.");
-        }
-
-        using (Process hostProcess = Process.GetProcessById(processId))
-        {
-            string runningHostPath = Path.GetFullPath(
-                hostProcess.MainModule?.FileName
-                ?? throw new InvalidDataException(
-                    "The running CouchLink Host executable path is unavailable."));
-
-            if (!target.Equals(runningHostPath, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidDataException(
-                    "The updater target does not match the running CouchLink Host executable.");
-            }
         }
 
         if (!Path.GetExtension(source).Equals(".exe", StringComparison.OrdinalIgnoreCase))

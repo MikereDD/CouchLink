@@ -163,6 +163,22 @@ public sealed class GitHubUpdateService
             ?? throw new InvalidOperationException(
                 "The current CouchLink executable path is unavailable.");
 
+        string installedHostSha256;
+        await using (FileStream installedHostStream = new(
+            target,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read | FileShare.Delete,
+            bufferSize: 81920,
+            useAsync: true))
+        {
+            installedHostSha256 = Convert.ToHexString(
+                    await SHA256.HashDataAsync(
+                        installedHostStream,
+                        cancellationToken))
+                .ToLowerInvariant();
+        }
+
         var startInfo = new ProcessStartInfo
         {
             FileName = updaterPath,
@@ -185,6 +201,9 @@ public sealed class GitHubUpdateService
 
         startInfo.ArgumentList.Add("--expected-sha256");
         startInfo.ArgumentList.Add(update.HostSha256);
+
+        startInfo.ArgumentList.Add("--expected-target-sha256");
+        startInfo.ArgumentList.Add(installedHostSha256);
 
         _ = Process.Start(startInfo)
             ?? throw new InvalidOperationException(
