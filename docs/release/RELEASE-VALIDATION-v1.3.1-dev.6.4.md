@@ -1,3 +1,4 @@
+down
 # CouchLink v1.3.1-dev.6.4 Validation Record
 
 ## Previous proof
@@ -5,32 +6,80 @@
 `dev.5 → dev.6.3` completed successfully:
 
 - legacy launch arguments accepted;
-- downloaded payload verified;
-- Host replaced and restarted;
-- trusted-device state survived;
-- listener and discovery resumed;
-- no new updater error was written.
-
-## Current proof objective
-
-Validate the newer Host path in which `dev.6.3` supplies `--expected-target-sha256`.
-
-## Expected success receipt
-
-```text
-Downloaded payload SHA-256 verified: true
-Installed target SHA-256 verified: true
-Replacement completed: true
-Restart requested: true
-```
-
-## Pending
-
-- [ ] Build and package.
-- [ ] Publish GitHub prerelease.
-- [ ] Windows discovery from `dev.6.3`.
-- [ ] Replacement and restart as `dev.6.4`.
-- [ ] Success receipt confirms installed-target SHA-256 verification.
-- [ ] State preservation.
-- [ ] Android signed update.
-- [ ] Final reports.
+- - downloaded payload verified;
+- - Host replaced and restarted;
+- - trusted-device state survived;
+- - listener and discovery resumed;
+- - no new updater error was written.
+-
+- ## Current proof objective
+-
+- Validate the newer Host path in which `dev.6.3` supplies `--expected-target-sha256`.
+-
+- ## Expected success receipt
+-
+- ```text
+- Downloaded payload SHA-256 verified: true
+- Installed target SHA-256 verified: true
+- Replacement completed: true
+- Restart requested: true
+- ````
+-
+- ## Final validation results
+-
+- * [x] Build and package passed.
+- * [x] GitHub prerelease published.
+- * [x] Windows `dev.6.3` discovered `dev.6.4`.
+- * [x] Host replacement completed successfully.
+- * [x] CouchLink restarted automatically as `dev.6.4`.
+- * [x] Downloaded payload SHA-256 verification passed.
+- * [x] Installed target SHA-256 verification passed.
+- * [x] Trusted-device and connected-device state survived.
+- * [x] Listener and discovery resumed.
+- * [x] No new updater error was written.
+- * [x] Android signed update reached versionCode `154`.
+- * [x] Android updater returned to Idle with no update available.
+- * [x] Windows updater returned to Idle with `Error: None`.
+-
+- ## Final updater reports
+-
+- ### Windows
+-
+- ```text
+- CouchLink Updater Test Report
+- Host version: 1.3.1-dev.6.4
+- Channel: Test
+- Available version: None
+- Status: Test updates are checked against official CouchLink prereleases.
+- Stage: Idle
+- Progress: 0%
+- Timestamp: 2026-07-27T20:42:40.1554674-05:00
+- Error: None
+- ```
+-
+- ### Android
+-
+- ```text
+- CouchLink Updater Test Report
+- Remote version: 1.3.1-dev.6.4 (154)
+- Channel: Test
+- Available: None
+- Stage: Idle
+- Status: Updates are delivered from the official MikereDD/CouchLink GitHub releases.
+- Progress: 0%
+- ```
+-
+- ## Final status
+-
+- CouchLink `v1.3.1-dev.6.4` passed:
+-
+- * the legacy Windows updater path;
+- * the hardened installed-target SHA-256 verification path;
+- * Windows replacement and automatic restart;
+- * trusted-device and connected-device state preservation;
+- * the signed Android update path;
+- * final no-update checks on both platforms.
+-
+- ```
+- ```
+-
