@@ -292,6 +292,12 @@ private fun CouchLinkApp() {
                             }
                         },
                         onRetryLauncherHost = launcherHost::retry,
+                        onWakePc = {
+                            if (hapticsEnabled) {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                            launcherHost.wakePc()
+                        },
                         onRefreshAudioOutputs = { launcherHost.refreshAudioOutputs() },
                         onAudioOutput = { endpointId -> launcherHost.setAudioOutput(endpointId) },
                         onSetAudioFavorite = { slot, endpointId -> launcherHost.setAudioFavorite(slot, endpointId) },

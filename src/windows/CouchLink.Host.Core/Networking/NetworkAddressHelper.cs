@@ -10,14 +10,8 @@ internal static class NetworkAddressHelper
     {
         var results = new List<(IPAddress, IPAddress)>();
 
-        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+        foreach (NetworkInterface adapter in GetCandidateAdapters())
         {
-            if (adapter.OperationalStatus != OperationalStatus.Up ||
-                adapter.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
-            {
-                continue;
-            }
-
             IPInterfaceProperties properties;
             try
             {
@@ -44,32 +38,58 @@ internal static class NetworkAddressHelper
         return results;
     }
 
-
     public static (IPAddress Address, IPAddress Broadcast, string MacAddress)? GetPrimaryNetworkIdentity()
     {
-        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces())
+        foreach (NetworkInterface adapter in GetCandidateAdapters())
         {
-            if (adapter.OperationalStatus != OperationalStatus.Up ||
-                adapter.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel)
+            byte[] physicalAddress = adapter.GetPhysicalAddress().GetAddressBytes();
+            if (physicalAddress.Length != 6 || physicalAddress.All(static value => value == 0))
+            {
                 continue;
+            }
 
             IPInterfaceProperties properties;
-            try { properties = adapter.GetIPProperties(); }
-            catch (NetworkInformationException) { continue; }
+            try
+            {
+                properties = adapter.GetIPProperties();
+            }
+            catch (NetworkInformationException)
+            {
+                continue;
+            }
 
             foreach (UnicastIPAddressInformation unicast in properties.UnicastAddresses)
             {
                 if (unicast.Address.AddressFamily != AddressFamily.InterNetwork ||
-                    IPAddress.IsLoopback(unicast.Address) || unicast.IPv4Mask is null)
+                    IPAddress.IsLoopback(unicast.Address) ||
+                    unicast.IPv4Mask is null)
+                {
                     continue;
+                }
 
-                string mac = string.Concat(adapter.GetPhysicalAddress().GetAddressBytes().Select(b => b.ToString("X2")));
-                if (mac.Length == 12)
-                    return (unicast.Address, CalculateBroadcast(unicast.Address, unicast.IPv4Mask), mac);
+                string mac = string.Concat(physicalAddress.Select(static value => value.ToString("X2")));
+                return (unicast.Address, CalculateBroadcast(unicast.Address, unicast.IPv4Mask), mac);
             }
         }
+
         return null;
     }
+
+    private static IEnumerable<NetworkInterface> GetCandidateAdapters() =>
+        NetworkInterface.GetAllNetworkInterfaces()
+            .Where(static adapter =>
+                adapter.OperationalStatus == OperationalStatus.Up &&
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
+                adapter.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+            .OrderBy(static adapter => AdapterPriority(adapter.NetworkInterfaceType))
+            .ThenBy(static adapter => adapter.Name, StringComparer.OrdinalIgnoreCase);
+
+    private static int AdapterPriority(NetworkInterfaceType type) => type switch
+    {
+        NetworkInterfaceType.Ethernet => 0,
+        NetworkInterfaceType.Wireless80211 => 1,
+        _ => 2,
+    };
 
     private static IPAddress CalculateBroadcast(IPAddress address, IPAddress mask)
     {

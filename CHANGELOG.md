@@ -1,3 +1,16 @@
+# CouchLink v1.3.1-dev.8
+
+- Add **Wake PC** for a previously trusted wired Windows Launcher Host.
+- Persist the PC name, endpoint, and normalized Ethernet MAC only after a trusted session succeeds.
+- Restore the remembered trusted Host while the PC is asleep so Wake PC remains available after an Android restart.
+- Send repeated standard magic packets to UDP ports 9 and 7 through limited and interface-specific broadcast addresses.
+- Keep normal discovery active and automatically reconnect the trusted Host after Windows wakes.
+- Add Waking, timeout, and failure states without affecting Bluetooth HID input.
+- Prefer an active wired Ethernet identity when the Windows Host advertises its Wake-on-LAN MAC.
+- Remove the saved wake identity together with the pairing token when **Forget Host** is used.
+- Add Wake PC diagnostics, setup documentation, and a pre-RC validation checklist.
+- Bump Android to versionCode 157.
+
 # CouchLink v1.3.1-dev.7.1
 
 ## Signed-to-signed updater proof build

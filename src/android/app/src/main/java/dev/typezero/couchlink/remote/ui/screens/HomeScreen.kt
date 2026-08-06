@@ -111,12 +111,13 @@ internal fun HomeScreen(
     launcherEnabled: Boolean,
     inputEnabled: Boolean,
     onRetryLauncherHost: () -> Unit,
+    onWakePc: () -> Unit,
     onRefreshAudioOutputs: () -> Unit,
     onAudioOutput: (String) -> Unit,
     onSetAudioFavorite: (AudioFavoriteSlot, String) -> Unit,
     onClearAudioFavorite: (AudioFavoriteSlot) -> Unit,
 ) {
-    LauncherHostStatus(launcherHostState, onRetryLauncherHost)
+    LauncherHostStatus(launcherHostState, onRetryLauncherHost, onWakePc)
     SectionLabel("LAUNCHERS")
     if (!launcherEnabled) {
         Text(
@@ -440,11 +441,12 @@ private fun compactAudioOutputName(name: String): String = name
 private fun LauncherHostStatus(
     state: LauncherHostState,
     onRetry: () -> Unit,
+    onWake: () -> Unit,
 ) {
     val shape = RoundedCornerShape(18.dp)
     val statusColor = when {
         state.connected -> Success
-        state.pairingRequired || state.connecting -> Accent
+        state.pairingRequired || state.connecting || state.waking -> Accent
         else -> Muted
     }
     Row(
@@ -452,7 +454,6 @@ private fun LauncherHostStatus(
             .fillMaxWidth()
             .background(Color(0xFF090D11), shape)
             .border(1.dp, Accent.copy(alpha = 0.72f), shape)
-            .clickable(enabled = !state.connected, onClick = onRetry)
             .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -472,7 +473,37 @@ private fun LauncherHostStatus(
                 maxLines = 2,
             )
         }
-        if (!state.connected) Text("RETRY", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        if (!state.connected) {
+            val wakeAvailable = state.trusted && state.wakeMacAddress.isNotBlank()
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = when {
+                        state.waking -> "WAKING"
+                        state.connecting -> "CONNECTING"
+                        wakeAvailable -> "WAKE PC"
+                        else -> "RETRY"
+                    },
+                    color = Accent,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clickable(
+                        enabled = !state.connecting && !state.waking,
+                        onClick = if (wakeAvailable) onWake else onRetry,
+                    ),
+                )
+                if (wakeAvailable && !state.connecting && !state.waking) {
+                    Text(
+                        text = "RETRY",
+                        color = Muted,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(top = 3.dp)
+                            .clickable(onClick = onRetry),
+                    )
+                }
+            }
+        }
     }
 }
 

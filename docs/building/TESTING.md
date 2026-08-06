@@ -56,3 +56,19 @@ For Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, E
 - Confirm no signing keys, passwords, pairing tokens, local logs, generated binaries, or machine-specific paths are present in source control.
 - Confirm LICENSE, NOTICE, PRIVACY.md, SECURITY.md, CONTRIBUTING.md, and TRADEMARKS.md are included.
 - Confirm release notes, installation guide, changelog, and version badges all report `1.1`.
+
+
+## Wake PC pre-RC validation
+
+- Upgrade Android to `1.3.1-dev.8` (`versionCode 157`) and Windows Host to `1.3.1-dev.8`.
+- Connect the trusted Host once while awake.
+- Confirm Settings shows the wired Wake-on-LAN MAC address.
+- Put the PC into settled S3 sleep and confirm Home changes from Host connected to **WAKE PC**.
+- Tap **WAKE PC** and confirm repeated packets do not freeze the Android UI.
+- Confirm the PC wakes and CouchLink automatically discovers and authenticates the Host.
+- Confirm launcher states and Audio Output repopulate after reconnect.
+- Repeat three complete sleep/wake cycles.
+- Cold-start Android while the PC is asleep and confirm the remembered trusted Host still offers **WAKE PC**.
+- Use **Forget Host** and confirm the saved wake identity and Wake PC action disappear with the trust token.
+- Close only the Windows Host while leaving the PC awake; confirm Wake PC reports a timeout rather than falsely claiming the Host reconnected.
+- Verify Bluetooth HID remains usable throughout Host sleep, wake, and reconnect transitions.

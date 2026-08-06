@@ -27,6 +27,7 @@ Include:
 
 - CouchLink does not provide internet-facing or cloud-relay functionality.
 - The Windows host is intended for trusted local networks.
+- Wake-on-LAN magic packets are unauthenticated LAN broadcasts by design; CouchLink exposes Wake PC only for a Host with an existing trusted pairing token and stores its wake identity only after a trusted session succeeds.
 - Pairing tokens and signing keys must never be committed to source control.
 - Android release keystores and passwords must remain private.
 - The Windows host does not inject keyboard or mouse input and does not bypass Windows authentication.

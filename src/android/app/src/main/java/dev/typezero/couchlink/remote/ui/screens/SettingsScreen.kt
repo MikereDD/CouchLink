@@ -100,7 +100,14 @@ internal fun SettingsScreen(
             appendLine("Bluetooth HID registered: ${hidState.registered}")
             appendLine("Bluetooth HID connected: ${hidState.connected}")
             appendLine("Bluetooth HID device: ${hidState.connectedHost?.name ?: "None"}")
-            append("Bluetooth status: ${hidState.message}")
+            appendLine("Bluetooth status: ${hidState.message}")
+            appendLine("Windows Host trusted: ${launcherHostState.trusted}")
+            appendLine("Windows Host connected: ${launcherHostState.connected}")
+            appendLine("Windows Host PC: ${launcherHostState.hostName.ifBlank { "None" }}")
+            appendLine("Windows Host endpoint: ${launcherHostState.hostAddress.ifBlank { "None" }}:${launcherHostState.hostPort}")
+            appendLine("Windows Host wake MAC: ${launcherHostState.wakeMacAddress.ifBlank { "Unavailable" }}")
+            appendLine("Windows Host waking: ${launcherHostState.waking}")
+            append("Windows Host status: ${launcherHostState.message}")
         }
     }
 
@@ -376,6 +383,7 @@ private fun WindowsLauncherHostPanel(
             Text(
                 text = when {
                     state.connected -> "CONNECTED"
+                    state.waking -> "WAKING"
                     state.connecting -> "CONNECTING"
                     state.discovered && !state.trusted -> "PAIR"
                     state.discovered -> "FOUND"
@@ -399,6 +407,10 @@ private fun WindowsLauncherHostPanel(
             if (state.hostAddress.isBlank()) "Not available" else "${state.hostAddress}:${state.hostPort}",
         )
         AboutDetailRow("Host version", state.hostVersion.ifBlank { "Unknown" })
+        AboutDetailRow(
+            "Wake-on-LAN",
+            state.wakeMacAddress.ifBlank { "Unavailable until a trusted Host advertises Ethernet identity" },
+        )
         AboutDetailRow("Launcher fallback", "Bluetooth HID when host is offline")
 
         if (state.discovered && !state.trusted && !state.connected && !state.connecting) {
