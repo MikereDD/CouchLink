@@ -1,3 +1,11 @@
+# CouchLink v1.3.1-dev.8.1
+
+- Remove the stale **Fire TV Stick** label from HDMI 3.
+- Replace Hisense-specific HDMI descriptions with neutral **HDMI input** labels.
+- Stop permanently highlighting HDMI 3 when CouchLink has no trustworthy live input-state feedback.
+- Preserve all verified HDMI hardware mappings and switching behavior.
+- Bump Android to versionCode 158.
+
 # CouchLink v1.3.1-dev.8
 
 - Add **Wake PC** for a previously trusted wired Windows Launcher Host.

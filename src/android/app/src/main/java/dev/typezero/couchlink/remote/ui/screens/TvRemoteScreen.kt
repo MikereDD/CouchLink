@@ -345,9 +345,9 @@ private fun InputSelectorDialog(
                 }
             }
 
-            InputSourceButton(RemoteIcon.Hdmi, "HDMI 1", "Hisense hardware input HW4") { onSelect(TvInputTarget.HDMI_1) }
-            InputSourceButton(RemoteIcon.Hdmi, "HDMI 2", "Hisense hardware input HW5") { onSelect(TvInputTarget.HDMI_2) }
-            InputSourceButton(RemoteIcon.Hdmi, "HDMI 3", "Fire TV Stick • HW6", highlighted = true) { onSelect(TvInputTarget.HDMI_3) }
+            InputSourceButton(RemoteIcon.Hdmi, "HDMI 1", "HDMI input") { onSelect(TvInputTarget.HDMI_1) }
+            InputSourceButton(RemoteIcon.Hdmi, "HDMI 2", "HDMI input") { onSelect(TvInputTarget.HDMI_2) }
+            InputSourceButton(RemoteIcon.Hdmi, "HDMI 3", "HDMI input") { onSelect(TvInputTarget.HDMI_3) }
             InputSourceButton(RemoteIcon.Composite, "COMPOSITE", "Analog AV input") { onSelect(TvInputTarget.COMPOSITE) }
             InputSourceButton(RemoteIcon.Antenna, "TV / ANTENNA", "Built-in tuner") { onSelect(TvInputTarget.TV) }
 
