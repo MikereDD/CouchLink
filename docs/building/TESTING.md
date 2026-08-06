@@ -72,3 +72,13 @@ For Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, E
 - Use **Forget Host** and confirm the saved wake identity and Wake PC action disappear with the trust token.
 - Close only the Windows Host while leaving the PC awake; confirm Wake PC reports a timeout rather than falsely claiming the Host reconnected.
 - Verify Bluetooth HID remains usable throughout Host sleep, wake, and reconnect transitions.
+
+## TV input selector regression
+
+- Install Android `1.3.1-dev.8.1` (`versionCode 158`).
+- Open **TV Remote → Input** without selecting an input first.
+- Confirm HDMI 1, HDMI 2, and HDMI 3 all show the neutral subtitle **HDMI input**.
+- Confirm no HDMI row is pre-highlighted.
+- Confirm the removed Fire TV Stick is not named anywhere in the selector.
+- Select each HDMI input and confirm the established HW4, HW5, and HW6 switching mappings still work.
+- Wake the Windows PC and allow HDMI-CEC to activate its source; reopen the selector and confirm CouchLink does not invent or preselect a live HDMI state.
