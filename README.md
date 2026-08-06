@@ -29,7 +29,7 @@ CouchLink uses independent connection paths so each feature remains useful even 
 | **Android Bluetooth HID** | Keyboard, mouse, touchpad, media keys, shortcuts, and sign-in input | **Yes** |
 | **Windows Launcher Host** | Local discovery, trusted pairing, launcher actions, and live state feedback | After desktop login |
 | **Google TV Remote v2** | Secure TV pairing, navigation, playback, power, volume, channels, settings, and app-link actions | Independent of the Windows host |
-| **Wake-on-LAN** | Powers on a configured TV that supports network wake | While the TV is in supported standby |
+| **Wake-on-LAN** | Wakes a trusted wired Windows PC from S3 sleep and powers on a configured TV that supports network wake | While the target retains network standby power |
 
 The Android remote remains useful when the optional Windows host is closed or unavailable. Launcher tiles prefer the host when connected and fall back to Bluetooth commands when appropriate. TV control uses its own secure local connection.
 
@@ -51,6 +51,7 @@ The Android remote remains useful when the optional Windows host is closed or un
   - Amazon Games
 - Local-only Windows host with six-digit pairing and persistent trusted-device tokens.
 - Automatic trusted reconnect, heartbeat monitoring, launcher-state feedback, and Bluetooth fallback.
+- **Wake PC** for a trusted wired Windows Host, with repeated magic packets and automatic discovery/reconnection.
 - Live Windows audio-output discovery and switching with Headphones and TV / Display favorites.
 - Automatic Audio Output synchronization across the Windows popup and connected Android remote.
 
@@ -67,6 +68,8 @@ The Android remote remains useful when the optional Windows host is closed or un
 - Premium haptic feedback with accidental Power double-tap protection.
 
 > **Current hardware validation:** the complete TV Remote feature set has been verified on a Hisense A6H Google TV. Standard Google TV controls should be broadly reusable, while direct input mappings are TV-model and firmware dependent.
+
+> **Wake PC scope:** the first implementation targets wired Ethernet wake from classic S3 sleep. Hybrid Sleep and automatic hibernation should be disabled for reliable operation. Wake from shutdown, hibernation, Wi-Fi, and routed networks is not claimed.
 
 ### Privacy and resilience
 
@@ -197,6 +200,7 @@ A quick look at CouchLink on Android and Windows.
 - [Architecture](docs/architecture/ARCHITECTURE.md)
 - [Build instructions](docs/building/BUILDING.md)
 - [Integration testing](docs/building/TESTING.md)
+- [Wake PC setup and validation](docs/building/WAKE-PC.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
 - [Release notes for 1.3](docs/release/RELEASE-NOTES-v1.3.md)

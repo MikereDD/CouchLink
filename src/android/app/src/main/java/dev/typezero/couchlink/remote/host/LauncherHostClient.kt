@@ -39,13 +39,14 @@ internal class LauncherHostClient(context: Context) {
     private val sequence = AtomicLong(0)
     private val writeLock = Any()
 
-    private val _state = MutableStateFlow(LauncherHostState())
+    private val _state = MutableStateFlow(rememberedHostState())
     val state: StateFlow<LauncherHostState> = _state.asStateFlow()
 
     private var discoveryJob: Job? = null
     private var connectionJob: Job? = null
     private var heartbeatJob: Job? = null
     private var audioSyncJob: Job? = null
+    private var wakeJob: Job? = null
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var activeHostId: String? = null
@@ -64,6 +65,7 @@ internal class LauncherHostClient(context: Context) {
 
     fun stop() {
         discoveryJob?.cancel()
+        wakeJob?.cancel()
         disconnect("Launcher host stopped.")
     }
 
@@ -75,7 +77,21 @@ internal class LauncherHostClient(context: Context) {
 
     fun forgetTrustedHost(): Boolean {
         val hostId = activeHostId ?: _state.value.hostId.takeIf(String::isNotBlank) ?: return false
-        preferences.edit().remove(tokenKey(hostId)).apply()
+        wakeJob?.cancel()
+        wakeJob = null
+        val editor = preferences.edit()
+            .remove(tokenKey(hostId))
+            .remove(hostNameKey(hostId))
+            .remove(hostAddressKey(hostId))
+            .remove(hostPortKey(hostId))
+            .remove(hostWakeMacKey(hostId))
+        if (preferences.getString(KEY_LAST_TRUSTED_HOST_ID, null) == hostId) {
+            editor.remove(KEY_LAST_TRUSTED_HOST_ID)
+        }
+        editor.apply()
+        activeHostId = null
+        activeHostAddress = null
+        activeHostPort = SESSION_PORT
         retry()
         return true
     }
@@ -134,6 +150,73 @@ internal class LauncherHostClient(context: Context) {
         }
     }
 
+
+    fun wakePc(): Boolean {
+        val current = _state.value
+        if (current.connected || current.connecting || current.waking || !current.trusted) return false
+
+        val hostId = current.hostId.takeIf(String::isNotBlank)
+            ?: preferences.getString(KEY_LAST_TRUSTED_HOST_ID, null)
+            ?: return false
+        val macAddress = WakeOnLanSender.normalizeMacAddress(
+            current.wakeMacAddress.ifBlank {
+                preferences.getString(hostWakeMacKey(hostId), null).orEmpty()
+            },
+        ) ?: run {
+            _state.value = current.copy(
+                message = "Wake PC is unavailable because this trusted host has no saved Ethernet MAC address.",
+            )
+            return false
+        }
+        val hostName = current.hostName.ifBlank {
+            preferences.getString(hostNameKey(hostId), "Windows PC") ?: "Windows PC"
+        }
+
+        wakeJob = scope.launch {
+            try {
+                _state.value = _state.value.copy(
+                    waking = true,
+                    connecting = false,
+                    message = "Sending Wake-on-LAN to $hostName…",
+                )
+                WakeOnLanSender.send(macAddress)
+                if (!_state.value.connected) {
+                    _state.value = _state.value.copy(
+                        message = "Wake signal sent. Waiting for $hostName and CouchLink Host…",
+                    )
+                }
+
+                val deadline = System.currentTimeMillis() + WAKE_RECONNECT_TIMEOUT_MS
+                while (isActive && !_state.value.connected && System.currentTimeMillis() < deadline) {
+                    delay(WAKE_RECONNECT_POLL_MS)
+                }
+
+                if (_state.value.connected) {
+                    _state.value = _state.value.copy(
+                        waking = false,
+                        message = "Launcher host connected to ${_state.value.hostName.ifBlank { hostName }}.",
+                    )
+                } else {
+                    _state.value = _state.value.copy(
+                        waking = false,
+                        connecting = false,
+                        message = "Wake signal sent, but $hostName did not reconnect. Confirm it is using S3 sleep with wired Ethernet wake enabled.",
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (exception: Exception) {
+                _state.value = _state.value.copy(
+                    waking = false,
+                    connecting = false,
+                    message = "Wake PC failed: ${exception.message ?: "unable to send the magic packet"}",
+                )
+            } finally {
+                wakeJob = null
+            }
+        }
+        return true
+    }
 
     fun refreshAudioOutputs(): Boolean = requestAudioOutputs(showLoading = true)
 
@@ -227,6 +310,9 @@ internal class LauncherHostClient(context: Context) {
                             ?: continue
                         val port = json.optInt("sessionPort", SESSION_PORT)
                         val hasToken = preferences.getString(tokenKey(hostId), null) != null
+                        val advertisedMac = WakeOnLanSender.normalizeMacAddress(json.optString("macAddress"))
+                        val rememberedMac = preferences.getString(hostWakeMacKey(hostId), null).orEmpty()
+                        val wakeMacAddress = advertisedMac ?: WakeOnLanSender.normalizeMacAddress(rememberedMac).orEmpty()
                         _state.value = _state.value.copy(
                             discovered = true,
                             trusted = hasToken,
@@ -234,8 +320,10 @@ internal class LauncherHostClient(context: Context) {
                             hostName = hostName,
                             hostAddress = address,
                             hostPort = port,
+                            wakeMacAddress = wakeMacAddress,
                             message = when {
                                 _state.value.connected -> _state.value.message
+                                _state.value.waking && hasToken -> "$hostName responded. Reconnecting CouchLink Host…"
                                 hasToken -> "Found $hostName"
                                 else -> "Found $hostName. Tap Pair to enable launching."
                             },
@@ -276,7 +364,11 @@ internal class LauncherHostClient(context: Context) {
                 hostName = hostName,
                 hostAddress = address,
                 hostPort = port,
-                message = "Connecting to $hostName…",
+                message = if (_state.value.waking) {
+                    "$hostName responded. Reconnecting CouchLink Host…"
+                } else {
+                    "Connecting to $hostName…"
+                },
             )
             var ownedSocket: Socket? = null
             var ownedOutput: DataOutputStream? = null
@@ -314,10 +406,15 @@ internal class LauncherHostClient(context: Context) {
             } catch (exception: Exception) {
                 if (activeHostId == hostId && socket === ownedSocket) {
                     _state.value = _state.value.copy(
+                        discovered = false,
                         connecting = false,
                         connected = false,
                         pairingRequired = false,
-                        message = "Launcher host disconnected. Bluetooth input still works.",
+                        message = if (_state.value.waking) {
+                            "Wake signal sent. Waiting for $hostName and CouchLink Host…"
+                        } else {
+                            "Launcher host disconnected. Bluetooth input still works."
+                        },
                     )
                 }
             } finally {
@@ -354,6 +451,7 @@ internal class LauncherHostClient(context: Context) {
                     hostId = hostId,
                     hostName = payload.optString("hostName", hostName),
                     hostVersion = payload.optString("hostVersion"),
+                    waking = if (trusted) _state.value.waking else false,
                     message = if (pairingRequired) {
                         "Enter the six-digit code shown by the Windows host."
                     } else {
@@ -387,8 +485,10 @@ internal class LauncherHostClient(context: Context) {
                     connected = true,
                     trusted = true,
                     pairingRequired = false,
+                    waking = false,
                     message = "Launcher host connected to ${payload.optString("hostName", hostName)}.",
                 )
+                saveTrustedHostIdentity(hostId)
                 applyStoredFavorites(activeHostId ?: _state.value.hostId)
                 startHeartbeat(payload.optInt("heartbeatSeconds", 5).coerceIn(2, 15))
                 startAudioSync()
@@ -493,9 +593,14 @@ internal class LauncherHostClient(context: Context) {
         if (result.isFailure) {
             if (_state.value.connected || _state.value.connecting) {
                 _state.value = _state.value.copy(
+                    discovered = false,
                     connected = false,
                     connecting = false,
-                    message = "Launcher host disconnected. Bluetooth input still works.",
+                    message = if (_state.value.waking) {
+                        "Wake signal sent. Waiting for ${_state.value.hostName.ifBlank { "Windows PC" }} and CouchLink Host…"
+                    } else {
+                        "Launcher host disconnected. Bluetooth input still works."
+                    },
                 )
             }
             return false
@@ -508,7 +613,7 @@ internal class LauncherHostClient(context: Context) {
         heartbeatJob?.cancel()
         audioSyncJob?.cancel()
         closeSocket()
-        _state.value = LauncherHostState(message = message)
+        _state.value = rememberedHostState(message)
     }
 
     private fun closeSocket() {
@@ -525,6 +630,57 @@ internal class LauncherHostClient(context: Context) {
             !_state.value.connected &&
             System.currentTimeMillis() - lastAttemptAtMs < RECONNECT_BACKOFF_MS
 
+
+    private fun rememberedHostState(messageOverride: String? = null): LauncherHostState {
+        val hostId = preferences.getString(KEY_LAST_TRUSTED_HOST_ID, null)
+            ?.takeIf(String::isNotBlank)
+            ?: return LauncherHostState(message = messageOverride ?: "Searching for CouchLink Host…")
+        val token = preferences.getString(tokenKey(hostId), null)
+            ?.takeIf(String::isNotBlank)
+            ?: return LauncherHostState(message = messageOverride ?: "Searching for CouchLink Host…")
+        val hostName = preferences.getString(hostNameKey(hostId), "Windows PC")
+            ?.takeIf(String::isNotBlank)
+            ?: "Windows PC"
+        val hostAddress = preferences.getString(hostAddressKey(hostId), "").orEmpty()
+        val hostPort = preferences.getInt(hostPortKey(hostId), SESSION_PORT)
+        val wakeMacAddress = WakeOnLanSender.normalizeMacAddress(
+            preferences.getString(hostWakeMacKey(hostId), null),
+        ).orEmpty()
+
+        return LauncherHostState(
+            trusted = token.isNotBlank(),
+            hostId = hostId,
+            hostName = hostName,
+            hostAddress = hostAddress,
+            hostPort = hostPort,
+            wakeMacAddress = wakeMacAddress,
+            message = messageOverride ?: if (wakeMacAddress.isNotBlank()) {
+                "$hostName is offline. Wake PC is available."
+            } else {
+                "Saved host $hostName is offline. Searching for CouchLink Host…"
+            },
+        )
+    }
+
+    private fun saveTrustedHostIdentity(hostId: String) {
+        if (hostId.isBlank() || preferences.getString(tokenKey(hostId), null).isNullOrBlank()) return
+        val current = _state.value
+        val normalizedMac = WakeOnLanSender.normalizeMacAddress(current.wakeMacAddress)
+        val editor = preferences.edit()
+            .putString(KEY_LAST_TRUSTED_HOST_ID, hostId)
+            .putString(hostNameKey(hostId), current.hostName.ifBlank { "Windows PC" })
+            .putString(hostAddressKey(hostId), current.hostAddress)
+            .putInt(hostPortKey(hostId), current.hostPort)
+        if (normalizedMac != null) {
+            editor.putString(hostWakeMacKey(hostId), normalizedMac)
+        }
+        editor.apply()
+    }
+
+    private fun hostNameKey(hostId: String) = "host_name_$hostId"
+    private fun hostAddressKey(hostId: String) = "host_address_$hostId"
+    private fun hostPortKey(hostId: String) = "host_port_$hostId"
+    private fun hostWakeMacKey(hostId: String) = "host_wake_mac_$hostId"
 
     private fun autoAssignFavorites(hostId: String, devices: List<AudioOutputDevice>) {
         if (hostId.isBlank() || devices.isEmpty()) return
@@ -606,7 +762,10 @@ internal class LauncherHostClient(context: Context) {
         const val RECONNECT_BACKOFF_MS = 4000L
         const val MAX_FRAME_BYTES = 1024 * 1024
         const val AUDIO_SYNC_INTERVAL_MS = 2500L
+        const val WAKE_RECONNECT_TIMEOUT_MS = 45_000L
+        const val WAKE_RECONNECT_POLL_MS = 1_000L
         const val KEY_CLIENT_ID = "client_id"
+        const val KEY_LAST_TRUSTED_HOST_ID = "last_trusted_host_id"
     }
 }
 

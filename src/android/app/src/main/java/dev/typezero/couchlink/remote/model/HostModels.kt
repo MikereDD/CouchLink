@@ -29,6 +29,8 @@ internal data class LauncherHostState(
     val hostAddress: String = "",
     val hostPort: Int = 45821,
     val hostVersion: String = "",
+    val wakeMacAddress: String = "",
+    val waking: Boolean = false,
     val message: String = "Searching for CouchLink Host…",
     val launcherStates: Map<LauncherId, String> = emptyMap(),
     val audioOutputs: List<AudioOutputDevice> = emptyList(),
