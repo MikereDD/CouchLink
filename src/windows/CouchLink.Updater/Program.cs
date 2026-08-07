@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using CouchLink.ReleaseSecurity;
+
+[assembly: InternalsVisibleTo("CouchLink.Updater.Tests")]
 
 namespace CouchLink.Updater;
 
@@ -20,11 +23,10 @@ internal static class Program
             target = Path.GetFullPath(GetRequired(options, "target"));
             restart = Path.GetFullPath(GetRequired(options, "restart"));
             string expectedSha256 = NormalizeSha256(GetRequired(options, "expected-sha256"));
-            string? signature = GetOptional(options, "signature");
-            if (!string.IsNullOrWhiteSpace(signature))
-            {
-                signature = Path.GetFullPath(signature);
-            }
+            // A detached release signature is mandatory. Missing or blank --signature
+            // fails closed here (GetRequired throws) so the privileged replace-and-run
+            // primitive never installs an unverified payload.
+            string signature = Path.GetFullPath(GetRequired(options, "signature"));
             string? expectedTargetSha256 = GetOptional(options, "expected-target-sha256");
             if (!string.IsNullOrWhiteSpace(expectedTargetSha256))
             {
@@ -64,12 +66,8 @@ internal static class Program
                 throw new InvalidDataException("The downloaded Host failed updater-side SHA-256 verification.");
             }
 
-            bool detachedSignatureVerified = false;
-            if (!string.IsNullOrWhiteSpace(signature))
-            {
-                ReleaseSignatureVerifier.VerifyFile(source, signature);
-                detachedSignatureVerified = true;
-            }
+            ReleaseSignatureVerifier.VerifyFile(source, signature);
+            bool detachedSignatureVerified = true;
 
             backup = target + ".previous";
             if (File.Exists(backup))
@@ -195,17 +193,22 @@ internal static class Program
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-    private static void RestoreBackup(string target, string backup)
+    internal static void RestoreBackup(string target, string backup)
     {
+        // No backup means there is nothing to restore. Return without touching the
+        // target so a second recovery call (for example, an inner catch that already
+        // restored, followed by the outer catch) can never delete a good Host.
+        if (!File.Exists(backup))
+        {
+            return;
+        }
+
         if (File.Exists(target))
         {
             File.Delete(target);
         }
 
-        if (File.Exists(backup))
-        {
-            File.Move(backup, target, overwrite: true);
-        }
+        File.Move(backup, target, overwrite: true);
     }
 
     private static void StartHost(string restart)
@@ -315,7 +318,7 @@ internal static class Program
         string name) =>
         values.TryGetValue(name, out string? value) ? value : null;
 
-    private static string GetRequired(IReadOnlyDictionary<string, string> values, string name) =>
+    internal static string GetRequired(IReadOnlyDictionary<string, string> values, string name) =>
         values.TryGetValue(name, out string? value) && !string.IsNullOrWhiteSpace(value)
             ? value
             : throw new ArgumentException($"Missing --{name} argument.");
