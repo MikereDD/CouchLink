@@ -2,7 +2,7 @@
 
 This is the validated release order for CouchLink Test-channel builds.
 
-1. Prepare and build the release source on `dev/add-updater`.
+1. Prepare and build the release source on the active release branch (for this cycle, `release/1.3.1`).
 2. Run the Windows solution build.
 3. Run the root signed release builder.
 4. Confirm the exact release assets and SHA-256 manifest.
