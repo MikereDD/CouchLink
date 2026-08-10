@@ -55,12 +55,12 @@ For Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, E
 
 - Confirm no signing keys, passwords, pairing tokens, local logs, generated binaries, or machine-specific paths are present in source control.
 - Confirm LICENSE, NOTICE, PRIVACY.md, SECURITY.md, CONTRIBUTING.md, and TRADEMARKS.md are included.
-- Confirm release notes, installation guide, changelog, and version badges all report `1.1`.
+- Confirm stable release notes, changelog, Android version metadata, and Windows version displays report `1.3.1`.
 
 
-## Wake PC pre-RC validation
+## Wake PC stable validation
 
-- Upgrade Android to `1.3.1-dev.8` (`versionCode 157`) and Windows Host to `1.3.1-dev.8`.
+- Upgrade Android and Windows Host to `1.3.1` (`versionCode 160` on Android).
 - Connect the trusted Host once while awake.
 - Confirm Settings shows the wired Wake-on-LAN MAC address.
 - Put the PC into settled S3 sleep and confirm Home changes from Host connected to **WAKE PC**.
@@ -75,7 +75,7 @@ For Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, E
 
 ## TV input selector regression
 
-- Install Android `1.3.1-dev.8.1` (`versionCode 158`).
+- Install Android `1.3.1` (`versionCode 160`).
 - Open **TV Remote → Input** without selecting an input first.
 - Confirm HDMI 1, HDMI 2, and HDMI 3 all show the neutral subtitle **HDMI input**.
 - Confirm no HDMI row is pre-highlighted.

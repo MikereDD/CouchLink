@@ -1,3 +1,22 @@
+# CouchLink v1.3.1
+
+- Promote the validated `v1.3.1-rc.1` build line to stable.
+- Carry forward the signed Windows self-updater with pinned ECDSA P-256 verification and mandatory detached signatures.
+- Carry forward the hardened updater rollback path and focused updater safety tests.
+- Carry forward Wake PC with automatic trusted-host rediscovery/reconnect after S3 wake.
+- Carry forward the corrected neutral TV input selector with no invented current-input highlight.
+- Preserve Android package/certificate verification, trusted-host reconnect, Audio Output, launcher controls, touchpad/keyboard, and Bluetooth HID behavior.
+- Bump Android to versionCode 160 for the stable in-place upgrade path.
+
+# CouchLink v1.3.1-rc.1
+
+- Promote the validated v1.3.1 development line to its first release candidate.
+- Require a detached Windows Host signature in the privileged external updater so unsigned updater invocation fails closed.
+- Make updater rollback idempotent so a second recovery call cannot delete an already-restored Host.
+- Add focused updater safety tests for rollback recovery and mandatory signature handling.
+- Carry forward the signed Windows update chain, Android package-identity verification, Wake PC, automatic trusted-host reconnect, and the corrected neutral TV input selector.
+- Bump Android to versionCode 159.
+
 # CouchLink v1.3.1-dev.8.1
 
 - Remove the stale **Fire TV Stick** label from HDMI 3.
