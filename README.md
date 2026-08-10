@@ -6,8 +6,8 @@
 
 ### A premium Android couch remote for Windows gaming and Google TV control.
 
-![Android](https://img.shields.io/badge/Android-1.3-ff8617?style=for-the-badge&logo=android&logoColor=white)
-![Windows Host](https://img.shields.io/badge/Windows_Host-1.3-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
+![Android](https://img.shields.io/badge/Android-1.3.1-ff8617?style=for-the-badge&logo=android&logoColor=white)
+![Windows Host](https://img.shields.io/badge/Windows_Host-1.3.1-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
 ![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
 ![Branding](https://img.shields.io/badge/Branding-Reserved-18181B?style=for-the-badge)
@@ -145,16 +145,16 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 | Component | Version | Status |
 |---|---:|---|
-| Android remote | `1.3` (`versionCode 141`) | Stable |
-| Windows Launcher Host | `1.3` | Stable |
+| Android remote | `1.3.1` (`versionCode 160`) | Stable |
+| Windows Launcher Host | `1.3.1` | Stable |
 | Shared launcher protocol | `1` | UDP discovery + framed TCP session |
 | Google TV protocol | Remote v2 | Secure local TLS pairing and control |
 
-CouchLink 1.3 is the stable unified Android and Windows release. It adds live Windows Audio Output discovery, favorites, switching, synchronization, and the redesigned CouchLink Host dashboard while preserving the complete Google TV Remote experience from 1.2.
+CouchLink 1.3.1 is the current stable unified Android and Windows release. It adds secure self-updating releases, Wake PC for trusted wired Windows hosts, hardened updater recovery and signature verification, improved reconnection reliability, and the corrected TV input selector while preserving the complete CouchLink 1.3 feature set.
 
 ## Self-updating releases
 
-CouchLink 1.3.1 is adding secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, accept stable releases only, require exact official asset names, and verify SHA-256 digests before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows uses a separate updater executable so the running Host can close, be replaced safely, and restart.
+CouchLink 1.3.1 includes secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, keep Stable and Test channels separate, require exact official asset names, and verify release integrity before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows verifies SHA-256 plus a detached ECDSA release signature against the pinned CouchLink release key, then uses a separate updater executable so the running Host can close, be replaced safely, rolled back if needed, and restarted.
 
 The updater never performs a silent Android install or accepts an arbitrary update server.
 
@@ -203,6 +203,9 @@ A quick look at CouchLink on Android and Windows.
 - [Wake PC setup and validation](docs/building/WAKE-PC.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
+- [Release notes for 1.3.1](docs/release/RELEASE-NOTES-v1.3.1.md)
+- [Release checklist for 1.3.1](docs/release/RELEASE-CHECKLIST-v1.3.1.md)
+- [Release validation for 1.3.1](docs/release/RELEASE-VALIDATION-v1.3.1.md)
 - [Release notes for 1.3](docs/release/RELEASE-NOTES-v1.3.md)
 - [Release checklist for 1.3](docs/release/RELEASE-CHECKLIST-v1.3.md)
 - [Release validation for 1.3](docs/release/RELEASE-VALIDATION-v1.3.md)
