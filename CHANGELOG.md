@@ -1,3 +1,13 @@
+# CouchLink v1.3.1
+
+- Promote the validated `v1.3.1-rc.1` build line to stable.
+- Carry forward the signed Windows self-updater with pinned ECDSA P-256 verification and mandatory detached signatures.
+- Carry forward the hardened updater rollback path and focused updater safety tests.
+- Carry forward Wake PC with automatic trusted-host rediscovery/reconnect after S3 wake.
+- Carry forward the corrected neutral TV input selector with no invented current-input highlight.
+- Preserve Android package/certificate verification, trusted-host reconnect, Audio Output, launcher controls, touchpad/keyboard, and Bluetooth HID behavior.
+- Bump Android to versionCode 160 for the stable in-place upgrade path.
+
 # CouchLink v1.3.1-rc.1
 
 - Promote the validated v1.3.1 development line to its first release candidate.
