@@ -5,45 +5,39 @@ using CouchLink.Protocol;
 
 namespace CouchLink.Host.Core.Networking;
 
+internal sealed record DiscoveryAdvertisementTarget(
+    DiscoveryAdvertisement Advertisement,
+    IPAddress SourceAddress,
+    IPAddress BroadcastAddress);
+
 internal sealed class DiscoveryAdvertiser : IAsyncDisposable
 {
-    private readonly Func<DiscoveryAdvertisement> _advertisementFactory;
-    private readonly UdpClient _udpClient;
+    private readonly Func<DiscoveryAdvertisementTarget?> _advertisementFactory;
 
-    public DiscoveryAdvertiser(Func<DiscoveryAdvertisement> advertisementFactory)
-    {
+    public DiscoveryAdvertiser(Func<DiscoveryAdvertisementTarget?> advertisementFactory) =>
         _advertisementFactory = advertisementFactory;
-        _udpClient = new UdpClient(AddressFamily.InterNetwork)
-        {
-            EnableBroadcast = true
-        };
-    }
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            DiscoveryAdvertisement advertisement = _advertisementFactory();
-            byte[] payload = JsonSerializer.SerializeToUtf8Bytes(advertisement, ProtocolJson.Options);
-
-            var targets = new HashSet<IPAddress> { IPAddress.Broadcast };
-            foreach ((_, IPAddress broadcast) in NetworkAddressHelper.GetActiveIpv4Addresses())
-            {
-                targets.Add(broadcast);
-            }
-
-            foreach (IPAddress target in targets)
+            DiscoveryAdvertisementTarget? advertisement = _advertisementFactory();
+            if (advertisement is not null)
             {
                 try
                 {
-                    await _udpClient.SendAsync(
-                        payload,
-                        new IPEndPoint(target, HostConstants.DiscoveryPort),
+                    using var udpClient = new UdpClient(new IPEndPoint(advertisement.SourceAddress, 0))
+                    {
+                        EnableBroadcast = true
+                    };
+                    await udpClient.SendAsync(
+                        SerializeAdvertisement(advertisement.Advertisement)!,
+                        new IPEndPoint(advertisement.BroadcastAddress, HostConstants.DiscoveryPort),
                         cancellationToken).ConfigureAwait(false);
                 }
                 catch (SocketException)
                 {
-                    // An adapter may disappear between enumeration and send.
+                    // An adapter may disappear between selection and send.
                 }
             }
 
@@ -53,9 +47,8 @@ internal sealed class DiscoveryAdvertiser : IAsyncDisposable
         }
     }
 
-    public ValueTask DisposeAsync()
-    {
-        _udpClient.Dispose();
-        return ValueTask.CompletedTask;
-    }
+    internal static byte[]? SerializeAdvertisement(DiscoveryAdvertisement? advertisement) =>
+        advertisement is null ? null : JsonSerializer.SerializeToUtf8Bytes(advertisement, ProtocolJson.Options);
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

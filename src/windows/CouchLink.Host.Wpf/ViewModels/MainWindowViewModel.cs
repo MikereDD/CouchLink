@@ -12,6 +12,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
 {
     private readonly CouchLinkHostRuntime _runtime = new();
     private HostSnapshot _snapshot;
+    private HostNetworkCandidate? _selectedNetworkInterface;
     private TrustedDeviceInfo? _selectedTrustedDevice;
     private readonly HostPreferences _preferences;
 
@@ -23,18 +24,22 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
         PairNewDeviceCommand = new RelayCommand(_runtime.PrepareForPairing);
         RevokeSelectedDeviceCommand = new RelayCommand(RevokeSelectedDevice);
         RevokeAllDevicesCommand = new RelayCommand(RevokeAllDevices);
+        SelectNetworkInterfaceCommand = new RelayCommand(SelectNetworkInterface);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ICommand PairNewDeviceCommand { get; }
     public ICommand RevokeSelectedDeviceCommand { get; }
     public ICommand RevokeAllDevicesCommand { get; }
+    public ICommand SelectNetworkInterfaceCommand { get; }
     public string HostName => _snapshot.HostName;
     public string HostId => _snapshot.HostId;
     public string HostVersion => _snapshot.HostVersion;
     public string HostState => _snapshot.HostState;
     public string DiscoveryEndpoint => $"UDP {_snapshot.DiscoveryPort}";
-    public string SessionEndpoint => $"{_snapshot.PrimaryAddress}:{_snapshot.SessionPort}";
+    public string SessionEndpoint => _snapshot.NetworkSelection.Availability == HostNetworkSelectionAvailability.Available
+        ? $"{_snapshot.NetworkSelection.SelectedAddress}:{_snapshot.SessionPort}"
+        : string.Empty;
     public string ServiceStatus => _snapshot.IsRunning ? "Listening" : "Stopped";
     public string VersionBadge => $"{HostVersion} — Local-first Windows launcher host";
     public string ProtocolVersion => "1";
@@ -66,7 +71,31 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
         }
     }
 
-    public string DiscoveryStatus => _snapshot.IsRunning ? "Advertising CouchLink Host" : "Not advertising";
+    public string DiscoveryStatus => !_snapshot.IsRunning
+        ? "Not advertising"
+        : _snapshot.NetworkSelection.Availability switch
+        {
+            HostNetworkSelectionAvailability.Available => "Advertising CouchLink Host",
+            HostNetworkSelectionAvailability.UnavailableRequiresReselection => "Discovery stopped — select an available interface to resume.",
+            _ => "Waiting for an eligible interface."
+        };
+    public IReadOnlyList<HostNetworkCandidate> NetworkInterfaceCandidates => _snapshot.NetworkSelection.Candidates;
+    public HostNetworkSelectionMode? NetworkSelectionMode => _snapshot.NetworkSelection.SelectionMode;
+    public string NetworkSelectionStatus => _snapshot.NetworkSelection.Availability switch
+    {
+        HostNetworkSelectionAvailability.Available => $"{_snapshot.NetworkSelection.SelectionMode}: {_snapshot.NetworkSelection.SelectedLabel} ({_snapshot.NetworkSelection.SelectedAddress})",
+        HostNetworkSelectionAvailability.UnavailableRequiresReselection => "Select an available interface to resume discovery.",
+        _ => "Waiting for an eligible LAN interface.",
+    };
+    public HostNetworkCandidate? SelectedNetworkInterface
+    {
+        get => _selectedNetworkInterface;
+        set
+        {
+            _selectedNetworkInterface = value;
+            OnPropertyChanged();
+        }
+    }
     public string ConnectedClients => _snapshot.ConnectedClients.ToString();
     public string ConnectedDevice => _snapshot.ConnectedDevice;
     public string TrustedDevices => _snapshot.TrustedDevices.ToString();
@@ -93,6 +122,15 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
     {
         get => _preferences.StartMinimized;
         set { _preferences.StartMinimized = value; _preferences.Save(); OnPropertyChanged(); }
+    }
+
+    private void SelectNetworkInterface()
+    {
+        HostNetworkCandidate? candidate = SelectedNetworkInterface;
+        if (candidate is not null)
+        {
+            _runtime.SelectAdvertisedInterface(candidate.Id);
+        }
     }
 
     private void RevokeSelectedDevice()
@@ -129,6 +167,8 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             _snapshot = snapshot;
+            _selectedNetworkInterface = snapshot.NetworkSelection.Candidates.FirstOrDefault(
+                candidate => candidate.Id == snapshot.NetworkSelection.SelectedCandidateId);
             OnPropertyChanged(string.Empty);
         });
     }

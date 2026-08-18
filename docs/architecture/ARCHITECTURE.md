@@ -32,6 +32,12 @@ Windows host
 
 Losing the Windows host must not disable Bluetooth input. Losing Bluetooth HID must not falsely report that the launcher host is disconnected. The Android UI therefore presents separate status panels for each route.
 
+## Windows advertised-interface selection
+
+The Windows Host chooses one eligible physical LAN interface for its current host session and advertises that interface's IPv4 address and MAC identity. This is **session-only selection**: it is not persisted in preferences and a new host session starts with a fresh automatic choice. The dashboard can explicitly choose another eligible interface during the session.
+
+If the selected interface disappears, discovery advertising stops rather than substituting another address or exposing a stale endpoint. Recovery requires **manual reselection** of an eligible interface; there is no automatic failover. This changes only which existing address is advertised: there is **no protocol change** to protocol-v1, UDP discovery port 45820, TCP listener binding on `IPAddress.Any:45821`, pairing/host identity, Wake-on-LAN semantics, or Bluetooth HID independence.
+
 ## Security boundary
 
 - Bluetooth HID uses the operating systems' standard pairing and HID stacks.
