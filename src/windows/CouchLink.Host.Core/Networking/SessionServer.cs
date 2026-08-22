@@ -126,119 +126,119 @@ internal sealed class SessionServer : IAsyncDisposable
         switch (envelope.Type)
         {
             case "hello":
-            {
-                HelloMessage? hello = envelope.Payload.Deserialize<HelloMessage>(ProtocolJson.Options);
-                if (hello is null) { await SendErrorAsync(stream, "invalid_hello", "Hello payload is missing.", envelope.MessageId, cancellationToken); return; }
-                bool trusted = _pairingStore.IsTrusted(hello.ClientId, hello.PairingToken);
-                state.Authenticated = trusted;
-                state.ClientName = hello.ClientName;
-                state.ClientId = hello.ClientId;
-                if (!trusted)
                 {
-                    string code = _pairingCoordinator.CreateOrRefresh(hello.ClientId, hello.ClientName);
-                    _pairingCodeSink(code);
-                    _eventSink($"Pairing requested by {hello.ClientName}. Code {code}");
+                    HelloMessage? hello = envelope.Payload.Deserialize<HelloMessage>(ProtocolJson.Options);
+                    if (hello is null) { await SendErrorAsync(stream, "invalid_hello", "Hello payload is missing.", envelope.MessageId, cancellationToken); return; }
+                    bool trusted = _pairingStore.IsTrusted(hello.ClientId, hello.PairingToken);
+                    state.Authenticated = trusted;
+                    state.ClientName = hello.ClientName;
+                    state.ClientId = hello.ClientId;
+                    if (!trusted)
+                    {
+                        string code = _pairingCoordinator.CreateOrRefresh(hello.ClientId, hello.ClientName);
+                        _pairingCodeSink(code);
+                        _eventSink($"Pairing requested by {hello.ClientName}. Code {code}");
+                    }
+                    else
+                    {
+                        _pairingCodeSink("------");
+                        _pairingStore.MarkConnected(hello.ClientId);
+                        _connectedDeviceSink(hello.ClientName);
+                        _eventSink($"Persistent trusted session opened for {hello.ClientName}");
+                    }
+                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("hello_ack",
+                        new HelloAckMessage(_hostId, _hostName, HostConstants.HostVersion, _hostState(), !trusted, trusted)), cancellationToken);
+                    if (trusted)
+                    {
+                        string[] capabilities = ["heartbeat", "session_state", "launcher_actions", "audio_outputs"];
+                        await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("session_ready",
+                            new SessionReadyMessage(_hostId, _hostName, _hostState(), HostConstants.HeartbeatSeconds, capabilities)), cancellationToken);
+                    }
+                    return;
                 }
-                else
-                {
-                    _pairingCodeSink("------");
-                    _pairingStore.MarkConnected(hello.ClientId);
-                    _connectedDeviceSink(hello.ClientName);
-                    _eventSink($"Persistent trusted session opened for {hello.ClientName}");
-                }
-                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("hello_ack",
-                    new HelloAckMessage(_hostId, _hostName, HostConstants.HostVersion, _hostState(), !trusted, trusted)), cancellationToken);
-                if (trusted)
-                {
-                    string[] capabilities = ["heartbeat", "session_state", "launcher_actions", "audio_outputs"];
-                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("session_ready",
-                        new SessionReadyMessage(_hostId, _hostName, _hostState(), HostConstants.HeartbeatSeconds, capabilities)), cancellationToken);
-                }
-                return;
-            }
 
             case "pair_request":
-            {
-                PairRequestMessage? request = envelope.Payload.Deserialize<PairRequestMessage>(ProtocolJson.Options);
-                if (request is null) { await SendErrorAsync(stream, "invalid_pair_request", "Pair request payload is missing.", envelope.MessageId, cancellationToken); return; }
-                if (!_pairingCoordinator.Validate(request.ClientId, request.PairingCode, out string expectedName))
                 {
-                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pair_result", new PairResultMessage(false, null, "The pairing code is invalid or expired.")), cancellationToken);
-                    _eventSink($"Pairing failed for {request.ClientName}");
+                    PairRequestMessage? request = envelope.Payload.Deserialize<PairRequestMessage>(ProtocolJson.Options);
+                    if (request is null) { await SendErrorAsync(stream, "invalid_pair_request", "Pair request payload is missing.", envelope.MessageId, cancellationToken); return; }
+                    if (!_pairingCoordinator.Validate(request.ClientId, request.PairingCode, out string expectedName))
+                    {
+                        await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pair_result", new PairResultMessage(false, null, "The pairing code is invalid or expired.")), cancellationToken);
+                        _eventSink($"Pairing failed for {request.ClientName}");
+                        return;
+                    }
+                    string token = _pairingStore.Trust(request.ClientId, string.IsNullOrWhiteSpace(expectedName) ? request.ClientName : expectedName);
+                    _pairingCodeSink("------");
+                    _eventSink($"Trusted device paired: {request.ClientName}");
+                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pair_result", new PairResultMessage(true, token, "Device trusted.")), cancellationToken);
                     return;
                 }
-                string token = _pairingStore.Trust(request.ClientId, string.IsNullOrWhiteSpace(expectedName) ? request.ClientName : expectedName);
-                _pairingCodeSink("------");
-                _eventSink($"Trusted device paired: {request.ClientName}");
-                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pair_result", new PairResultMessage(true, token, "Device trusted.")), cancellationToken);
-                return;
-            }
 
             case "ping":
-            {
-                if (!state.Authenticated) return;
-                PingMessage? ping = envelope.Payload.Deserialize<PingMessage>(ProtocolJson.Options);
-                if (ping is null) { await SendErrorAsync(stream, "invalid_ping", "Ping payload is missing.", envelope.MessageId, cancellationToken); return; }
-                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pong", new PongMessage(ping.Sequence, DateTimeOffset.UtcNow)), cancellationToken);
-                return;
-            }
-
-            case "audio_output_list":
-            {
-                if (!state.Authenticated) return;
-                AudioOutputListResult result = _audioOutputController.List();
-                var devices = result.Devices
-                    .Select(d => new AudioOutputDeviceMessage(d.Id, d.Name, d.IsDefault))
-                    .ToArray();
-                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_list_result",
-                    new AudioOutputListMessage(result.Success, devices, result.Error)), cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
-            case "audio_output_set":
-            {
-                if (!state.Authenticated) return;
-                AudioOutputSetMessage? request = envelope.Payload.Deserialize<AudioOutputSetMessage>(ProtocolJson.Options);
-                if (request is null || string.IsNullOrWhiteSpace(request.EndpointId))
                 {
-                    await SendErrorAsync(stream, "invalid_audio_output", "Audio endpoint ID is missing.", envelope.MessageId, cancellationToken).ConfigureAwait(false);
+                    if (!state.Authenticated) return;
+                    PingMessage? ping = envelope.Payload.Deserialize<PingMessage>(ProtocolJson.Options);
+                    if (ping is null) { await SendErrorAsync(stream, "invalid_ping", "Ping payload is missing.", envelope.MessageId, cancellationToken); return; }
+                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("pong", new PongMessage(ping.Sequence, DateTimeOffset.UtcNow)), cancellationToken);
                     return;
                 }
-                AudioOutputSetResult result = _audioOutputController.SetDefault(request.EndpointId);
-                _eventSink(result.Message);
-                await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_result",
-                    new AudioOutputResultMessage(result.Success, result.EndpointId, result.Name, result.Message)), cancellationToken).ConfigureAwait(false);
-                return;
-            }
+
+            case "audio_output_list":
+                {
+                    if (!state.Authenticated) return;
+                    AudioOutputListResult result = _audioOutputController.List();
+                    var devices = result.Devices
+                        .Select(d => new AudioOutputDeviceMessage(d.Id, d.Name, d.IsDefault))
+                        .ToArray();
+                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_list_result",
+                        new AudioOutputListMessage(result.Success, devices, result.Error)), cancellationToken).ConfigureAwait(false);
+                    return;
+                }
+
+            case "audio_output_set":
+                {
+                    if (!state.Authenticated) return;
+                    AudioOutputSetMessage? request = envelope.Payload.Deserialize<AudioOutputSetMessage>(ProtocolJson.Options);
+                    if (request is null || string.IsNullOrWhiteSpace(request.EndpointId))
+                    {
+                        await SendErrorAsync(stream, "invalid_audio_output", "Audio endpoint ID is missing.", envelope.MessageId, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+                    AudioOutputSetResult result = _audioOutputController.SetDefault(request.EndpointId);
+                    _eventSink(result.Message);
+                    await FrameCodec.WriteAsync(stream, ProtocolEnvelope.Create("audio_output_result",
+                        new AudioOutputResultMessage(result.Success, result.EndpointId, result.Name, result.Message)), cancellationToken).ConfigureAwait(false);
+                    return;
+                }
 
             case "launcher_action":
-            {
-                if (!state.Authenticated) return;
-                LauncherActionMessage? launcher =
-                    envelope.Payload.Deserialize<LauncherActionMessage>(ProtocolJson.Options);
-
-                if (launcher is null)
                 {
-                    await SendErrorAsync(
+                    if (!state.Authenticated) return;
+                    LauncherActionMessage? launcher =
+                        envelope.Payload.Deserialize<LauncherActionMessage>(ProtocolJson.Options);
+
+                    if (launcher is null)
+                    {
+                        await SendErrorAsync(
+                            stream,
+                            "invalid_launcher_action",
+                            "Launcher action payload is missing.",
+                            envelope.MessageId,
+                            cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    LauncherResultMessage result =
+                        _launcherController.Execute(launcher.Launcher, launcher.Action);
+
+                    _eventSink(result.Message);
+
+                    await FrameCodec.WriteAsync(
                         stream,
-                        "invalid_launcher_action",
-                        "Launcher action payload is missing.",
-                        envelope.MessageId,
+                        ProtocolEnvelope.Create("launcher_result", result),
                         cancellationToken).ConfigureAwait(false);
                     return;
                 }
-
-                LauncherResultMessage result =
-                    _launcherController.Execute(launcher.Launcher, launcher.Action);
-
-                _eventSink(result.Message);
-
-                await FrameCodec.WriteAsync(
-                    stream,
-                    ProtocolEnvelope.Create("launcher_result", result),
-                    cancellationToken).ConfigureAwait(false);
-                return;
-            }
 
             default:
                 await SendErrorAsync(stream, "unsupported_message", $"Message type '{envelope.Type}' is not supported by the launcher host.", envelope.MessageId, cancellationToken);

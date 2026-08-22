@@ -1,3 +1,9 @@
+# Unreleased
+
+- Add Windows Host **session-only selection** of the LAN interface used for discovery advertisement.
+- Stop advertising when the selected interface is lost; recovery requires **manual reselection** and never silently fails over to a different interface.
+- Keep protocol-v1, UDP 45820, TCP `IPAddress.Any:45821`, host/pairing identity, Wake-on-LAN semantics, and Bluetooth HID behavior unchanged: this is **no protocol change**.
+
 # CouchLink v1.3.1
 
 - Promote the validated `v1.3.1-rc.1` build line to stable.

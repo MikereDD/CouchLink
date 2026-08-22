@@ -29,3 +29,6 @@ publish/
 .DS_Store
 Thumbs.db
 .idea/
+
+# Contributor-local AI tooling
+CLAUDE.md

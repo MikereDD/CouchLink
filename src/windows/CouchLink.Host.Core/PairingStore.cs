@@ -10,6 +10,13 @@ internal sealed class PairingStore
     private readonly string _machinePath;
     private readonly Dictionary<string, TrustedDevice> _devices;
 
+    internal PairingStore(bool inMemory)
+    {
+        _path = string.Empty;
+        _machinePath = string.Empty;
+        _devices = new(StringComparer.Ordinal);
+    }
+
     public PairingStore()
     {
         string directory = Path.Combine(

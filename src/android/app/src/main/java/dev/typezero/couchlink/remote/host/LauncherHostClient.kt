@@ -1,6 +1,7 @@
 package dev.typezero.couchlink.remote.host
 
 import android.content.Context
+import android.net.wifi.WifiManager
 import android.os.Build
 import dev.typezero.couchlink.remote.BuildConfig
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
@@ -38,6 +39,9 @@ internal class LauncherHostClient(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val sequence = AtomicLong(0)
     private val writeLock = Any()
+    private val multicastLock = (appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager)
+        ?.createMulticastLock("CouchLinkDiscovery")
+        ?.apply { setReferenceCounted(false) }
 
     private val _state = MutableStateFlow(rememberedHostState())
     val state: StateFlow<LauncherHostState> = _state.asStateFlow()
@@ -60,18 +64,21 @@ internal class LauncherHostClient(context: Context) {
 
     fun start() {
         if (discoveryJob?.isActive == true) return
+        acquireMulticastLock()
         discoveryJob = scope.launch { discoveryLoop() }
     }
 
     fun stop() {
         discoveryJob?.cancel()
         wakeJob?.cancel()
+        releaseMulticastLock()
         disconnect("Launcher host stopped.")
     }
 
     fun retry() {
         disconnect("Searching for CouchLink Host…")
         discoveryJob?.cancel()
+        acquireMulticastLock()
         discoveryJob = scope.launch { discoveryLoop() }
     }
 
@@ -279,6 +286,14 @@ internal class LauncherHostClient(context: Context) {
             }
         }
         return true
+    }
+
+    private fun acquireMulticastLock() {
+        if (multicastLock?.isHeld == false) multicastLock.acquire()
+    }
+
+    private fun releaseMulticastLock() {
+        if (multicastLock?.isHeld == true) multicastLock.release()
     }
 
     private suspend fun discoveryLoop() {
