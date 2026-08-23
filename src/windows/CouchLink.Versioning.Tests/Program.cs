@@ -63,6 +63,8 @@ internal static class Program
             new("1.3.1-beta.1", "1.3.1-alpha.9", 1),
             new("1.3.1-alpha.2", "1.3.1-dev.9", 1),
             new("1.3.1-dev.9", "1.3.1-alpha.2", -1),
+            new("1.3.3", "1.3.2", 1),
+            new("1.3.2", "1.3.3", -1),
             new("1.3.2", "1.3.1", 1),
             new("1.3.1", "1.3.2", -1),
             new("1.3.2-dev.1", "1.3.1", 1),
@@ -142,7 +144,11 @@ internal static class Program
         NetworkInterfaceInventoryEntry alternative = Adapter("alternative", "Wi-Fi", NetworkInterfaceType.Wireless80211, "10.0.0.2", "AABBCCDDEEFF");
         selection.Start([selected, alternative]);
         int failures = Assert(selection.CurrentIdentity?.AdapterId == "selected", "A new session selects one automatic identity.");
-        failures += Assert(selection.Refresh([alternative]) is null && selection.RequiresManualReselection && selection.CurrentIdentity is null, "Selection loss clears stale details without automatically selecting another identity.");
+        failures += Assert(
+            selection.Refresh([alternative])?.AdapterId == "alternative" &&
+            !selection.RequiresManualReselection &&
+            selection.Snapshot.SelectionMode == HostNetworkSelectionMode.Automatic,
+            "Selection loss automatically falls back to the first remaining eligible identity.");
         failures += Assert(DiscoveryAdvertiser.SerializeAdvertisement(null) is null, "No advertisement is serialized when selection is unavailable.");
 
         var delayed = new SessionInterfaceSelection();
@@ -163,9 +169,9 @@ internal static class Program
         snapshots.Clear();
         current = [];
         failures += Assert(runtime.CreateAdvertisement() is null && snapshots.Count == 1 &&
-            snapshots[0].NetworkSelection.Availability == HostNetworkSelectionAvailability.UnavailableRequiresReselection &&
+            snapshots[0].NetworkSelection.Availability == HostNetworkSelectionAvailability.NotStarted &&
             snapshots[0].NetworkSelection.SelectedAddress is null,
-            "Interface loss stops advertising and immediately publishes an unavailable snapshot.");
+            "Interface loss with no eligible fallback stops advertising and publishes a waiting snapshot.");
         runtime.StopAsync().GetAwaiter().GetResult();
         current = [NetworkAddressHelper.SelectDefaultIdentity([selected])!];
         failures += Assert(runtime.CreateAdvertisement() is null &&
@@ -221,11 +227,12 @@ internal static class Program
         ];
         DiscoveryAdvertisementTarget? unavailableAdvertisement = unavailableRuntime.CreateAdvertisement();
         failures += Assert(unavailableSnapshots.Count == 1 &&
-            unavailableSnapshots[0].NetworkSelection.Availability == HostNetworkSelectionAvailability.UnavailableRequiresReselection &&
-            unavailableSnapshots[0].NetworkSelection.SelectedCandidateId is null &&
+            unavailableSnapshots[0].NetworkSelection.Availability == HostNetworkSelectionAvailability.Available &&
+            unavailableSnapshots[0].NetworkSelection.SelectionMode == HostNetworkSelectionMode.Automatic &&
+            unavailableSnapshots[0].NetworkSelection.SelectedCandidateId == "selected" &&
             unavailableSnapshots[0].NetworkSelection.Candidates.Select(static candidate => candidate.Id).SequenceEqual(["selected", "alternative"]) &&
-            unavailableAdvertisement is null,
-            "Returning candidates publish while required manual reselection prevents automatic advertising.");
+            unavailableAdvertisement is not null,
+            "Returning candidates automatically restore selection and advertising.");
         unavailableRuntime.StopAsync().GetAwaiter().GetResult();
         return failures;
     }
@@ -260,14 +267,15 @@ internal static class Program
             selection.CurrentIdentity?.MacAddress == "AABBCCDDEEFF",
             "An absent opaque ID is rejected without changing the selection.");
         selection.Refresh([ethernet]);
-        HostNetworkSelectionSnapshot unavailable = selection.Snapshot;
+        HostNetworkSelectionSnapshot fallback = selection.Snapshot;
         failures += Assert(
-            unavailable.Availability == HostNetworkSelectionAvailability.UnavailableRequiresReselection &&
-            unavailable.SelectedCandidateId is null && unavailable.SelectedAddress is null &&
-            unavailable.SelectionMode is null && unavailable.Candidates.Select(static candidate => candidate.Id).SequenceEqual(["ethernet"]),
-            "Loss clears stale details while retaining eligible alternatives for explicit reselection.");
+            fallback.Availability == HostNetworkSelectionAvailability.Available &&
+            fallback.SelectedCandidateId == "ethernet" && fallback.SelectedAddress == "192.168.1.2" &&
+            fallback.SelectionMode == HostNetworkSelectionMode.Automatic &&
+            fallback.Candidates.Select(static candidate => candidate.Id).SequenceEqual(["ethernet"]),
+            "Loss of a manually selected interface automatically falls back to an eligible alternative.");
         failures += Assert(selection.Select("ethernet", [ethernet]) && selection.Snapshot.SelectionMode == HostNetworkSelectionMode.Manual,
-            "Explicit reselection resumes selection without automatic failover.");
+            "Explicit selection can return an automatically selected fallback to manual mode.");
         selection.Stop();
         failures += Assert(selection.Snapshot.Availability == HostNetworkSelectionAvailability.NotStarted &&
             selection.Snapshot.SelectedAddress is null && selection.Snapshot.Candidates.Count == 0,

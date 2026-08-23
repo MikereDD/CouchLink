@@ -6,8 +6,8 @@
 
 ### A premium Android couch remote for Windows gaming and Google TV control.
 
-![Android](https://img.shields.io/badge/Android-1.3.2-ff8617?style=for-the-badge&logo=android&logoColor=white)
-![Windows Host](https://img.shields.io/badge/Windows_Host-1.3.2-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
+![Android](https://img.shields.io/badge/Android-1.3.3-ff8617?style=for-the-badge&logo=android&logoColor=white)
+![Windows Host](https://img.shields.io/badge/Windows_Host-1.3.3-0078D4?style=for-the-badge&logo=windows11&logoColor=white)
 ![Protocol](https://img.shields.io/badge/Protocol-1-18181B?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Apache_2.0-ff8617?style=for-the-badge)
 ![Branding](https://img.shields.io/badge/Branding-Reserved-18181B?style=for-the-badge)
@@ -145,16 +145,16 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 | Component | Version | Status |
 |---|---:|---|
-| Android remote | `1.3.2` (`versionCode 161`) | Stable |
-| Windows Launcher Host | `1.3.2` | Stable |
+| Android remote | `1.3.3` (`versionCode 162`) | Stable |
+| Windows Launcher Host | `1.3.3` | Stable |
 | Shared launcher protocol | `1` | UDP discovery + framed TCP session |
 | Google TV protocol | Remote v2 | Secure local TLS pairing and control |
 
-CouchLink 1.3.2 is the current stable unified Android and Windows release. It adds explicit physical LAN-interface selection for Host discovery, safer behavior when interfaces appear or disappear, Android multicast-lock support during discovery, and CouchLink-native styling for the new selector while preserving the complete 1.3.1 feature set.
+CouchLink 1.3.3 is the current stable unified Android and Windows release. It adds the Android Launcher Tray, requires the paired Windows Launcher Host for launcher actions, and persists the selected Host network interface across restarts with safe automatic fallback while preserving the complete 1.3.2 feature set.
 
 ## Self-updating releases
 
-CouchLink 1.3.2 includes secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, keep Stable and Test channels separate, require exact official asset names, and verify release integrity before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows verifies SHA-256 plus a detached ECDSA release signature against the pinned CouchLink release key, then uses a separate updater executable so the running Host can close, be replaced safely, rolled back if needed, and restarted.
+CouchLink 1.3.3 includes secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, keep Stable and Test channels separate, require exact official asset names, and verify release integrity before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows verifies SHA-256 plus a detached ECDSA release signature against the pinned CouchLink release key, then uses a separate updater executable so the running Host can close, be replaced safely, rolled back if needed, and restarted.
 
 The updater never performs a silent Android install or accepts an arbitrary update server.
 
@@ -203,6 +203,9 @@ A quick look at CouchLink on Android and Windows.
 - [Wake PC setup and validation](docs/building/WAKE-PC.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
+- [Release notes for 1.3.3](docs/release/RELEASE-NOTES-v1.3.3.md)
+- [Release checklist for 1.3.3](docs/release/RELEASE-CHECKLIST-v1.3.3.md)
+- [Release validation for 1.3.3](docs/release/RELEASE-VALIDATION-v1.3.3.md)
 - [Release notes for 1.3.2](docs/release/RELEASE-NOTES-v1.3.2.md)
 - [Release checklist for 1.3.2](docs/release/RELEASE-CHECKLIST-v1.3.2.md)
 - [Release validation for 1.3.2](docs/release/RELEASE-VALIDATION-v1.3.2.md)

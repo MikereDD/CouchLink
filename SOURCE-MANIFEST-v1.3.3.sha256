@@ -1,6 +1,5 @@
 00c36a15d82b673cedba53eb696e2a6f0ee847b380cb3cfb815edf9348256be4  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.SessionHost/BootServiceStatusReader.cs
 0157abfad74e0c1d288e8bc42099a7b6a0a1f557e583d535c0280c70cf27e74f  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/hid/BluetoothHidController.kt
-018cd731261e6f25a9ad46fc805538f14a126f28884e8aa34a25aeb23a8be043  ./Build-Release.ps1
 01d010e98c902354ea57b424544570d70019f97ee6b1ea0ed209d338177f58ab  ./docs/release/RELEASE-NOTES-v1.3.2.md
 02e15117b5ee26052b7847e7eaa9bb64c399e057857a21b68b1cb1db7d31548f  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/KeyboardScreen.kt
 041f543a24748bab97a434de6152223c90226cc500fcaa26b19d6840c74e7b21  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/model/AppModels.kt
@@ -9,8 +8,8 @@
 057aea8f035c4ba8c81248cfc1540ad8a279c650eda1aaa6414b2af9df490ab0  ./docs/release/RELEASE-NOTES-v1.3-dev.7.md
 05c5736101ae6aa857b3d31f5fbdf537273c4db5d438a1d86a51a5240b7ae791  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/build.gradle.kts
 05c8f6c68daf8ac5bf50864e07273bc5afd88e6e11e64b86542cc36a20eda4fe  ./docs/history/android/BUILD-NOTES-v0.2-dev.11.md
+05ecd789a00db89aecd87151f5348e219752c3cc013d861458c8110cccc41dca  ./src/android/app/build.gradle.kts
 069106a9d18ffb71a0c84697e27a39a9d31db2cab8b449870bdf02931a86169b  ./src/android/app/src/main/res/drawable-nodpi/launcher_rockstar.png
-074bce1648cbcb0a57c0c2c87e13dfd19f31267434fb08f232b8a60f3fb30c14  ./CHANGELOG.md
 0779a0e980ae0f745318581deb58d9aa54190c0a679136e8b6a9221ba48729ca  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.6.1.md
 07e7150b9e842c8f2abd50053a06dbbea7c1cbae97e27f130003459fa410608f  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
 07e7150b9e842c8f2abd50053a06dbbea7c1cbae97e27f130003459fa410608f  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/mipmap-hdpi/ic_launcher.png
@@ -22,13 +21,16 @@
 08d9ab27d4feb2028a82bb5dedb2eaff254d7f6eee56c5183bdfd237c963c932  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.8.md
 09f3ddd8d77910e5cb8ef6df8b5d643d0a1a9017e31002d35531959e8d8fa03e  ./src/windows/CouchLink.ReleaseSecurity/PinnedReleaseKey.cs
 0a2ed9a107c8cb0f045b72db45226e700b70023f8403a21e337cdeaa84763099  ./scripts/Test-WindowsReleaseSigningKey.ps1
-0b8b0f7908a4dd75a94dd4b99b66528a48ee9d8b14d00430464ce4e3db6ea230  ./README.md
+0aaaaa309969c7d639a2855ce12135443892db7e30b37e5e59f67deeae3a842e  ./SOURCE-MANIFEST-v1.3.2.sha256
 0c07490614bf34b2713efa6ec5d9f0c2d7efc6e7ba166e5e983c3147f8810f94  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 0c07490614bf34b2713efa6ec5d9f0c2d7efc6e7ba166e5e983c3147f8810f94  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 0c07490614bf34b2713efa6ec5d9f0c2d7efc6e7ba166e5e983c3147f8810f94  ./src/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 0c07490614bf34b2713efa6ec5d9f0c2d7efc6e7ba166e5e983c3147f8810f94  ./src/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+0c4970c1a04ddd9defb83989cb8ff3844cb038ab71cb3cc71ee1dc5b0ebebcfc  ./src/windows/CouchLink.Host.Wpf/CouchLink.Host.Wpf.csproj
 0dfcbf3c9e874e28700a93844a0a04bc8c2abc1d933c111da729ac3aca4ab928  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.4.md
+0e95cf39c154448c5c882298b832df1f2207b6dbdc5ac9a1e13a3af88fbbfa64  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/MainActivity.kt
 0ecc0f77e50f88a4f252df65e09df357fea3d428de19023a38ee68b649355647  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/drawable-nodpi/launcher_ea.png
+0f276434a48018e4e8066578f022b994c048615870d6fcc29d6648eeb039bef8  ./docs/release/RELEASE-CHECKLIST-v1.3.3.md
 10484b7f924d995b8861464d93891dc9bec1999b114e4ee6e60e43d53f576bb0  ./src/android/app/src/main/proto/remotemessage.proto
 10bcc0d6014ecc5b6ff2acfe9b93c0ba3b395ff25c5fbc37b2c9160bb346e8d0  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.8.md
 10f844e94fb82179394fbd7c77ebb1a3da046e68e2ad2346fdf930df4ffd8f96  ./src/windows/CouchLink.Host.Core/Networking/DiscoveryAdvertiser.cs
@@ -36,6 +38,7 @@
 12868176b88cf73343315a52cfe59d99512a0a759e65749db92d7d58eedac039  ./src/windows/CouchLink.Host.Core/PairingStore.cs
 134cbe69e0f207439dd70100e41c8bb6a2f179496ef979f2b56a5e7bf93a88c6  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/values/styles.xml
 134cbe69e0f207439dd70100e41c8bb6a2f179496ef979f2b56a5e7bf93a88c6  ./src/android/app/src/main/res/values/styles.xml
+13692a7998c4e7e214c78ff125678498617c63c985c804e800aba88a8fcb2e51  ./docs/release/RELEASE-VALIDATION-v1.3.3.md
 139c33180fa380012f5854e3a12ea38783cef74a22480c5eb65532a269271b6b  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/tv/TvRemoteClient.kt
 14a34cee05c324315eded9d7b5ee3d8f8db0064fb06431e5d66ccbcde28efe51  ./src/android/build.gradle.kts
 150544f63511330f5ed5302939f26e11ac7f756fb2a434422995d5f62ef597ec  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Protocol/CouchLink.Protocol.csproj
@@ -60,10 +63,11 @@
 1e8634310923239e71f83a4ee84b07aa3382e0b7244c2dcb03ca9b65c1cfb880  ./NOTICE
 1f6a172bedc7a13ae8d3456aed7e6e69c4da25e7e2fef23726902b720d4763ee  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.VirtualHid/CouchLinkHidProtocol.h
 1fd56c7fe377444e2f069ebee820a133b7f81e52a03f968e60cb33c93afc76e5  ./docs/screenshots/windows-host-audio-output.png
-2026523051a8e37494866244f46b91617d0f58cc3a623e9e4b8c8a043080525c  ./src/windows/CouchLink.Host.Wpf/CouchLink.Host.Wpf.csproj
+20195d41c05445125f9b14865feb0137b72eeb897f4a7ab58405170bff9e4ec1  ./Build-Release.ps1
 21a8840d84e11b42b670edcdc493be16d5b6e45c277def58c05d385d4dcf61f0  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.7.1.md
 21c97261a7b99f8f2dfb29e8ead4f46dee1be251ae47f8087275c6d927db1e56  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.SessionHost/SessionHostSnapshot.cs
 223ee4946af4c27d5be28f8d3c5fa08580d655f1868c7dfaf0e9345a1c449e20  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.7.md
+2304c5e6acb1799c6e76ef1925138dd47608da30128b3802cf5aeb453a75831c  ./src/windows/CouchLink.Host.Wpf/ViewModels/MainWindowViewModel.cs
 23559d4631a0cf4d1360c44174ab7fa9c7190f83c0c366a2d1b0513e92fc88e2  ./docs/tv-remote/v1.2-dev.3-test-checklist.md
 249c2920c3284aeeb2167385a259487fac7fb62861ec27d76d63c9669410864c  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/PairingStore.cs
 24a42daf36fe8b1edf825c60de3944a30e771a086124288182f4147a7b51841b  ./src/android/app/src/main/res/drawable-nodpi/launcher_steam.png
@@ -76,7 +80,6 @@
 2a3760c77668ad2cd756de416d69e0a95d8df5d2e3e54b549ef1323ab3fff33c  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.12.1.md
 2c09e5c7b996cbf25fb13be22d49702b2d5a93923a12696a193714304e8a3aa3  ./docs/release/RELEASE-NOTES-v1.3.1-dev.7.1.md
 2c923da067900580212a47b8352c921c5c5caabe7cff39ea415c4e3674ebbfda  ./docs/release/RELEASE-NOTES-v1.3.1-dev.6.4.md
-2cb995bd0522944a8dfbc366308d549bc7b20d0908883f12553e3003d57fddad  ./src/windows/CouchLink.Host.Wpf/ViewModels/MainWindowViewModel.cs
 2cd89b97e23ad630cbd573f89c220e8623a74113ca576e4036f4c90ae75f6faf  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Wpf/ViewModels/RelayCommand.cs
 2cd89b97e23ad630cbd573f89c220e8623a74113ca576e4036f4c90ae75f6faf  ./src/windows/CouchLink.Host.Wpf/ViewModels/RelayCommand.cs
 2d585d51aea134e06848e5f5a71e1a09977dd6729bf2e337123de15a161a0965  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/drawable-nodpi/command_escape.png
@@ -122,7 +125,6 @@
 4b7aa35b055de6747692f946e58528d17f6134d535aee3bc305b2d51ad51aee8  ./docs/images/couchlink-feature-overview-v1.2.png
 4c51540ca267bc43f7b8af9bd7110148345e75a3f4158d78e2a217e89c8ebf62  ./docs/history/tv-remote/v1.2-dev.7-release-cleanup-checklist.md
 4e059b72ecd694e4ffa44f46b3c438b2f3ee4dbba1d345e599f80dac6530e9b9  ./src/windows/CouchLink.Protocol/Messages.cs
-4e61161308e06b840bc671ce73a8169bb8b423f47fa3589c53d035a4150e01df  ./src/android/app/build.gradle.kts
 4e780c51d171f5b4d162ad45c3244c56265689226021b5a986d8c5f584fcf4d6  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.5.md
 4eb880778c4dba086566d35e40acfecf74ca53d85d6e8f829b45e583b50441d4  ./Legacy-CouchLink-v0.1-dev.13/tools/Test-CouchLinkDriverPrereqs.ps1
 4f4e554611c2719e811768efd73058e40421803513c7168085856c771c35aae0  ./docs/screenshots/touchpad.png
@@ -140,21 +142,21 @@
 580faf900043b8a4568f97502921af4d3be1f95f009d016790a1799980b88f0c  ./src/windows/CouchLink.Host.Wpf/Services/GitHubUpdateService.cs
 588798929bd8f48c887aa98a90388f05b40348a028ecf25dd37737aad1f71fbf  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/LauncherController.cs
 588798929bd8f48c887aa98a90388f05b40348a028ecf25dd37737aad1f71fbf  ./src/windows/CouchLink.Host.Core/LauncherController.cs
-58b9dab87fed48db1bb81359a778fab36b571edc80e0fc8713792f4dd2c91d6a  ./src/windows/CouchLink.Host.Core/HostConstants.cs
 5943a95bdfeef9a83383b960ce0025852519b5f84d091a69b77431219b7133e4  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/PairingCoordinator.cs
 5943a95bdfeef9a83383b960ce0025852519b5f84d091a69b77431219b7133e4  ./src/windows/CouchLink.Host.Core/PairingCoordinator.cs
+5c0ddd51571fbb23d0b7374fc59ab85f0b0a51a08cdb1aeccbc72ae5b4ac73fe  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/HomeScreen.kt
 5c91ccd874550864a87817664d497f5bdd33ed6bcdc65bd554232199aed4850b  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.11.3.1.md
 5ce6db99f3b24d7a0d2e55b482269b3289c3613125645bae81d7c3b190ba5d25  ./docs/release/TESTER-PROGRAM.md
 5e884c14b3e285a0ffee1618bc20a532e21db82bfdc9543a1c30bbcf845f4f01  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.6.4.md
 5e8b86de339a8dd852e47d930cb3c1514c562d0f053b0e96da88acc024fb3c78  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/WindowsInputController.cs
-600d7a188ca5da598f42074255011345981f7ff1b2191a8115c12bf9faf72cba  ./src/windows/CouchLink.Versioning.Tests/Program.cs
+5f20bbf9c3a046bb75c4c520f944fda100c8d4988be64a17fe4dde9e6ac4db3a  ./src/android/tools/Build-SignedRelease.ps1
 613a5f3b7b0e096f7be530e5dde18e77bd023f86ae62bfa02bfea8d2b3d8615c  ./docs/release/TV-PAIRING-TEST-v1.2-dev.2.md
 6160a477e1133a4c1dae8ea68af8f6bfec6a855e825aa81385f1fbfc173fcd19  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Wpf/Assets/couchlink.ico
 6160a477e1133a4c1dae8ea68af8f6bfec6a855e825aa81385f1fbfc173fcd19  ./src/windows/CouchLink.Host.Wpf/Assets/couchlink.ico
 61b601dd4ed546e374a3badcc738bb349f5a588794bb3e2b85faddc856bd2a6f  ./src/windows/CouchLink.Host.Core/CouchLink.Host.Core.csproj
-62ed7523ae09de13438da3ab171206e3316ad7a60ae0234017debfdb7d9c4fcb  ./src/windows/CouchLink.sln
 63159e931201b5025071b38de0491c9f943f9e01c427997206397cbed9571242  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.sln
 63e0775d9c0d5ae867b334c64847dca95b033555a4d3bac409b874633df1b6df  ./src/windows/CouchLink.Host.Wpf/App.xaml.cs
+63e82da2bc47baa9ec2b37808d66c4213221f6e132181f04e51bb074745be9ae  ./src/windows/CouchLink.Host.Wpf/Services/HostPreferences.cs
 647ced4e813c56d76c2f98facbc0e06b5367caff1d436998a1866a0ffb24405e  ./docs/screenshots/keyboard.png
 686376c7554b78924c52380a4993ed86c5e280121eb67587dcc162399e17b010  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.13.md
 68a6b333b9834a94e774e1130a5d4cb50b6bca995c011e9ba63f19819590f971  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/theme/CouchLinkTheme.kt
@@ -175,6 +177,7 @@
 7001e0faca1e3c752efc680934aeb9e4e38858aabf2e4dacc5af6424119f9ead  ./Legacy-CouchLink-v0.1-dev.13/docs/DECISIONS.md
 709c16044d9e4db8f4fd17befd1f2a3e93006bbf42051d5f75a92336b11c9d2d  ./docs/building/TESTING.md
 7124d3ed384b752bcfa589d753535427c6fff7205a09b7956875041d6e2f4a60  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.VirtualHid/Driver.h
+712c221816eb1e4ca3ac43293be82be276237cbf8555414ac09068129c3593d5  ./src/android/app/src/main/res/drawable/ic_launcher_rocket.xml
 71e9162816066358c51454c7aae9e4ff7c336404fb9e00f884e06d57562647b1  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/tv/TvModels.kt
 724567e768340a08a517f348258400b1fb4c830b3719cc2d9db766070af916d5  ./docs/release/RELEASE-VALIDATION-v1.3.1-rc.1.md
 74739ab9f4a8974d558a7a657c5a0749fbd92f02e9396b66ed43a46444c825ad  ./docs/release/RELEASE-NOTES-v1.3.1-dev.5.md
@@ -203,6 +206,7 @@
 8143da42cd0dd18f6b14573643a7d2df4050cb1760ad8b0fceabc16f0534a811  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.SessionHost/SessionHostCoordinator.cs
 824a7ab0580ceabd2ff894e5da27aa7b5200080e9ce491728fd4217dca738836  ./docs/history/android/SETTINGS-CLEANUP-v0.2-dev.7.md
 82c10dd9969911d65c8e68e7024f9614253838b109f4f2429f59b9d9be0d442a  ./docs/release/RELEASE-CHECKLIST-v1.3.1-rc.1.md
+82c96007ee617127f6c989b68011fd4946ccfa70888a136462fcd0084e22ed97  ./src/windows/CouchLink.sln
 82d8aef5091c2a0f3198d0f68c0f75e0c7861fff7f7bcd4438da49f9ab6d7616  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/update/CouchLinkUpdateManager.kt
 831b0dcc65b0c488a3b4c922bff273d547f66f7b64adfd296311c08ec85386d4  ./docs/history/windows/REFACTOR-v0.2-dev.1.md
 836ecaa1f664bd4dfb46c7f8a5d90e7c687275a94689d55e5f2b67137558cf0e  ./src/windows/CouchLink.ReleaseSecurity/ReleaseSignatureVerifier.cs
@@ -224,7 +228,6 @@
 8a9bc555f201dd5b1254769f07290998ce396ec69a8acbcd26f51c57d3c40b66  ./Legacy-CouchLink-v0.1-dev.13/docs/VIRTUAL-HID-FOUNDATION.md
 8ac730d1e27ead130a14991f8eba5c95f3697af14c152f158dbdbd8c34bb119e  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/CouchLinkHostRuntime.cs
 8ac8887abf0f8b098853667949ac4f56fb6109e0eea078f9a3ce22f10afa34e3  ./Legacy-CouchLink-v0.1-dev.13/tools/Install-CouchLinkBootService.ps1
-8b8c07c7f7210e20d5a1208567515d02f763b6ba063bd9b86e24e4994b98f7fd  ./src/windows/CouchLink.Host.Core/Networking/SessionInterfaceSelection.cs
 8c12092088b471f34fc615feed02286939617d191a49035a508ddddd79f04eae  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Wpf/Views/MainWindow.xaml.cs
 8c12092088b471f34fc615feed02286939617d191a49035a508ddddd79f04eae  ./src/windows/CouchLink.Host.Wpf/Views/MainWindow.xaml.cs
 8c71b4a2e35c4e0924558c42bae02d75908e3b4aa9359ee95c20ced37b10defc  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/Networking/NetworkAddressHelper.cs
@@ -234,6 +237,7 @@
 8f4c8a949abcb114a4c7a989b680268e2e7a15b1c3321266e1e235336e644fab  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.8.1.md
 918ebbc73adf058886d3858bfa64819dee7e48250574af1f187050a9a7723b7d  ./docs/screenshots/home.png
 92720ab56f12072a22325b37c49063577b3c9c095d328b560ddf4f27d43f9154  ./docs/building/WAKE-PC.md
+929611d32645590d4b88777955fdf3345bdb8cf064155289a2cfd57f6a6fe54d  ./src/windows/CouchLink.Host.Core/Networking/SessionInterfaceSelection.cs
 92ef64b07035e8c121bb16e87587963b2f9a450660f0086b65ea7744e0de6f8c  ./docs/release/RELEASE-CHECKLIST-v1.3.2.md
 9322d19bc3148221dd50a1f0060ce9f802bfcf2867403830c7e25823109124b1  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.3.1.md
 93305df60cc4dbc6f41db6b1f1ed421d68729fe51469f43997a5e01cdbd3ffc1  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.11.2.6.md
@@ -266,7 +270,6 @@
 9e02b86775ea3daee00a9ff3483c0f743103281c3417dd40192f149221a77cdb  ./docs/architecture/ARCHITECTURE.md
 9f97a8e40d552ff43d06a1e3e89df7dd1322cc2feb3e1563114870728f1a0786  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/drawable-nodpi/launcher_ubisoft.png
 a093046e5f61982d17ca61d2eacc41efdb12f0d073e01cffe55148806057f8e7  ./docs/history/android/EA-LAUNCH-FIX-v0.2-dev.6.md
-a190d1d7167c3b17629609523b08de08c616ec345f73683c24c01814402a07c6  ./src/windows/CouchLink.Host.Wpf/Services/HostPreferences.cs
 a200bcde2cd4d9b0c25bad25e6410ba15122859083a8f7a7ad677b4b264af052  ./docs/release/RELEASE-VALIDATION-v1.2.md
 a292d63bd384ed7f12c5d80a3f26ec62d8170902dc22ba34d2bd4dd736e2ba3e  ./src/windows/CouchLink.Host.Wpf/Views/AudioOutputWindow.xaml
 a4bffd6764b63b5349aab9f306651e03cc25b19186875f3cd50e7888d26173d4  ./docs/history/android/RELEASE-CHECKLIST-v1.0.md
@@ -274,7 +277,6 @@ a719c054a8a6aeed6f536457004b55dd335c0c463f8c95af955f495167de403a  ./docs/release
 a753c2e03ce653f023b643330f5419622cd99bd482aa691d29625c96ee13c380  ./docs/history/android/CHANGELOG-v0.2-dev.10.1.md
 a77d7c997cfadaa8db7073590585da3f9e9e80d5c50ade070c949110dfd10a84  ./docs/history/README.md
 a7b8b6383646eacd51cf6f041379287975296462c54af90cd560fcc17b36806c  ./Legacy-CouchLink-v0.1-dev.13/docs/ARCHITECTURE.md
-a86453be69e362fad050f53b736b29004531d9322415954cc64d08a347caf17a  ./src/android/tools/Build-SignedRelease.ps1
 a94c79095d276c35c9fa8e05f7a70a35585fe80e2c1395cde7b3995ba2a3a25f  ./docs/release/RELEASE-NOTES-v1.3.1.md
 a98d772cd19a51cc1f0ea501fab2455c727d4adc7407ae43dcc7454b42be58a5  ./docs/release/RELEASE-NOTES-v1.3.1-dev.8.1.md
 a9a0a9a8bfe8a9e886532b325988bccfb1e066b5d12af758da81c169679a1d61  ./docs/images/couchlink-tv-remote-mockup.png
@@ -305,6 +307,7 @@ ba8739b937286a1f810bf5a2f277f0387690f7612761347d4bda7cc684187497  ./Legacy-Couch
 bb0557ae55a37f268cdf4adf4cd5187957025427385d002357d336388f56a1e6  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.7.3.md
 bb3c8c595de2d0fe3bbd7430f272881d4cc0c2b0c74d1c5868a8ba3ef3762c28  ./src/android/app/src/main/res/drawable-nodpi/launcher_ubisoft.png
 bb8494a1a490261c58f43c62b0b7530a6f20c10ad52721a7218379c3e9ca2e65  ./docs/history/android/BUILD-VALIDATION-v0.2-dev.9.md
+bdc9d80c0c8dc93b7eaf2a3127a637b1684345cc2077697ed528f4a0571227ca  ./CHANGELOG.md
 beb85c5a59c91a80cc6e6e3496401b0e8eb2a1b9e5a900b794017790c7fae674  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/components/PremiumComponents.kt
 beef5339df7de0587c2728c9680ccd9d0d08189d90b56014d24b0d48e7cb609e  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/drawable-nodpi/launcher_steam.png
 bef60f57aee5eb9bfe7aacffbbbfff1839a0e9bd4f9078d211d82cec53c5ee90  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Wpf/App.xaml
@@ -315,7 +318,6 @@ c20382b3c05b64ef3e32b9e542c3bc659ce72562bf7544ba0671b5d1fd6279f5  ./Legacy-Couch
 c248d17e910ea91e026a04e8dbcddd677b9ec617825286779dc0fc2acf3e57bb  ./src/windows/CouchLink.Updater.Tests/CouchLink.Updater.Tests.csproj
 c2d6b6a7ed9e4283a8d269f947b8db2c748c1aea834deba05ef5b2d66686d843  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.BootService/BootWorker.cs
 c3ad8cf57ea886d83ef77ef66261950208551bbaf91b73899db07828b091a9b9  ./docs/release/RELEASE-NOTES-v1.3.1-dev.6.1.md
-c4a10056dd8b110b7a24aeb19bcf948034c55af0b9e9371b816dc619f2377229  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/ui/screens/HomeScreen.kt
 c680267f33feb7cbdd99876c060206e1aee4f5ce2402f736aea3986db7843c64  ./docs/history/android/BUILD-FIX-v0.2-dev.12.1.md
 c701451bbf66d7ad3e3ceadeaf5d1e562b81c413cec215aebf59707ae3d7f472  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.9.md
 c7329877da979682201b013d7ce320eb97f4dd91e9c8a6443c5911a6e2bc497b  ./docs/building/BUILDING.md
@@ -345,12 +347,13 @@ d18749f0c5d870774ccddb61c4f4f783b7716591f3273fb09e9bfddbaa3f8fdc  ./Legacy-Couch
 d18749f0c5d870774ccddb61c4f4f783b7716591f3273fb09e9bfddbaa3f8fdc  ./src/android/app/src/main/res/drawable/ic_launcher_background.xml
 d1f338bc50452d95c459766696d8d5355024a3c56b85f4fdd9df57c2bf19ce46  ./src/windows/CouchLink.Host.Core/AudioOutputController.cs
 d1f4c3a786083e2c5d66df0cfad14a865337d7b5823a4790dc1e3627421309af  ./docs/release/RELEASE-CHECKLIST-v1.3.1-dev.6.md
+d4fa486d380350f443ed3944b97b7883184651cbe77f1e912e7a6922d67cbab9  ./README.md
+d5cef83c087e96fe6ce70b69d8c36e791eef37c495ecd98d7cfef776857ece8e  ./src/windows/CouchLink.Versioning.Tests/Program.cs
 d6246c2d5d493b82e524779c48ae5c5c35fb879f0d10430b21b23e5f83731cd2  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.8.1.1.md
 d62f2fd6646ead75073ff4a84b3a34df78d1f95633da97b4af4e1a981f69dd32  ./src/windows/CouchLink.Host.Core/Networking/SessionServer.cs
 d667254df7c37104282434044db1abab3e421fd2278f14e0e82e3ea0f25dfa11  ./PRIVACY.md
 d77afcae2a7e8415af87b50c5cacfbb501f3d608e887df5ad5ded6049313cf20  ./docs/release/RELEASE-VALIDATION-v1.3.1-dev.6.4.md
 d809b71f3eac87e50b6de145dd0ae9a7fe6897500dacc3b1f6f0dea92b447ab4  ./Legacy-CouchLink-v0.1-dev.13/src/windows/CouchLink.Host.Core/CouchLink.Host.Core.csproj
-d8581c3ffaa914c3219a4092f666172425903459dbcef8a9d95e39ec3bc1355b  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/MainActivity.kt
 d9e8f55212cd0fe828e66f89d92af4307af244081d8959941571e4a4f033b69d  ./Legacy-CouchLink-v0.1-dev.13/README.md
 dd1fe108d92e3908ed0c729648d465c9da2b9c066e6d2da894f0f3fea04386a4  ./docs/history/android/TEST-CHECKLIST-v0.2-dev.10.md
 ddf2ab42c819921b90ba5bc9e3e34251b4d764492816c15144da9f31b3c0ea00  ./docs/release/RELEASE-NOTES-v1.3.1-dev.6.md
@@ -377,7 +380,9 @@ e9c8e82cff8048de4a1252904805ba4607d052165f99de30d53201374cf7b41f  ./Legacy-Couch
 ea0311d9fa07c437d42b8fc90feba7ebe7abeb124efcc5b3d97e265e83ba070b  ./Legacy-CouchLink-v0.1-dev.13/src/android/app/src/main/res/drawable-nodpi/command_gamebar.png
 ec2b83169e9f86117176a6a41c0ba104b06b3c9771c9cb694843e98061f927bd  ./.gitignore
 ec81aa904219dcda51cc78bb288cb7a01ffde942f0cb0db66abe32c58cd8d627  ./docs/release/RELEASE-VALIDATION-v1.1.md
+ecbb683aa4e8a500b1947b3497c111373194c90115c1c23a78a0f8c7c3269036  ./docs/release/RELEASE-NOTES-v1.3.3.md
 ed3c374f7e1bf19bdd0ea0612ab2bc9c8395c4ffe427515a0985fd16b64bad22  ./docs/release/RELEASE-NOTES-v1.3.1-dev.8.md
+ed4494a581cf9fd5369d0a5637b1cc9244086d27655c66e06149c8966a83928d  ./src/windows/CouchLink.Host.Core/HostConstants.cs
 ed98572749aa377acb0fc86a81f795c330909b04bbf51b29340b31b7bedeba68  ./Legacy-CouchLink-v0.1-dev.13/TEST-v0.1-dev.9.4.md
 ee04b217e3f4206525b321dbb3bab1fdf990e86fa218149290f1487524b6900f  ./scripts/Sign-WindowsReleaseAsset.ps1
 ee22cda85ca03e64632d9685b141b9b3af3d7d1f2f12557eeb6f342f90bc8d24  ./src/android/app/src/main/java/dev/typezero/couchlink/remote/model/HostModels.kt
