@@ -190,7 +190,6 @@ internal class GoogleAndroidTvProvider(
             TvCapability.Channels,
             TvCapability.LiveTv,
             TvCapability.Inputs,
-            TvCapability.AppLaunch,
             TvCapability.WakeOnLan,
         )
 
