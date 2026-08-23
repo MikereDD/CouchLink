@@ -1,8 +1,14 @@
 # Unreleased
 
-- Add Windows Host **session-only selection** of the LAN interface used for discovery advertisement.
-- Stop advertising when the selected interface is lost; recovery requires **manual reselection** and never silently fails over to a different interface.
-- Keep protocol-v1, UDP 45820, TCP `IPAddress.Any:45821`, host/pairing identity, Wake-on-LAN semantics, and Bluetooth HID behavior unchanged: this is **no protocol change**.
+# CouchLink v1.3.2
+
+- Add Windows Host **session-only selection** of the physical LAN interface used for CouchLink discovery advertisement.
+- Start with the first eligible Ethernet/Wi-Fi interface, wait safely when no eligible interface exists, and require explicit manual reselection after a selected interface disappears rather than silently failing over.
+- Bind discovery advertisement to the selected interface and its broadcast address while keeping the TCP session listener on `IPAddress.Any:45821`.
+- Hold an Android Wi-Fi multicast lock only while Launcher Host discovery is active so discovery remains reliable on devices that otherwise filter multicast traffic.
+- Theme the new Windows network-interface selector and action button with CouchLink's existing control language, including friendly adapter-name rendering.
+- Preserve protocol v1, pairing/trust identity, Wake-on-LAN semantics, launcher behavior, Audio Output, Bluetooth HID, and the existing Google TV Remote path.
+- Bump Android to `versionCode 161` and synchronize Android/Windows stable version metadata to `1.3.2`.
 
 # CouchLink v1.3.1
 

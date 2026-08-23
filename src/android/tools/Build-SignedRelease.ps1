@@ -4,7 +4,7 @@ param(
 
     [string]$Alias = 'couchlink-release',
 
-    [string]$Version = '1.3',
+    [string]$Version = '1.3.2',
 
     [string]$OutputDirectory
 )
