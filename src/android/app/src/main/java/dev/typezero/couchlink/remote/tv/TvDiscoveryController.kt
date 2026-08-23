@@ -171,7 +171,6 @@ internal class TvDiscoveryController(
         }
     }
 
-
     fun beginPairing() {
         val device = _state.value.selectedDevice ?: run {
             _state.value = _state.value.copy(message = "Select a TV before pairing.")
@@ -314,9 +313,6 @@ internal class TvDiscoveryController(
             connectRemote()
             return
         }
-        // The write is real network I/O and MUST NOT run on the main thread, or Android
-        // throws NetworkOnMainThreadException. Dispatch to IO; state updates from the
-        // client marshal back to Main via its own callback.
         scope.launch {
             withContext(Dispatchers.IO) { remoteClient.sendKey(keyCode) }
         }
@@ -359,6 +355,26 @@ internal class TvDiscoveryController(
             val opened = withContext(Dispatchers.IO) { remoteClient.launchAppLink(target.appLink) }
             if (opened) {
                 _state.value = _state.value.copy(message = "Switched to ${target.label}.")
+            }
+        }
+    }
+
+    fun launchAppLink(displayName: String, appLink: String) {
+        if (!_state.value.remote.ready) {
+            _state.value = _state.value.copy(message = "Reconnect to the TV before launching $displayName.")
+            connectRemote()
+            return
+        }
+        val cleanLink = appLink.trim()
+        if (cleanLink.isBlank()) {
+            _state.value = _state.value.copy(message = "No launch target is configured for $displayName.")
+            return
+        }
+        _state.value = _state.value.copy(message = "Launching $displayName…")
+        scope.launch {
+            val opened = withContext(Dispatchers.IO) { remoteClient.launchAppLink(cleanLink) }
+            if (opened) {
+                _state.value = _state.value.copy(message = "Launched $displayName.")
             }
         }
     }

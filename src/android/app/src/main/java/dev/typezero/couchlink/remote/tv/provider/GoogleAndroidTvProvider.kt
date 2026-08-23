@@ -43,7 +43,6 @@ internal class GoogleAndroidTvProvider(
     }
 
     override fun startDiscovery() = controller.startDiscovery()
-
     override fun stopDiscovery() = controller.stopDiscovery()
 
     override fun select(device: TvProviderDevice) {
@@ -62,15 +61,10 @@ internal class GoogleAndroidTvProvider(
     }
 
     override fun selectManual(host: String) = controller.selectManual(host)
-
     override fun probeSelected() = controller.probeSelected()
-
     override fun beginPairing() = controller.beginPairing()
-
     override fun finishPairing(code: String) = controller.finishPairing(code)
-
     override fun cancelPairing() = controller.cancelPairing()
-
     override fun connect() = controller.connectRemote()
 
     override fun send(command: TvRemoteCommand) {
@@ -89,8 +83,9 @@ internal class GoogleAndroidTvProvider(
     }
 
     override fun launchApp(app: TvProviderApp) {
-        throw UnsupportedOperationException(
-            "Google/Android TV app launching is not wired to Remote v2 yet: ${app.displayName}",
+        controller.launchAppLink(
+            displayName = app.displayName,
+            appLink = app.launchTarget,
         )
     }
 
@@ -196,6 +191,7 @@ internal class GoogleAndroidTvProvider(
             TvCapability.Channels,
             TvCapability.LiveTv,
             TvCapability.Inputs,
+            TvCapability.AppLaunch,
             TvCapability.WakeOnLan,
         )
 
