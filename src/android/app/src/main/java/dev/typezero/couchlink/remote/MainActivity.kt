@@ -99,6 +99,7 @@ private fun CouchLinkApp() {
         TvProviderRuntime(context.applicationContext)
     }
     val tvProviderState by tvProviderRuntime.providerState.collectAsState()
+    val activeTvProviderId by tvProviderRuntime.activeProviderId.collectAsState()
 
     val updateManager = remember(context) { CouchLinkUpdateManager.get(context.applicationContext) }
     val updateState by updateManager.state.collectAsState()
@@ -364,6 +365,9 @@ private fun CouchLinkApp() {
                         hidState = hidState,
                         launcherHostState = launcherHostState,
                         tvState = tvProviderState,
+                        tvProviders = tvProviderRuntime.providers,
+                        activeTvProviderId = activeTvProviderId,
+                        onTvProviderSelected = tvProviderRuntime::selectProvider,
                         hapticsEnabled = hapticsEnabled,
                         onHapticsChanged = { enabled ->
                             hapticsEnabled = enabled

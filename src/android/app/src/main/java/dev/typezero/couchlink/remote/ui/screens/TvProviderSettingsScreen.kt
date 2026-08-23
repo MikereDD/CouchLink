@@ -1,14 +1,31 @@
 package dev.typezero.couchlink.remote.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.typezero.couchlink.remote.hid.BluetoothHidController
 import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.tv.TvConnectionProbe
 import dev.typezero.couchlink.remote.tv.TvDevice
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
 import dev.typezero.couchlink.remote.tv.TvRemoteClient
+import dev.typezero.couchlink.remote.tv.provider.TvProviderDescriptor
 import dev.typezero.couchlink.remote.tv.provider.TvProviderDevice
+import dev.typezero.couchlink.remote.tv.provider.TvProviderId
 import dev.typezero.couchlink.remote.tv.provider.TvProviderState
+import dev.typezero.couchlink.remote.ui.components.PremiumPanel
+import dev.typezero.couchlink.remote.ui.theme.Accent
+import dev.typezero.couchlink.remote.ui.theme.Muted
+import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
 
 /**
@@ -22,6 +39,9 @@ internal fun TvProviderSettingsScreen(
     hidState: BluetoothHidController.State,
     launcherHostState: LauncherHostState,
     tvState: TvProviderState,
+    tvProviders: List<TvProviderDescriptor>,
+    activeTvProviderId: TvProviderId,
+    onTvProviderSelected: (TvProviderId) -> Boolean,
     hapticsEnabled: Boolean,
     onHapticsChanged: (Boolean) -> Unit,
     naturalScrolling: Boolean,
@@ -51,6 +71,12 @@ internal fun TvProviderSettingsScreen(
     onContinueInstall: () -> Unit,
     onOpenInstallPermission: () -> Unit,
 ) {
+    TvProviderSelectorPanel(
+        providers = tvProviders,
+        activeProviderId = activeTvProviderId,
+        onSelect = onTvProviderSelected,
+    )
+
     SettingsScreen(
         hidState = hidState,
         launcherHostState = launcherHostState,
@@ -94,6 +120,69 @@ internal fun TvProviderSettingsScreen(
         onContinueInstall = onContinueInstall,
         onOpenInstallPermission = onOpenInstallPermission,
     )
+}
+
+
+@Composable
+private fun TvProviderSelectorPanel(
+    providers: List<TvProviderDescriptor>,
+    activeProviderId: TvProviderId,
+    onSelect: (TvProviderId) -> Boolean,
+) {
+    PremiumPanel {
+        Text(
+            text = "TV PLATFORM",
+            color = Muted,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "Choose the TV operating system CouchLink should control.",
+            color = Muted,
+            fontSize = 12.sp,
+        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            providers.forEach { provider ->
+                val active = provider.id == activeProviderId
+
+                OutlinedButton(
+                    onClick = { onSelect(provider.id) },
+                    enabled = provider.implemented && !active,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = provider.displayName,
+                            modifier = Modifier.weight(1f),
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = when {
+                                active -> "ACTIVE"
+                                provider.implemented -> "AVAILABLE"
+                                else -> "COMING LATER"
+                            },
+                            color = when {
+                                active -> Success
+                                provider.implemented -> Accent
+                                else -> Muted
+                            },
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 private fun TvProviderState.toLegacyState(): TvDiscoveryController.State {
