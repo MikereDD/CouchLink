@@ -6,6 +6,7 @@ internal enum class TvProviderId {
     SamsungTizen,
     LgWebOs,
     FireTv,
+    AppleTv,
 }
 
 internal data class TvProviderDescriptor(

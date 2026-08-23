@@ -8,14 +8,17 @@ CouchLink TV Remote will use one shared remote experience with selectable TV OS/
 
 The existing Google / Android TV implementation remains the reference backend and must keep its current behavior while the provider architecture is introduced.
 
-Planned provider order:
+Initial roadmap sequence:
 
 1. Google TV / Android TV — existing implementation
 2. Roku
 3. Samsung Tizen
 4. LG webOS
 5. Fire TV
-6. Additional TV platforms where practical
+6. Apple TV
+7. Additional TV platforms where practical
+
+The implementation order may change as protocol feasibility, maintenance cost, and test hardware become clearer.
 
 The TV OS is selected during TV setup. CouchLink should remember the selected TV, its provider type, pairing/trust state, and provider-specific connection data without mixing credentials between providers.
 
@@ -120,6 +123,16 @@ The first LG implementation should target local-network control and preserve Cou
 - Implement discovery / manual addressing as supported.
 - Implement pairing / authorization as required.
 - Map supported commands and report capabilities.
+- Add provider-specific tests and diagnostics.
+
+## Phase 7 — Apple TV backend
+
+- Evaluate a maintainable local-network control path before selecting an implementation.
+- Implement discovery / manual addressing where supported.
+- Implement pairing / authorization and session handling.
+- Map supported CouchLink commands through the shared provider contract.
+- Report Apple TV capabilities rather than assuming parity with other providers.
+- Keep Apple TV credentials/trust material isolated from every other provider.
 - Add provider-specific tests and diagnostics.
 
 ## Existing Google / Android TV foundation

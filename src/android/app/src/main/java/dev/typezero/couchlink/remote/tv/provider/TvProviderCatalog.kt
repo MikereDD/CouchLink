@@ -33,6 +33,11 @@ internal object TvProviderCatalog {
             displayName = "Fire TV",
             implemented = false,
         ),
+        TvProviderDescriptor(
+            id = TvProviderId.AppleTv,
+            displayName = "Apple TV",
+            implemented = false,
+        ),
     )
 
     fun descriptor(id: TvProviderId): TvProviderDescriptor =
