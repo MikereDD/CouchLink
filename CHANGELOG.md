@@ -1,5 +1,14 @@
 # Unreleased
 
+# CouchLink v1.3.3
+
+- Add the Android **Launcher Tray** with dedicated controls for Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, Epic Games Launcher, and Amazon Games.
+- Require a connected, paired Windows Launcher Host for launcher actions instead of falling back to Bluetooth HID / Windows Run commands.
+- Persist the Windows Host interface selected with **Use Interface** across Host restarts.
+- Restore the saved interface automatically at startup and fall back to another eligible physical LAN interface when the saved/active interface is unavailable instead of leaving discovery stopped.
+- Preserve trusted-host pairing, Wake-on-LAN, automatic post-wake reconnect, Audio Output, Bluetooth HID keyboard/mouse input, updater security, and the existing Google TV Remote path.
+- Bump Android to `versionCode 162` and synchronize Android/Windows stable version metadata to `1.3.3`.
+
 # CouchLink v1.3.2
 
 - Add Windows Host **session-only selection** of the physical LAN interface used for CouchLink discovery advertisement.
