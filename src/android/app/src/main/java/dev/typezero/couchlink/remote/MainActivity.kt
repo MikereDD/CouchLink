@@ -53,7 +53,7 @@ import dev.typezero.couchlink.remote.ui.screens.HomeScreen
 import dev.typezero.couchlink.remote.ui.screens.KeyboardScreen
 import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
 import dev.typezero.couchlink.remote.ui.screens.TvProviderRemoteScreen
-import dev.typezero.couchlink.remote.ui.screens.TvProviderSettingsScreen
+import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
 import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
@@ -361,7 +361,7 @@ private fun CouchLinkApp() {
                         },
                     )
 
-                    AppScreen.Settings -> TvProviderSettingsScreen(
+                    AppScreen.Settings -> SettingsScreen(
                         hidState = hidState,
                         launcherHostState = launcherHostState,
                         tvState = tvProviderState,
