@@ -149,6 +149,7 @@ internal fun SettingsScreen(
     TvProviderSelectorPanel(
         providers = tvProviders,
         activeProviderId = activeTvProviderId,
+        activeProviderName = activeProviderName,
         onSelect = onTvProviderSelected,
     )
 
@@ -248,43 +249,65 @@ internal fun SettingsScreen(
 private fun TvProviderSelectorPanel(
     providers: List<TvProviderDescriptor>,
     activeProviderId: TvProviderId,
+    activeProviderName: String,
     onSelect: (TvProviderId) -> Boolean,
 ) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
     PremiumPanel {
-        Text("TV PLATFORM", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("TV Platform", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text(activeProviderName, color = Muted, fontSize = 12.sp)
+            }
+        }
+
         Text(
             "Choose the TV operating system CouchLink should control.",
             color = Muted,
             fontSize = 12.sp,
         )
 
-        providers.forEach { provider ->
-            val active = provider.id == activeProviderId
-            OutlinedButton(
-                onClick = { onSelect(provider.id) },
-                enabled = provider.implemented && !active,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        provider.displayName,
-                        modifier = Modifier.weight(1f),
-                        fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-                    )
-                    Text(
-                        when {
-                            active -> "ACTIVE"
-                            provider.implemented -> "AVAILABLE"
-                            else -> "COMING LATER"
-                        },
-                        color = when {
-                            active -> Success
-                            provider.implemented -> Accent
-                            else -> Muted
-                        },
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+        TextButton(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                if (expanded) "HIDE TV PLATFORMS" else "CHANGE TV PLATFORM",
+                color = Accent,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        if (expanded) {
+            providers.forEach { provider ->
+                val active = provider.id == activeProviderId
+                OutlinedButton(
+                    onClick = { onSelect(provider.id) },
+                    enabled = provider.implemented && !active,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            provider.displayName,
+                            modifier = Modifier.weight(1f),
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                        )
+                        Text(
+                            when {
+                                active -> "ACTIVE"
+                                provider.implemented -> "AVAILABLE"
+                                else -> "COMING LATER"
+                            },
+                            color = when {
+                                active -> Success
+                                provider.implemented -> Accent
+                                else -> Muted
+                            },
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
         }
