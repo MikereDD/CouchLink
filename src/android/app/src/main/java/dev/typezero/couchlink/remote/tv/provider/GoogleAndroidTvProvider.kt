@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
  */
 internal class GoogleAndroidTvProvider(
     private val controller: TvDiscoveryController,
+    private val closeControllerOnClose: Boolean = true,
 ) : TvRemoteProvider {
 
     override val descriptor: TvProviderDescriptor =
@@ -91,7 +92,9 @@ internal class GoogleAndroidTvProvider(
 
     override fun close() {
         scope.cancel()
-        controller.close()
+        if (closeControllerOnClose) {
+            controller.close()
+        }
     }
 
     private fun TvDiscoveryController.State.toProviderState(): TvProviderState =

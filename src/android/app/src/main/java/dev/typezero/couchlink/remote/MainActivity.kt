@@ -46,6 +46,7 @@ import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
+import dev.typezero.couchlink.remote.tv.provider.TvProviderRuntime
 import dev.typezero.couchlink.remote.ui.components.BottomNav
 import dev.typezero.couchlink.remote.ui.components.ConnectionOverview
 import dev.typezero.couchlink.remote.ui.components.PremiumHeader
@@ -53,7 +54,7 @@ import dev.typezero.couchlink.remote.ui.screens.HomeScreen
 import dev.typezero.couchlink.remote.ui.screens.KeyboardScreen
 import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
-import dev.typezero.couchlink.remote.ui.screens.TvRemoteScreen
+import dev.typezero.couchlink.remote.ui.screens.TvProviderRemoteScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
 import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
@@ -94,8 +95,19 @@ private fun CouchLinkApp() {
     val hidState by hidController.state.collectAsState()
     val launcherHost = remember(context) { LauncherHostRuntime.client(context.applicationContext) }
     val launcherHostState by launcherHost.state.collectAsState()
+
+    // Keep one Google/Android TV controller during the transition so Settings and
+    // the provider-backed TV Remote observe/control the exact same session.
     val tvDiscovery = remember(context) { TvDiscoveryController(context.applicationContext) }
     val tvState by tvDiscovery.state.collectAsState()
+    val tvProviderRuntime = remember(context, tvDiscovery) {
+        TvProviderRuntime(
+            context = context.applicationContext,
+            sharedGoogleController = tvDiscovery,
+        )
+    }
+    val tvProviderState by tvProviderRuntime.providerState.collectAsState()
+
     val updateManager = remember(context) { CouchLinkUpdateManager.get(context.applicationContext) }
     val updateState by updateManager.state.collectAsState()
     var pairingCode by rememberSaveable { mutableStateOf("") }
@@ -107,8 +119,11 @@ private fun CouchLinkApp() {
     }
     var pendingDiscoverability by remember { mutableStateOf(false) }
 
-    DisposableEffect(tvDiscovery) {
-        onDispose { tvDiscovery.close() }
+    DisposableEffect(tvProviderRuntime, tvDiscovery) {
+        onDispose {
+            tvProviderRuntime.close()
+            tvDiscovery.close()
+        }
     }
 
     val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
@@ -173,9 +188,6 @@ private fun CouchLinkApp() {
     }
 
     fun makeBluetoothDiscoverable() {
-        // Making the phone discoverable is the only action that needs
-        // BLUETOOTH_ADVERTISE. Request it here instead of gating all HID input on
-        // it, so core keyboard/mouse use keeps working even if advertise is denied.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             !hidController.hasAdvertisePermission()
         ) {
@@ -343,13 +355,15 @@ private fun CouchLinkApp() {
                         onShortcut = { shortcut -> hidController.pressShortcut(shortcut) },
                     )
 
-                    AppScreen.TvRemote -> TvRemoteScreen(
-                        state = tvState,
-                        onConnect = tvDiscovery::connectRemote,
-                        onPower = tvDiscovery::togglePower,
-                        onKey = tvDiscovery::sendKey,
-                        onLiveTv = tvDiscovery::openGoogleTvLive,
-                        onInput = tvDiscovery::selectInput,
+                    AppScreen.TvRemote -> TvProviderRemoteScreen(
+                        state = tvProviderState,
+                        onConnect = { tvProviderRuntime.activeProvider.value.connect() },
+                        onCommand = { command ->
+                            tvProviderRuntime.activeProvider.value.send(command)
+                        },
+                        onInput = { input ->
+                            tvProviderRuntime.activeProvider.value.selectInput(input)
+                        },
                         onHaptic = {
                             if (hapticsEnabled) {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)

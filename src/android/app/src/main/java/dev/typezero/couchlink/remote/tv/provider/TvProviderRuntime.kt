@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.stateIn
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class TvProviderRuntime(
     context: Context,
+    private val sharedGoogleController: TvDiscoveryController? = null,
 ) : AutoCloseable {
 
     private val appContext = context.applicationContext
@@ -96,8 +97,13 @@ internal class TvProviderRuntime(
 
     private fun createProvider(providerId: TvProviderId): TvRemoteProvider =
         when (providerId) {
-            TvProviderId.GoogleAndroidTv ->
-                GoogleAndroidTvProvider(TvDiscoveryController(appContext))
+            TvProviderId.GoogleAndroidTv -> {
+                val controller = sharedGoogleController ?: TvDiscoveryController(appContext)
+                GoogleAndroidTvProvider(
+                    controller = controller,
+                    closeControllerOnClose = sharedGoogleController == null,
+                )
+            }
 
             TvProviderId.Roku,
             TvProviderId.SamsungTizen,
