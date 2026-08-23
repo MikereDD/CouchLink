@@ -29,6 +29,7 @@ internal interface TvRemoteProvider : AutoCloseable {
     fun connect()
     fun send(command: TvRemoteCommand)
     fun selectInput(input: TvProviderInput)
+    fun launchApp(app: TvProviderApp)
 
     fun forgetDevice()
 

@@ -88,6 +88,12 @@ internal class GoogleAndroidTvProvider(
         controller.selectInput(target)
     }
 
+    override fun launchApp(app: TvProviderApp) {
+        throw UnsupportedOperationException(
+            "Google/Android TV app launching is not wired to Remote v2 yet: ${app.displayName}",
+        )
+    }
+
     override fun forgetDevice() = controller.forgetTv()
 
     override fun close() {

@@ -69,6 +69,18 @@ internal data class TvProviderInput(
 )
 
 /**
+ * Provider-neutral launch request for one TV application shortcut.
+ *
+ * launchTarget is intentionally opaque to shared UI code. Each provider owns the
+ * meaning of this value (for example, an Android/Google TV app-link URI).
+ */
+internal data class TvProviderApp(
+    val id: String,
+    val displayName: String,
+    val launchTarget: String,
+)
+
+/**
  * One provider-defined connectivity diagnostic exposed in a protocol-neutral way.
  *
  * Providers choose the labels/endpoints that make sense for their protocol.
