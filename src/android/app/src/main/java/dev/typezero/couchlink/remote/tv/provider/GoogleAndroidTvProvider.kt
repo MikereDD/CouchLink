@@ -75,6 +75,7 @@ internal class GoogleAndroidTvProvider(
     override fun send(command: TvRemoteCommand) {
         when (command) {
             TvRemoteCommand.Power -> controller.togglePower()
+            TvRemoteCommand.LiveTv -> controller.openGoogleTvLive()
             else -> controller.sendKey(command.toGoogleKeyCode())
         }
     }
@@ -138,6 +139,7 @@ internal class GoogleAndroidTvProvider(
             TvRemoteCommand.Back -> RemoteKeyCode.KEYCODE_BACK
             TvRemoteCommand.Home -> RemoteKeyCode.KEYCODE_HOME
             TvRemoteCommand.Menu -> RemoteKeyCode.KEYCODE_MENU
+            TvRemoteCommand.Settings -> RemoteKeyCode.KEYCODE_SETTINGS
             TvRemoteCommand.Power -> RemoteKeyCode.KEYCODE_POWER
             TvRemoteCommand.VolumeUp -> RemoteKeyCode.KEYCODE_VOLUME_UP
             TvRemoteCommand.VolumeDown -> RemoteKeyCode.KEYCODE_VOLUME_DOWN
@@ -147,6 +149,7 @@ internal class GoogleAndroidTvProvider(
             TvRemoteCommand.FastForward -> RemoteKeyCode.KEYCODE_MEDIA_FAST_FORWARD
             TvRemoteCommand.ChannelUp -> RemoteKeyCode.KEYCODE_CHANNEL_UP
             TvRemoteCommand.ChannelDown -> RemoteKeyCode.KEYCODE_CHANNEL_DOWN
+            TvRemoteCommand.LiveTv -> error("LiveTv is handled as a Google TV navigation macro.")
         }
 
     private companion object {
@@ -155,11 +158,13 @@ internal class GoogleAndroidTvProvider(
             TvCapability.Back,
             TvCapability.Home,
             TvCapability.Menu,
+            TvCapability.Settings,
             TvCapability.Power,
             TvCapability.Volume,
             TvCapability.Mute,
             TvCapability.Playback,
             TvCapability.Channels,
+            TvCapability.LiveTv,
             TvCapability.Inputs,
             TvCapability.AppLaunch,
         )

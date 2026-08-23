@@ -19,11 +19,13 @@ internal enum class TvCapability {
     Back,
     Home,
     Menu,
+    Settings,
     Power,
     Volume,
     Mute,
     Playback,
     Channels,
+    LiveTv,
     Inputs,
     TextInput,
     AppLaunch,
@@ -38,6 +40,7 @@ internal enum class TvRemoteCommand {
     Back,
     Home,
     Menu,
+    Settings,
     Power,
     VolumeUp,
     VolumeDown,
@@ -47,6 +50,7 @@ internal enum class TvRemoteCommand {
     FastForward,
     ChannelUp,
     ChannelDown,
+    LiveTv,
 }
 
 internal data class TvProviderDevice(
