@@ -45,15 +45,15 @@ import dev.typezero.couchlink.remote.hid.MouseButton
 import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
-import dev.typezero.couchlink.remote.tv.TvDiscoveryController
+import dev.typezero.couchlink.remote.tv.provider.TvProviderRuntime
 import dev.typezero.couchlink.remote.ui.components.BottomNav
 import dev.typezero.couchlink.remote.ui.components.ConnectionOverview
 import dev.typezero.couchlink.remote.ui.components.PremiumHeader
 import dev.typezero.couchlink.remote.ui.screens.HomeScreen
 import dev.typezero.couchlink.remote.ui.screens.KeyboardScreen
-import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
 import dev.typezero.couchlink.remote.ui.screens.TvRemoteScreen
+import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
 import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
@@ -94,8 +94,13 @@ private fun CouchLinkApp() {
     val hidState by hidController.state.collectAsState()
     val launcherHost = remember(context) { LauncherHostRuntime.client(context.applicationContext) }
     val launcherHostState by launcherHost.state.collectAsState()
-    val tvDiscovery = remember(context) { TvDiscoveryController(context.applicationContext) }
-    val tvState by tvDiscovery.state.collectAsState()
+
+    val tvProviderRuntime = remember(context) {
+        TvProviderRuntime(context.applicationContext)
+    }
+    val tvProviderState by tvProviderRuntime.providerState.collectAsState()
+    val activeTvProviderId by tvProviderRuntime.activeProviderId.collectAsState()
+
     val updateManager = remember(context) { CouchLinkUpdateManager.get(context.applicationContext) }
     val updateState by updateManager.state.collectAsState()
     var pairingCode by rememberSaveable { mutableStateOf("") }
@@ -107,8 +112,8 @@ private fun CouchLinkApp() {
     }
     var pendingDiscoverability by remember { mutableStateOf(false) }
 
-    DisposableEffect(tvDiscovery) {
-        onDispose { tvDiscovery.close() }
+    DisposableEffect(tvProviderRuntime) {
+        onDispose { tvProviderRuntime.close() }
     }
 
     val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
@@ -173,9 +178,6 @@ private fun CouchLinkApp() {
     }
 
     fun makeBluetoothDiscoverable() {
-        // Making the phone discoverable is the only action that needs
-        // BLUETOOTH_ADVERTISE. Request it here instead of gating all HID input on
-        // it, so core keyboard/mouse use keeps working even if advertise is denied.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             !hidController.hasAdvertisePermission()
         ) {
@@ -344,12 +346,14 @@ private fun CouchLinkApp() {
                     )
 
                     AppScreen.TvRemote -> TvRemoteScreen(
-                        state = tvState,
-                        onConnect = tvDiscovery::connectRemote,
-                        onPower = tvDiscovery::togglePower,
-                        onKey = tvDiscovery::sendKey,
-                        onLiveTv = tvDiscovery::openGoogleTvLive,
-                        onInput = tvDiscovery::selectInput,
+                        state = tvProviderState,
+                        onConnect = { tvProviderRuntime.activeProvider.value.connect() },
+                        onCommand = { command ->
+                            tvProviderRuntime.activeProvider.value.send(command)
+                        },
+                        onInput = { input ->
+                            tvProviderRuntime.activeProvider.value.selectInput(input)
+                        },
                         onHaptic = {
                             if (hapticsEnabled) {
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -360,7 +364,10 @@ private fun CouchLinkApp() {
                     AppScreen.Settings -> SettingsScreen(
                         hidState = hidState,
                         launcherHostState = launcherHostState,
-                        tvState = tvState,
+                        tvState = tvProviderState,
+                        tvProviders = tvProviderRuntime.providers,
+                        activeTvProviderId = activeTvProviderId,
+                        onTvProviderSelected = tvProviderRuntime::selectProvider,
                         hapticsEnabled = hapticsEnabled,
                         onHapticsChanged = { enabled ->
                             hapticsEnabled = enabled
@@ -383,16 +390,22 @@ private fun CouchLinkApp() {
                         onReconnectLauncherHost = launcherHost::retry,
                         onPairLauncherHost = launcherHost::pairWithHost,
                         onForgetLauncherHost = launcherHost::forgetTrustedHost,
-                        onTvScan = tvDiscovery::startDiscovery,
-                        onTvStopScan = tvDiscovery::stopDiscovery,
-                        onTvSelect = tvDiscovery::select,
-                        onTvSelectManual = tvDiscovery::selectManual,
-                        onTvProbe = tvDiscovery::probeSelected,
-                        onTvBeginPairing = tvDiscovery::beginPairing,
-                        onTvFinishPairing = tvDiscovery::finishPairing,
-                        onTvCancelPairing = tvDiscovery::cancelPairing,
-                        onTvConnect = tvDiscovery::connectRemote,
-                        onTvForget = tvDiscovery::forgetTv,
+                        onTvScan = { tvProviderRuntime.activeProvider.value.startDiscovery() },
+                        onTvStopScan = { tvProviderRuntime.activeProvider.value.stopDiscovery() },
+                        onTvSelect = { device ->
+                            tvProviderRuntime.activeProvider.value.select(device)
+                        },
+                        onTvSelectManual = { host ->
+                            tvProviderRuntime.activeProvider.value.selectManual(host)
+                        },
+                        onTvProbe = { tvProviderRuntime.activeProvider.value.probeSelected() },
+                        onTvBeginPairing = { tvProviderRuntime.activeProvider.value.beginPairing() },
+                        onTvFinishPairing = { code ->
+                            tvProviderRuntime.activeProvider.value.finishPairing(code)
+                        },
+                        onTvCancelPairing = { tvProviderRuntime.activeProvider.value.cancelPairing() },
+                        onTvConnect = { tvProviderRuntime.activeProvider.value.connect() },
+                        onTvForget = { tvProviderRuntime.activeProvider.value.forgetDevice() },
                         updateState = updateState,
                         onCheckForUpdates = updateManager::checkForUpdates,
                         onUpdateChannelChanged = updateManager::setTestChannel,

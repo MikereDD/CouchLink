@@ -39,8 +39,10 @@ import dev.typezero.couchlink.remote.BuildConfig
 import dev.typezero.couchlink.remote.R
 import dev.typezero.couchlink.remote.hid.BluetoothHidController
 import dev.typezero.couchlink.remote.model.LauncherHostState
-import dev.typezero.couchlink.remote.tv.TvDevice
-import dev.typezero.couchlink.remote.tv.TvDiscoveryController
+import dev.typezero.couchlink.remote.tv.provider.TvProviderDescriptor
+import dev.typezero.couchlink.remote.tv.provider.TvProviderDevice
+import dev.typezero.couchlink.remote.tv.provider.TvProviderId
+import dev.typezero.couchlink.remote.tv.provider.TvProviderState
 import dev.typezero.couchlink.remote.ui.components.PremiumPanel
 import dev.typezero.couchlink.remote.ui.theme.Accent
 import dev.typezero.couchlink.remote.ui.theme.Danger
@@ -54,7 +56,10 @@ import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
 internal fun SettingsScreen(
     hidState: BluetoothHidController.State,
     launcherHostState: LauncherHostState,
-    tvState: TvDiscoveryController.State,
+    tvState: TvProviderState,
+    tvProviders: List<TvProviderDescriptor>,
+    activeTvProviderId: TvProviderId,
+    onTvProviderSelected: (TvProviderId) -> Boolean,
     hapticsEnabled: Boolean,
     onHapticsChanged: (Boolean) -> Unit,
     naturalScrolling: Boolean,
@@ -69,7 +74,7 @@ internal fun SettingsScreen(
     onForgetLauncherHost: () -> Boolean,
     onTvScan: () -> Unit,
     onTvStopScan: () -> Unit,
-    onTvSelect: (TvDevice) -> Unit,
+    onTvSelect: (TvProviderDevice) -> Unit,
     onTvSelectManual: (String) -> Unit,
     onTvProbe: () -> Unit,
     onTvBeginPairing: () -> Unit,
@@ -87,8 +92,9 @@ internal fun SettingsScreen(
     val context = LocalContext.current
     var diagnosticsCopied by rememberSaveable { mutableStateOf(false) }
     val buildChannel = if (BuildConfig.DEBUG) "Debug" else "Release"
+    val activeProviderName = tvProviders.firstOrNull { it.id == activeTvProviderId }?.displayName ?: activeTvProviderId.name
 
-    val diagnostics = remember(hidState, launcherHostState, buildChannel) {
+    val diagnostics = remember(hidState, launcherHostState, tvState, activeProviderName, buildChannel) {
         buildString {
             appendLine("CouchLink Remote")
             appendLine("Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
@@ -107,7 +113,14 @@ internal fun SettingsScreen(
             appendLine("Windows Host endpoint: ${launcherHostState.hostAddress.ifBlank { "None" }}:${launcherHostState.hostPort}")
             appendLine("Windows Host wake MAC: ${launcherHostState.wakeMacAddress.ifBlank { "Unavailable" }}")
             appendLine("Windows Host waking: ${launcherHostState.waking}")
-            append("Windows Host status: ${launcherHostState.message}")
+            appendLine("Windows Host status: ${launcherHostState.message}")
+            appendLine("TV provider: $activeProviderName")
+            appendLine("TV selected: ${tvState.selectedDevice?.name ?: "None"}")
+            appendLine("TV endpoint: ${tvState.selectedDevice?.host ?: "None"}")
+            appendLine("TV paired: ${tvState.pairing.paired}")
+            appendLine("TV connected: ${tvState.connection.ready}")
+            appendLine("TV wake MAC: ${tvState.wakeMacAddress ?: "Unavailable"}")
+            append("TV status: ${tvState.message}")
         }
     }
 
@@ -126,7 +139,6 @@ internal fun SettingsScreen(
         onDisconnect = onDisconnectBluetoothHost,
     )
 
-
     WindowsLauncherHostPanel(
         state = launcherHostState,
         onReconnect = onReconnectLauncherHost,
@@ -134,8 +146,16 @@ internal fun SettingsScreen(
         onForget = onForgetLauncherHost,
     )
 
+    TvProviderSelectorPanel(
+        providers = tvProviders,
+        activeProviderId = activeTvProviderId,
+        activeProviderName = activeProviderName,
+        onSelect = onTvProviderSelected,
+    )
+
     TvRemoteSettingsPanel(
         state = tvState,
+        providerName = activeProviderName,
         onScan = onTvScan,
         onStopScan = onTvStopScan,
         onSelect = onTvSelect,
@@ -163,7 +183,6 @@ internal fun SettingsScreen(
         )
     }
 
-
     UpdateSettingsPanel(
         state = updateState,
         onCheck = onCheckForUpdates,
@@ -186,40 +205,23 @@ internal fun SettingsScreen(
             Spacer(Modifier.width(12.dp))
             Column {
                 Row {
-                    Text(
-                        text = "Couch",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = "Link",
-                        color = Accent,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    Text("Couch", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Link", color = Accent, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                 }
-                Text(
-                    text = "Remote ${BuildConfig.VERSION_NAME}",
-                    color = Muted,
-                    fontSize = 12.sp,
-                )
+                Text("Remote ${BuildConfig.VERSION_NAME}", color = Muted, fontSize = 12.sp)
             }
         }
 
+        Text("ABOUT", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text(
-            text = "ABOUT",
-            color = Muted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = "A local-first Bluetooth keyboard, mouse, and launcher remote for Windows living-room PCs.",
+            "A local-first Bluetooth keyboard, mouse, launcher, and TV remote for living-room control.",
             color = TextColor,
             fontSize = 14.sp,
         )
         HorizontalDivider(color = Raised2)
         AboutDetailRow("Build", "$buildChannel · ${BuildConfig.VERSION_CODE}")
         AboutDetailRow("Input", "Bluetooth HID")
+        AboutDetailRow("TV platform", activeProviderName)
         AboutDetailRow("Privacy", "No cloud account or telemetry")
 
         Button(
@@ -236,30 +238,89 @@ internal fun SettingsScreen(
             ),
         ) {
             Text(
-                text = if (diagnosticsCopied) {
-                    "DIAGNOSTICS COPIED"
-                } else {
-                    "COPY DIAGNOSTICS"
-                },
+                if (diagnosticsCopied) "DIAGNOSTICS COPIED" else "COPY DIAGNOSTICS",
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TvProviderSelectorPanel(
+    providers: List<TvProviderDescriptor>,
+    activeProviderId: TvProviderId,
+    activeProviderName: String,
+    onSelect: (TvProviderId) -> Boolean,
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    PremiumPanel {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("TV Platform", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                Text(activeProviderName, color = Muted, fontSize = 12.sp)
+            }
+        }
+
+        Text(
+            "Choose the TV operating system CouchLink should control.",
+            color = Muted,
+            fontSize = 12.sp,
+        )
+
+        TextButton(
+            onClick = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                if (expanded) "HIDE TV PLATFORMS" else "CHANGE TV PLATFORM",
+                color = Accent,
                 fontWeight = FontWeight.Bold,
             )
         }
 
-        Text(
-            text = "Keyboard, mouse, touchpad, shortcuts, and Windows sign-in use Bluetooth HID. " +
-                "The optional Windows Launcher Host handles launcher control and status over the local network.",
-            color = Muted,
-            fontSize = 11.sp,
-        )
+        if (expanded) {
+            providers.forEach { provider ->
+                val active = provider.id == activeProviderId
+                OutlinedButton(
+                    onClick = { onSelect(provider.id) },
+                    enabled = provider.implemented && !active,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            provider.displayName,
+                            modifier = Modifier.weight(1f),
+                            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                        )
+                        Text(
+                            when {
+                                active -> "ACTIVE"
+                                provider.implemented -> "AVAILABLE"
+                                else -> "COMING LATER"
+                            },
+                            color = when {
+                                active -> Success
+                                provider.implemented -> Accent
+                                else -> Muted
+                            },
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
 private fun TvRemoteSettingsPanel(
-    state: TvDiscoveryController.State,
+    state: TvProviderState,
+    providerName: String,
     onScan: () -> Unit,
     onStopScan: () -> Unit,
-    onSelect: (TvDevice) -> Unit,
+    onSelect: (TvProviderDevice) -> Unit,
     onSelectManual: (String) -> Unit,
     onProbe: () -> Unit,
     onBeginPairing: () -> Unit,
@@ -276,19 +337,19 @@ private fun TvRemoteSettingsPanel(
             Column(Modifier.weight(1f)) {
                 Text("TV Remote", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    state.selectedDevice?.let { "${it.name} • ${it.host}" } ?: "No Google TV selected",
+                    state.selectedDevice?.let { "${it.name} • ${it.host}" } ?: "No $providerName device selected",
                     color = Muted,
                     fontSize = 12.sp,
                 )
             }
             Text(
                 when {
-                    state.remote.ready -> "CONNECTED"
-                    state.remote.connecting -> "CONNECTING"
+                    state.connection.ready -> "CONNECTED"
+                    state.connection.connecting -> "CONNECTING"
                     state.pairing.paired -> "PAIRED"
                     else -> "NOT PAIRED"
                 },
-                color = if (state.remote.ready) Success else Accent,
+                color = if (state.connection.ready) Success else Accent,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
             )
@@ -298,24 +359,37 @@ private fun TvRemoteSettingsPanel(
         state.wakeMacAddress?.let { AboutDetailRow("Wake-on-LAN", it) }
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = if (state.scanning) onStopScan else onScan, modifier = Modifier.weight(1f)) {
+            OutlinedButton(
+                onClick = if (state.scanning) onStopScan else onScan,
+                modifier = Modifier.weight(1f),
+            ) {
                 Text(if (state.scanning) "STOP SCAN" else "SCAN")
             }
-            OutlinedButton(onClick = onProbe, enabled = state.selectedDevice != null && !state.probing, modifier = Modifier.weight(1f)) {
+            OutlinedButton(
+                onClick = onProbe,
+                enabled = state.selectedDevice != null && !state.probing,
+                modifier = Modifier.weight(1f),
+            ) {
                 Text(if (state.probing) "TESTING" else "DIAGNOSTICS")
             }
         }
 
-        state.probe?.let {
-            AboutDetailRow("Pairing service (6467)", if (it.pairingPortReachable) "Reachable" else "No response")
-            AboutDetailRow("Remote service (6466)", if (it.remotePortReachable) "Reachable" else "No response")
+        state.serviceProbes.forEach { probe ->
+            val label = if (probe.endpoint.isNullOrBlank()) probe.label else "${probe.label} (${probe.endpoint})"
+            AboutDetailRow(label, if (probe.reachable) "Reachable" else "No response")
         }
 
         if (state.devices.isNotEmpty()) {
             Text("DISCOVERED TVS", color = Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             state.devices.forEach { device ->
                 OutlinedButton(onClick = { onSelect(device) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (state.selectedDevice?.host == device.host) "✓ ${device.name} • ${device.host}" else "${device.name} • ${device.host}")
+                    Text(
+                        if (state.selectedDevice?.host == device.host) {
+                            "✓ ${device.name} • ${device.host}"
+                        } else {
+                            "${device.name} • ${device.host}"
+                        },
+                    )
                 }
             }
         }
@@ -327,7 +401,11 @@ private fun TvRemoteSettingsPanel(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedButton(onClick = { onSelectManual(manualHost) }, enabled = manualHost.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { onSelectManual(manualHost) },
+            enabled = manualHost.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Text("USE MANUAL ADDRESS")
         }
 
@@ -335,22 +413,42 @@ private fun TvRemoteSettingsPanel(
             state.pairing.awaitingCode -> {
                 OutlinedTextField(
                     value = pairingCode,
-                    onValueChange = { value -> pairingCode = value.uppercase().filter { it.isDigit() || it in 'A'..'F' }.take(6) },
+                    onValueChange = { value ->
+                        pairingCode = value.uppercase()
+                            .filter { it.isDigit() || it in 'A'..'F' }
+                            .take(6)
+                    },
                     label = { Text("Code shown on TV") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onFinishPairing(pairingCode) }, enabled = pairingCode.length == 6, modifier = Modifier.weight(1f)) { Text("PAIR") }
-                    OutlinedButton(onClick = onCancelPairing, modifier = Modifier.weight(1f)) { Text("CANCEL") }
+                    Button(
+                        onClick = { onFinishPairing(pairingCode) },
+                        enabled = pairingCode.length == 6,
+                        modifier = Modifier.weight(1f),
+                    ) { Text("PAIR") }
+                    OutlinedButton(onClick = onCancelPairing, modifier = Modifier.weight(1f)) {
+                        Text("CANCEL")
+                    }
                 }
             }
-            !state.pairing.paired -> Button(onClick = onBeginPairing, enabled = state.selectedDevice != null, modifier = Modifier.fillMaxWidth()) {
+
+            !state.pairing.paired -> Button(
+                onClick = onBeginPairing,
+                enabled = state.selectedDevice != null,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text("PAIR WITH TV", color = Color.Black, fontWeight = FontWeight.Bold)
             }
+
             else -> {
-                OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) { Text("RECONNECT TV REMOTE") }
-                OutlinedButton(onClick = onForget, modifier = Modifier.fillMaxWidth()) { Text("FORGET TV") }
+                OutlinedButton(onClick = onConnect, modifier = Modifier.fillMaxWidth()) {
+                    Text("RECONNECT TV REMOTE")
+                }
+                OutlinedButton(onClick = onForget, modifier = Modifier.fillMaxWidth()) {
+                    Text("FORGET TV")
+                }
             }
         }
     }
@@ -364,24 +462,17 @@ private fun WindowsLauncherHostPanel(
     onForget: () -> Boolean,
 ) {
     PremiumPanel {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
+                Text("Windows Launcher Host", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = "Windows Launcher Host",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = "Launches, focuses, closes, and reports launcher state over your local network.",
+                    "Launches, focuses, closes, and reports launcher state over your local network.",
                     color = Muted,
                     fontSize = 12.sp,
                 )
             }
             Text(
-                text = when {
+                when {
                     state.connected -> "CONNECTED"
                     state.waking -> "WAKING"
                     state.connecting -> "CONNECTING"
@@ -395,12 +486,7 @@ private fun WindowsLauncherHostPanel(
             )
         }
 
-        Text(
-            text = state.message,
-            color = Muted,
-            fontSize = 12.sp,
-        )
-
+        Text(state.message, color = Muted, fontSize = 12.sp)
         AboutDetailRow("PC", state.hostName.ifBlank { "Not discovered" })
         AboutDetailRow(
             "Endpoint",
@@ -420,21 +506,15 @@ private fun WindowsLauncherHostPanel(
                 colors = ButtonDefaults.buttonColors(containerColor = Accent),
             ) {
                 Text(
-                    text = "PAIR WITH ${state.hostName.ifBlank { "HOST" }.uppercase()}",
+                    "PAIR WITH ${state.hostName.ifBlank { "HOST" }.uppercase()}",
                     color = Color.Black,
                     fontWeight = FontWeight.Bold,
                 )
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = onReconnect,
-                modifier = Modifier.weight(1f),
-            ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onReconnect, modifier = Modifier.weight(1f)) {
                 Text(if (state.connected) "RECONNECT" else "FIND HOST")
             }
             OutlinedButton(
@@ -445,66 +525,6 @@ private fun WindowsLauncherHostPanel(
                 Text("FORGET HOST")
             }
         }
-
-        Text(
-            text = "Bluetooth HID remains the input route even when the launcher host is disconnected.",
-            color = Muted,
-            fontSize = 11.sp,
-        )
-    }
-}
-
-@Composable
-private fun PreferenceSwitchRow(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = description,
-                color = Muted,
-                fontSize = 12.sp,
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
-    }
-}
-
-@Composable
-private fun AboutDetailRow(
-    label: String,
-    value: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            color = Muted,
-            fontSize = 12.sp,
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            text = value,
-            color = TextColor,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.End,
-        )
     }
 }
 
@@ -520,24 +540,17 @@ private fun BluetoothHidPanel(
     var pairedDevicesExpanded by rememberSaveable { mutableStateOf(false) }
 
     PremiumPanel {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
+                Text("Bluetooth secure input", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = "Bluetooth secure input",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = "Android presents itself as a real keyboard and mouse for Windows sign-in.",
+                    "Android presents itself as a real keyboard and mouse for Windows sign-in.",
                     color = Muted,
                     fontSize = 12.sp,
                 )
             }
             Text(
-                text = when {
+                when {
                     state.connected -> "CONNECTED"
                     state.connecting -> "CONNECTING"
                     state.registered -> "READY"
@@ -549,18 +562,10 @@ private fun BluetoothHidPanel(
             )
         }
 
-        Text(
-            text = state.message,
-            color = Muted,
-            fontSize = 12.sp,
-        )
+        Text(state.message, color = Muted, fontSize = 12.sp)
 
         if (!state.supported) {
-            Text(
-                text = "Android 9 or newer is required.",
-                color = Danger,
-                fontSize = 12.sp,
-            )
+            Text("Android 9 or newer is required.", color = Danger, fontSize = 12.sp)
             return@PremiumPanel
         }
 
@@ -570,56 +575,34 @@ private fun BluetoothHidPanel(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Accent),
             ) {
-                Text(
-                    text = "ALLOW BLUETOOTH HID",
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                )
+                Text("ALLOW BLUETOOTH HID", color = Color.Black, fontWeight = FontWeight.Bold)
             }
             return@PremiumPanel
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = onMakeDiscoverable,
-                modifier = Modifier.weight(1f),
-            ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onMakeDiscoverable, modifier = Modifier.weight(1f)) {
                 Text("PAIR WINDOWS")
             }
-            OutlinedButton(
-                onClick = onRefreshHosts,
-                modifier = Modifier.weight(1f),
-            ) {
+            OutlinedButton(onClick = onRefreshHosts, modifier = Modifier.weight(1f)) {
                 Text("REFRESH")
             }
         }
 
         if (state.connected) {
             Text(
-                text = "Input route: Bluetooth HID → ${state.connectedHost?.name ?: "Windows PC"}",
+                "Input route: Bluetooth HID → ${state.connectedHost?.name ?: "Windows PC"}",
                 color = Success,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
             )
-            OutlinedButton(
-                onClick = { onDisconnect() },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            OutlinedButton(onClick = { onDisconnect() }, modifier = Modifier.fillMaxWidth()) {
                 Text("DISCONNECT BLUETOOTH HID")
             }
         } else if (state.pairedHosts.isNotEmpty()) {
-            TextButton(
-                onClick = { pairedDevicesExpanded = !pairedDevicesExpanded },
-            ) {
+            TextButton(onClick = { pairedDevicesExpanded = !pairedDevicesExpanded }) {
                 Text(
-                    text = if (pairedDevicesExpanded) {
-                        "HIDE PAIRED DEVICES"
-                    } else {
-                        "CHOOSE PAIRED DEVICE"
-                    },
+                    if (pairedDevicesExpanded) "HIDE PAIRED DEVICES" else "CHOOSE PAIRED DEVICE",
                     color = Accent,
                 )
             }
@@ -635,22 +618,49 @@ private fun BluetoothHidPanel(
                             horizontalAlignment = Alignment.Start,
                         ) {
                             Text(pairedHost.name)
-                            Text(
-                                text = pairedHost.address,
-                                color = Muted,
-                                fontSize = 10.sp,
-                            )
+                            Text(pairedHost.address, color = Muted, fontSize = 10.sp)
                         }
                     }
                 }
             }
         } else {
             Text(
-                text = "Use PAIR WINDOWS, then add “CouchLink Remote” from Windows Bluetooth settings.",
+                "Use PAIR WINDOWS, then add “CouchLink Remote” from Windows Bluetooth settings.",
                 color = Muted,
                 fontSize = 11.sp,
             )
         }
+    }
+}
+
+@Composable
+private fun PreferenceSwitchRow(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            Text(description, color = Muted, fontSize = 12.sp)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun AboutDetailRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, color = Muted, fontSize = 12.sp)
+        Spacer(Modifier.weight(1f))
+        Text(
+            value,
+            color = TextColor,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End,
+        )
     }
 }
 
@@ -664,32 +674,24 @@ private fun UpdateSettingsPanel(
     onOpenInstallPermission: () -> Unit,
 ) {
     val updatePanelContext = LocalContext.current
+
     PremiumPanel {
+        Text("APP UPDATES", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text(
-            text = "APP UPDATES",
-            color = Muted,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = state.message,
+            state.message,
             color = if (state.updateAvailable) Accent else TextColor,
             fontSize = 14.sp,
         )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Text("TEST BUILDS", color = TextColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Text(
-                    text = "TEST BUILDS",
-                    color = TextColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                )
-                Text(
-                    text = "Opt in to selected prereleases for volunteer testing.",
+                    "Opt in to selected prereleases for volunteer testing.",
                     color = Muted,
                     fontSize = 10.sp,
                 )
@@ -700,44 +702,38 @@ private fun UpdateSettingsPanel(
                 enabled = !state.checking && !state.downloading,
             )
         }
+
         if (state.availableVersion != null) {
             AboutDetailRow("Installed", BuildConfig.VERSION_NAME)
             AboutDetailRow("Available", state.availableVersion)
         }
-        Text(
-            text = state.stage.uppercase(),
-            color = Accent,
-            fontWeight = FontWeight.Bold,
-            fontSize = 11.sp,
-        )
+
+        Text(state.stage.uppercase(), color = Accent, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+
         if (state.progressPercent != null) {
             LinearProgressIndicator(
                 progress = { state.progressPercent / 100f },
                 modifier = Modifier.fillMaxWidth(),
             )
             Text(
-                text = "DOWNLOAD ${state.progressPercent}%",
+                "DOWNLOAD ${state.progressPercent}%",
                 color = Accent,
                 fontWeight = FontWeight.Bold,
                 fontSize = 12.sp,
             )
         }
+
         if (state.releaseNotes.isNotBlank() && state.updateAvailable) {
-            Text(
-                text = state.releaseNotes.take(700),
-                color = Muted,
-                fontSize = 11.sp,
-            )
+            Text(state.releaseNotes.take(700), color = Muted, fontSize = 11.sp)
         }
+
         if (state.installPermissionRequired) {
-            Button(
-                onClick = onOpenInstallPermission,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("ALLOW UPDATE INSTALLS", fontWeight = FontWeight.Bold) }
-            OutlinedButton(
-                onClick = onContinueInstall,
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text("INSTALL UPDATE", fontWeight = FontWeight.Bold) }
+            Button(onClick = onOpenInstallPermission, modifier = Modifier.fillMaxWidth()) {
+                Text("ALLOW UPDATE INSTALLS", fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = onContinueInstall, modifier = Modifier.fillMaxWidth()) {
+                Text("INSTALL UPDATE", fontWeight = FontWeight.Bold)
+            }
         } else if (state.updateAvailable) {
             Button(
                 onClick = onDownload,
@@ -750,13 +746,17 @@ private fun UpdateSettingsPanel(
                 )
             }
         }
+
         if (state.testChannel) {
             OutlinedButton(
                 onClick = { onChannelChanged(false) },
                 enabled = !state.checking && !state.downloading,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("RETURN TO STABLE", fontWeight = FontWeight.Bold) }
+            ) {
+                Text("RETURN TO STABLE", fontWeight = FontWeight.Bold)
+            }
         }
+
         OutlinedButton(
             onClick = {
                 val report = buildString {
@@ -768,11 +768,14 @@ private fun UpdateSettingsPanel(
                     appendLine("Status: ${state.message}")
                     appendLine("Progress: ${state.progressPercent ?: 0}%")
                 }
-                val clipboard = updatePanelContext.getSystemService(ClipboardManager::class.java)
-                clipboard?.setPrimaryClip(ClipData.newPlainText("CouchLink updater report", report))
+                updatePanelContext.getSystemService(ClipboardManager::class.java)
+                    ?.setPrimaryClip(ClipData.newPlainText("CouchLink updater report", report))
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("COPY TEST REPORT", fontWeight = FontWeight.Bold) }
+        ) {
+            Text("COPY TEST REPORT", fontWeight = FontWeight.Bold)
+        }
+
         OutlinedButton(
             onClick = onCheck,
             enabled = !state.checking && !state.downloading,
@@ -780,8 +783,9 @@ private fun UpdateSettingsPanel(
         ) {
             Text(if (state.checking) "CHECKING…" else "CHECK FOR UPDATES", fontWeight = FontWeight.Bold)
         }
+
         Text(
-            text = if (state.testChannel) {
+            if (state.testChannel) {
                 "Test channel selected. Prereleases still require official assets, GitHub SHA-256, and APK certificate verification."
             } else {
                 "Stable channel selected. Downloads require official assets, GitHub SHA-256, and APK certificate verification."
@@ -791,4 +795,3 @@ private fun UpdateSettingsPanel(
         )
     }
 }
-
