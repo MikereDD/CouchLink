@@ -63,6 +63,8 @@ internal static class Program
             new("1.3.1-beta.1", "1.3.1-alpha.9", 1),
             new("1.3.1-alpha.2", "1.3.1-dev.9", 1),
             new("1.3.1-dev.9", "1.3.1-alpha.2", -1),
+            new("1.3.2", "1.3.1", 1),
+            new("1.3.1", "1.3.2", -1),
             new("1.3.2-dev.1", "1.3.1", 1),
             new("v1.3.1-dev.5", "1.3.1-dev.4", 1),
             new("1.3.1-dev.5-debug", "1.3.1-dev.5", 0),
