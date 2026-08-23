@@ -50,9 +50,10 @@ internal sealed class SessionInterfaceSelection
             identity => string.Equals(identity.AdapterId, _selectedAdapterId, StringComparison.Ordinal));
         if (CurrentIdentity is null)
         {
-            _selectedAdapterId = null;
-            _selectionMode = null;
-            RequiresManualReselection = true;
+            CurrentIdentity = _candidates.FirstOrDefault();
+            _selectedAdapterId = CurrentIdentity?.AdapterId;
+            _selectionMode = CurrentIdentity is null ? null : HostNetworkSelectionMode.Automatic;
+            RequiresManualReselection = false;
         }
 
         return CurrentIdentity;
