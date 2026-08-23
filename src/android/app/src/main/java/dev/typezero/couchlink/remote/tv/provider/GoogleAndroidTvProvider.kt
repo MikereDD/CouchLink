@@ -105,6 +105,26 @@ internal class GoogleAndroidTvProvider(
             devices = devices.map { it.toProviderDevice() },
             selectedDevice = selectedDevice?.toProviderDevice(),
             probing = probing,
+            serviceProbes = buildList {
+                probe?.let { result ->
+                    add(
+                        TvProviderServiceProbe(
+                            id = "pairing",
+                            label = "Pairing service",
+                            endpoint = "6467",
+                            reachable = result.pairingPortReachable,
+                        ),
+                    )
+                    add(
+                        TvProviderServiceProbe(
+                            id = "remote",
+                            label = "Remote service",
+                            endpoint = "6466",
+                            reachable = result.remotePortReachable,
+                        ),
+                    )
+                }
+            },
             pairing = TvProviderPairingState(
                 inProgress = pairing.inProgress,
                 awaitingCode = pairing.awaitingCode,
@@ -120,6 +140,7 @@ internal class GoogleAndroidTvProvider(
                 commandsSent = remote.commandsSent,
             ),
             inputs = GOOGLE_INPUTS,
+            wakeMacAddress = wakeMacAddress,
             message = message,
         )
 
@@ -170,6 +191,7 @@ internal class GoogleAndroidTvProvider(
             TvCapability.LiveTv,
             TvCapability.Inputs,
             TvCapability.AppLaunch,
+            TvCapability.WakeOnLan,
         )
 
         val GOOGLE_INPUTS = TvInputTarget.entries.map { target ->

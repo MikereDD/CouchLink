@@ -30,6 +30,7 @@ internal enum class TvCapability {
     Inputs,
     TextInput,
     AppLaunch,
+    WakeOnLan,
 }
 
 internal enum class TvRemoteCommand {
@@ -67,6 +68,18 @@ internal data class TvProviderInput(
     val label: String,
 )
 
+/**
+ * One provider-defined connectivity diagnostic exposed in a protocol-neutral way.
+ *
+ * Providers choose the labels/endpoints that make sense for their protocol.
+ */
+internal data class TvProviderServiceProbe(
+    val id: String,
+    val label: String,
+    val endpoint: String? = null,
+    val reachable: Boolean,
+)
+
 internal data class TvProviderPairingState(
     val inProgress: Boolean = false,
     val awaitingCode: Boolean = false,
@@ -90,8 +103,10 @@ internal data class TvProviderState(
     val devices: List<TvProviderDevice> = emptyList(),
     val selectedDevice: TvProviderDevice? = null,
     val probing: Boolean = false,
+    val serviceProbes: List<TvProviderServiceProbe> = emptyList(),
     val pairing: TvProviderPairingState = TvProviderPairingState(),
     val connection: TvProviderConnectionState = TvProviderConnectionState(),
     val inputs: List<TvProviderInput> = emptyList(),
+    val wakeMacAddress: String? = null,
     val message: String,
 )
