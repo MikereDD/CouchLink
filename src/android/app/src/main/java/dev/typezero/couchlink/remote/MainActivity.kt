@@ -38,7 +38,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import dev.typezero.couchlink.remote.hid.BluetoothHidController
 import dev.typezero.couchlink.remote.hid.BluetoothHidRuntime
 import dev.typezero.couchlink.remote.hid.BluetoothHidService
 import dev.typezero.couchlink.remote.hid.MouseAction
@@ -46,7 +45,6 @@ import dev.typezero.couchlink.remote.hid.MouseButton
 import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
-import dev.typezero.couchlink.remote.model.LauncherId
 import dev.typezero.couchlink.remote.tv.TvDiscoveryController
 import dev.typezero.couchlink.remote.ui.components.BottomNav
 import dev.typezero.couchlink.remote.ui.components.ConnectionOverview
@@ -65,8 +63,6 @@ private const val HAPTICS_PREFERENCE = "haptics"
 private const val NATURAL_SCROLLING_PREFERENCE = "natural_scrolling"
 private const val MAX_KEYBOARD_TEXT_LENGTH = 1_024
 private const val DISCOVERABLE_DURATION_SECONDS = 300
-private const val EA_DESKTOP_COMMAND =
-    "%ProgramFiles%\\Electronic Arts\\EA Desktop\\EA Desktop\\EADesktop.exe"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -277,19 +273,16 @@ private fun CouchLinkApp() {
                 when (screen) {
                     AppScreen.Home -> HomeScreen(
                         launcherHostState = launcherHostState,
-                        launcherEnabled = launcherHostState.connected || hidState.connected,
+                        launcherEnabled = launcherHostState.connected,
                         inputEnabled = hidState.connected,
                         onLauncher = { launcher ->
                             if (hapticsEnabled) {
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             }
-                            if (!launcherHost.launch(
-                                    launcher = launcher,
-                                    onSendFailed = { hidController.launchLauncher(launcher) },
-                                )
-                            ) {
-                                hidController.launchLauncher(launcher)
-                            }
+                            launcherHost.launch(
+                                launcher = launcher,
+                                onSendFailed = {},
+                            )
                         },
                         onRetryLauncherHost = launcherHost::retry,
                         onWakePc = {
@@ -416,12 +409,4 @@ private fun CouchLinkApp() {
             )
         }
     }
-}
-
-private fun BluetoothHidController.launchLauncher(
-    launcher: LauncherId,
-): Boolean = when (launcher) {
-    LauncherId.Steam -> launchWindowsRunCommand("steam://open/bigpicture")
-    LauncherId.Ea -> launchWindowsRunCommand(EA_DESKTOP_COMMAND)
-    else -> launchWindowsApp(launcher.displayName)
 }

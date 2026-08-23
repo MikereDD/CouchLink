@@ -22,6 +22,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,7 +49,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.typezero.couchlink.remote.R
@@ -57,14 +59,12 @@ import dev.typezero.couchlink.remote.model.LauncherHostState
 import dev.typezero.couchlink.remote.model.LauncherId
 import dev.typezero.couchlink.remote.ui.components.SectionLabel
 import dev.typezero.couchlink.remote.ui.theme.Accent
-import dev.typezero.couchlink.remote.ui.theme.Cyan
 import dev.typezero.couchlink.remote.ui.theme.Muted
-import dev.typezero.couchlink.remote.ui.theme.Purple
 import dev.typezero.couchlink.remote.ui.theme.Silver
 import dev.typezero.couchlink.remote.ui.theme.Success
 import dev.typezero.couchlink.remote.ui.theme.Text as TextColor
 
-private data class SecondaryLauncherSpec(
+private data class LauncherSpec(
     val label: String,
     val launcher: LauncherId,
     @param:DrawableRes val iconRes: Int,
@@ -83,17 +83,15 @@ private enum class CommandGlyphType {
     Close,
 }
 
-private val secondaryLauncherRows = listOf(
-    listOf(
-        SecondaryLauncherSpec("Xbox", LauncherId.Xbox, R.drawable.launcher_xbox),
-        SecondaryLauncherSpec("EA app", LauncherId.Ea, R.drawable.launcher_ea),
-        SecondaryLauncherSpec("Ubisoft", LauncherId.Ubisoft, R.drawable.launcher_ubisoft),
-    ),
-    listOf(
-        SecondaryLauncherSpec("Rockstar", LauncherId.Rockstar, R.drawable.launcher_rockstar),
-        SecondaryLauncherSpec("Epic", LauncherId.Epic, R.drawable.launcher_epic),
-        SecondaryLauncherSpec("Amazon", LauncherId.Amazon, R.drawable.launcher_amazon),
-    ),
+private val launchers = listOf(
+    LauncherSpec("Steam", LauncherId.Steam, R.drawable.launcher_steam),
+    LauncherSpec("GOG Galaxy", LauncherId.Gog, R.drawable.launcher_gog),
+    LauncherSpec("Xbox", LauncherId.Xbox, R.drawable.launcher_xbox),
+    LauncherSpec("EA app", LauncherId.Ea, R.drawable.launcher_ea),
+    LauncherSpec("Ubisoft", LauncherId.Ubisoft, R.drawable.launcher_ubisoft),
+    LauncherSpec("Rockstar", LauncherId.Rockstar, R.drawable.launcher_rockstar),
+    LauncherSpec("Epic", LauncherId.Epic, R.drawable.launcher_epic),
+    LauncherSpec("Amazon", LauncherId.Amazon, R.drawable.launcher_amazon),
 )
 
 private val commandDeck = listOf(
@@ -118,47 +116,23 @@ internal fun HomeScreen(
     onClearAudioFavorite: (AudioFavoriteSlot) -> Unit,
 ) {
     LauncherHostStatus(launcherHostState, onRetryLauncherHost, onWakePc)
-    SectionLabel("LAUNCHERS")
-    if (!launcherEnabled) {
-        Text(
-            text = "Connect the Windows launcher host or Bluetooth input to use launchers.",
-            color = Muted,
-            fontSize = 11.sp,
+    var showLauncherTray by remember { mutableStateOf(false) }
+
+    LauncherTrayCard(
+        launcherCount = launchers.size,
+        connected = launcherEnabled,
+        onClick = { showLauncherTray = true },
+    )
+
+    if (showLauncherTray) {
+        LauncherTray(
+            launcherEnabled = launcherEnabled,
+            onDismiss = { showLauncherTray = false },
+            onLauncher = { launcher ->
+                showLauncherTray = false
+                onLauncher(launcher)
+            },
         )
-    }
-
-    PrimaryLauncherTile(
-        iconRes = R.drawable.launcher_steam,
-        title = "Steam",
-        subtitle = "Launch Big Picture",
-        running = launcherHostState.launcherStates[LauncherId.Steam] == "running",
-        enabled = launcherEnabled,
-        onClick = { onLauncher(LauncherId.Steam) },
-    )
-
-    FeaturedLauncherTile(
-        iconRes = R.drawable.launcher_gog,
-        title = "GOG Galaxy",
-        subtitle = "Open your DRM-free library",
-        enabled = launcherEnabled,
-        onClick = { onLauncher(LauncherId.Gog) },
-    )
-
-    secondaryLauncherRows.forEach { row ->
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            row.forEach { launcher ->
-                SecondaryLauncherTile(
-                    iconRes = launcher.iconRes,
-                    label = launcher.label,
-                    enabled = launcherEnabled,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onLauncher(launcher.launcher) },
-                )
-            }
-        }
     }
 
     Spacer(Modifier.height(2.dp))
@@ -508,162 +482,208 @@ private fun LauncherHostStatus(
 }
 
 @Composable
-private fun PrimaryLauncherTile(
-    @DrawableRes iconRes: Int,
-    title: String,
-    subtitle: String,
-    running: Boolean,
-    enabled: Boolean,
+private fun LauncherTrayCard(
+    launcherCount: Int,
+    connected: Boolean,
     onClick: () -> Unit,
 ) {
-    HeroLauncherTile(
-        iconRes = iconRes,
-        title = title,
-        subtitle = subtitle,
-        accent = Cyan,
-        height = 124.dp,
-        iconSize = 88.dp,
-        titleSize = 28.sp,
-        running = running,
-        enabled = enabled,
-        onClick = onClick,
-    )
-}
+    val shape = RoundedCornerShape(18.dp)
 
-@Composable
-private fun FeaturedLauncherTile(
-    @DrawableRes iconRes: Int,
-    title: String,
-    subtitle: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    HeroLauncherTile(
-        iconRes = iconRes,
-        title = title,
-        subtitle = subtitle,
-        accent = Purple,
-        height = 108.dp,
-        iconSize = 76.dp,
-        titleSize = 23.sp,
-        running = false,
-        enabled = enabled,
-        onClick = onClick,
-    )
-}
-
-@Composable
-private fun HeroLauncherTile(
-    @DrawableRes iconRes: Int,
-    title: String,
-    subtitle: String,
-    accent: Color,
-    height: Dp,
-    iconSize: Dp,
-    titleSize: TextUnit,
-    running: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(24.dp)
-    val alpha = if (enabled) 1f else 0.42f
-
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(height)
-            .graphicsLayer(alpha = alpha)
+            .height(72.dp)
             .shadow(
-                elevation = 14.dp,
+                elevation = 9.dp,
                 shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.76f),
-                spotColor = Color.Black.copy(alpha = 0.34f),
+                ambientColor = Color.Black.copy(alpha = 0.68f),
             )
             .background(
                 brush = Brush.horizontalGradient(
-                    listOf(Color(0xFF111820), Color(0xFF030608), Color(0xFF0B1117)),
+                    listOf(
+                        Color(0xFF111820),
+                        Color(0xFF05080B),
+                        Color(0xFF0B1117),
+                    ),
                 ),
                 shape = shape,
             )
-            .border(1.35.dp, Accent.copy(alpha = 0.96f), shape)
-            .padding(2.dp)
-            .border(0.75.dp, Accent.copy(alpha = 0.42f), RoundedCornerShape(22.dp))
-            .clickable(enabled = enabled, onClick = onClick),
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            val stroke = Stroke(width = 1.dp.toPx())
-            drawArc(
-                color = accent.copy(alpha = 0.08f),
-                startAngle = 212f,
-                sweepAngle = 150f,
-                useCenter = false,
-                topLeft = Offset(size.width * 0.42f, size.height * -0.34f),
-                size = Size(size.width * 0.78f, size.height * 1.20f),
-                style = stroke,
+            .border(
+                width = 1.1.dp,
+                color = Accent.copy(alpha = 0.92f),
+                shape = shape,
             )
-            drawArc(
-                color = Silver.copy(alpha = 0.05f),
-                startAngle = 203f,
-                sweepAngle = 148f,
-                useCenter = false,
-                topLeft = Offset(size.width * 0.50f, size.height * -0.20f),
-                size = Size(size.width * 0.64f, size.height * 1.02f),
-                style = stroke,
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(
+                    color = Color(0xFF0A0F14),
+                    shape = RoundedCornerShape(15.dp),
+                )
+                .border(
+                    width = 1.dp,
+                    color = Accent.copy(alpha = 0.72f),
+                    shape = RoundedCornerShape(15.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_rocket),
+                contentDescription = "Launchers",
+                modifier = Modifier.size(34.dp),
+                contentScale = ContentScale.Fit,
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Spacer(Modifier.width(13.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center,
         ) {
-            IconCradle(
-                iconRes = iconRes,
-                description = title,
-                size = iconSize,
-                accent = accent,
-            )
-            Spacer(Modifier.width(17.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        color = TextColor,
-                        fontSize = titleSize,
-                        lineHeight = titleSize,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
-                    if (running) {
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "●",
-                            color = Success,
-                            fontSize = 12.sp,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    color = accent,
-                    fontSize = 13.sp,
-                    lineHeight = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                )
-            }
             Text(
-                text = "›",
-                color = accent.copy(alpha = 0.96f),
-                fontSize = 43.sp,
-                lineHeight = 43.sp,
+                text = "LAUNCHERS",
+                color = TextColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+            )
+
+            Spacer(Modifier.height(2.dp))
+
+            Text(
+                text = if (connected) {
+                    "$launcherCount available"
+                } else {
+                    "Windows Host offline"
+                },
+                color = Muted,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
             )
+        }
+
+        Text(
+            text = "›",
+            color = Accent,
+            fontSize = 31.sp,
+            lineHeight = 31.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LauncherTray(
+    launcherEnabled: Boolean,
+    onDismiss: () -> Unit,
+    onLauncher: (LauncherId) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF090D11),
+        contentColor = TextColor,
+        scrimColor = Color.Black.copy(alpha = 0.72f),
+        shape = RoundedCornerShape(
+            topStart = 28.dp,
+            topEnd = 28.dp,
+        ),
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 8.dp)
+                    .width(42.dp)
+                    .height(4.dp)
+                    .background(
+                        Silver.copy(alpha = 0.40f),
+                        RoundedCornerShape(2.dp),
+                    ),
+            )
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 18.dp, end = 18.dp, bottom = 24.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = "Launchers",
+                        color = TextColor,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = if (launcherEnabled) {
+                            "${launchers.size} available"
+                        } else {
+                            "Windows Host offline"
+                        },
+                        color = if (launcherEnabled) Accent else Muted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+
+                Text(
+                    text = "×",
+                    color = Muted,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .clickable(onClick = onDismiss)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            launchers.chunked(3).forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    row.forEach { launcher ->
+                        SecondaryLauncherTile(
+                            iconRes = launcher.iconRes,
+                            label = launcher.label,
+                            enabled = launcherEnabled,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onLauncher(launcher.launcher) },
+                        )
+                    }
+
+                    repeat(3 - row.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+            }
+
+            if (!launcherEnabled) {
+                Text(
+                    text = "Connect the Windows launcher host to launch apps.",
+                    color = Muted,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
@@ -715,35 +735,58 @@ private fun SecondaryLauncherTile(
 
     Column(
         modifier = modifier
-            .height(112.dp)
+            .height(100.dp)
             .graphicsLayer(alpha = alpha)
-            .shadow(9.dp, shape, ambientColor = Color.Black.copy(alpha = 0.68f))
+            .shadow(
+                elevation = 9.dp,
+                shape = shape,
+                ambientColor = Color.Black.copy(alpha = 0.68f),
+            )
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(Color(0xFF151C23), Color(0xFF040709)),
+                    listOf(
+                        Color(0xFF151C23),
+                        Color(0xFF040709),
+                    ),
                 ),
                 shape = shape,
             )
-            .border(1.1.dp, Accent.copy(alpha = 0.92f), shape)
+            .border(
+                width = 1.1.dp,
+                color = Accent.copy(alpha = 0.92f),
+                shape = shape,
+            )
             .padding(2.dp)
-            .border(0.6.dp, Accent.copy(alpha = 0.30f), RoundedCornerShape(17.dp))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 7.dp, vertical = 8.dp),
+            .border(
+                width = 0.6.dp,
+                color = Accent.copy(alpha = 0.30f),
+                shape = RoundedCornerShape(17.dp),
+            )
+            .clickable(
+                enabled = enabled,
+                onClick = onClick,
+            )
+            .padding(
+                horizontal = 7.dp,
+                vertical = 7.dp,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         IconCradle(
             iconRes = iconRes,
             description = label,
-            size = 68.dp,
+            size = 58.dp,
             accent = Accent,
         )
-        Spacer(Modifier.height(4.dp))
+
+        Spacer(Modifier.height(3.dp))
+
         Text(
             text = label,
             color = TextColor.copy(alpha = 0.88f),
-            fontSize = 11.sp,
-            lineHeight = 12.sp,
+            fontSize = 10.sp,
+            lineHeight = 11.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
         )
