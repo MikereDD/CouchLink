@@ -45,16 +45,15 @@ import dev.typezero.couchlink.remote.hid.MouseButton
 import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
-import dev.typezero.couchlink.remote.tv.TvDiscoveryController
 import dev.typezero.couchlink.remote.tv.provider.TvProviderRuntime
 import dev.typezero.couchlink.remote.ui.components.BottomNav
 import dev.typezero.couchlink.remote.ui.components.ConnectionOverview
 import dev.typezero.couchlink.remote.ui.components.PremiumHeader
 import dev.typezero.couchlink.remote.ui.screens.HomeScreen
 import dev.typezero.couchlink.remote.ui.screens.KeyboardScreen
-import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
 import dev.typezero.couchlink.remote.ui.screens.TvProviderRemoteScreen
+import dev.typezero.couchlink.remote.ui.screens.TvProviderSettingsScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
 import dev.typezero.couchlink.remote.update.CouchLinkUpdateManager
@@ -96,15 +95,8 @@ private fun CouchLinkApp() {
     val launcherHost = remember(context) { LauncherHostRuntime.client(context.applicationContext) }
     val launcherHostState by launcherHost.state.collectAsState()
 
-    // Keep one Google/Android TV controller during the transition so Settings and
-    // the provider-backed TV Remote observe/control the exact same session.
-    val tvDiscovery = remember(context) { TvDiscoveryController(context.applicationContext) }
-    val tvState by tvDiscovery.state.collectAsState()
-    val tvProviderRuntime = remember(context, tvDiscovery) {
-        TvProviderRuntime(
-            context = context.applicationContext,
-            sharedGoogleController = tvDiscovery,
-        )
+    val tvProviderRuntime = remember(context) {
+        TvProviderRuntime(context.applicationContext)
     }
     val tvProviderState by tvProviderRuntime.providerState.collectAsState()
 
@@ -119,11 +111,8 @@ private fun CouchLinkApp() {
     }
     var pendingDiscoverability by remember { mutableStateOf(false) }
 
-    DisposableEffect(tvProviderRuntime, tvDiscovery) {
-        onDispose {
-            tvProviderRuntime.close()
-            tvDiscovery.close()
-        }
+    DisposableEffect(tvProviderRuntime) {
+        onDispose { tvProviderRuntime.close() }
     }
 
     val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
@@ -371,10 +360,10 @@ private fun CouchLinkApp() {
                         },
                     )
 
-                    AppScreen.Settings -> SettingsScreen(
+                    AppScreen.Settings -> TvProviderSettingsScreen(
                         hidState = hidState,
                         launcherHostState = launcherHostState,
-                        tvState = tvState,
+                        tvState = tvProviderState,
                         hapticsEnabled = hapticsEnabled,
                         onHapticsChanged = { enabled ->
                             hapticsEnabled = enabled
@@ -397,16 +386,22 @@ private fun CouchLinkApp() {
                         onReconnectLauncherHost = launcherHost::retry,
                         onPairLauncherHost = launcherHost::pairWithHost,
                         onForgetLauncherHost = launcherHost::forgetTrustedHost,
-                        onTvScan = tvDiscovery::startDiscovery,
-                        onTvStopScan = tvDiscovery::stopDiscovery,
-                        onTvSelect = tvDiscovery::select,
-                        onTvSelectManual = tvDiscovery::selectManual,
-                        onTvProbe = tvDiscovery::probeSelected,
-                        onTvBeginPairing = tvDiscovery::beginPairing,
-                        onTvFinishPairing = tvDiscovery::finishPairing,
-                        onTvCancelPairing = tvDiscovery::cancelPairing,
-                        onTvConnect = tvDiscovery::connectRemote,
-                        onTvForget = tvDiscovery::forgetTv,
+                        onTvScan = { tvProviderRuntime.activeProvider.value.startDiscovery() },
+                        onTvStopScan = { tvProviderRuntime.activeProvider.value.stopDiscovery() },
+                        onTvSelect = { device ->
+                            tvProviderRuntime.activeProvider.value.select(device)
+                        },
+                        onTvSelectManual = { host ->
+                            tvProviderRuntime.activeProvider.value.selectManual(host)
+                        },
+                        onTvProbe = { tvProviderRuntime.activeProvider.value.probeSelected() },
+                        onTvBeginPairing = { tvProviderRuntime.activeProvider.value.beginPairing() },
+                        onTvFinishPairing = { code ->
+                            tvProviderRuntime.activeProvider.value.finishPairing(code)
+                        },
+                        onTvCancelPairing = { tvProviderRuntime.activeProvider.value.cancelPairing() },
+                        onTvConnect = { tvProviderRuntime.activeProvider.value.connect() },
+                        onTvForget = { tvProviderRuntime.activeProvider.value.forgetDevice() },
                         updateState = updateState,
                         onCheckForUpdates = updateManager::checkForUpdates,
                         onUpdateChannelChanged = updateManager::setTestChannel,
