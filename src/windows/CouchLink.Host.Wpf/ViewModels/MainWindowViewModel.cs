@@ -127,9 +127,10 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
     private void SelectNetworkInterface()
     {
         HostNetworkCandidate? candidate = SelectedNetworkInterface;
-        if (candidate is not null)
+        if (candidate is not null && _runtime.SelectAdvertisedInterface(candidate.Id))
         {
-            _runtime.SelectAdvertisedInterface(candidate.Id);
+            _preferences.SelectedNetworkInterfaceId = candidate.Id;
+            _preferences.Save();
         }
     }
 
@@ -160,7 +161,16 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IAsyncDisposab
         SelectedTrustedDevice = null;
     }
 
-    public async Task StartAsync() => await _runtime.StartAsync();
+    public async Task StartAsync()
+    {
+        await _runtime.StartAsync();
+
+        string? savedInterfaceId = _preferences.SelectedNetworkInterfaceId;
+        if (!string.IsNullOrWhiteSpace(savedInterfaceId))
+        {
+            _runtime.SelectAdvertisedInterface(savedInterfaceId);
+        }
+    }
 
     private void OnSnapshotChanged(object? sender, HostSnapshot snapshot)
     {
