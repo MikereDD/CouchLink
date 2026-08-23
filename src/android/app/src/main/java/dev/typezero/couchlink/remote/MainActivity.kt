@@ -52,7 +52,7 @@ import dev.typezero.couchlink.remote.ui.components.PremiumHeader
 import dev.typezero.couchlink.remote.ui.screens.HomeScreen
 import dev.typezero.couchlink.remote.ui.screens.KeyboardScreen
 import dev.typezero.couchlink.remote.ui.screens.TouchpadScreen
-import dev.typezero.couchlink.remote.ui.screens.TvProviderRemoteScreen
+import dev.typezero.couchlink.remote.ui.screens.TvRemoteScreen
 import dev.typezero.couchlink.remote.ui.screens.SettingsScreen
 import dev.typezero.couchlink.remote.ui.theme.CouchLinkTheme
 import dev.typezero.couchlink.remote.ui.theme.SurfaceColor
@@ -345,7 +345,7 @@ private fun CouchLinkApp() {
                         onShortcut = { shortcut -> hidController.pressShortcut(shortcut) },
                     )
 
-                    AppScreen.TvRemote -> TvProviderRemoteScreen(
+                    AppScreen.TvRemote -> TvRemoteScreen(
                         state = tvProviderState,
                         onConnect = { tvProviderRuntime.activeProvider.value.connect() },
                         onCommand = { command ->
