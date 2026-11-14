@@ -105,7 +105,7 @@ internal class TvRemoteClient(private val context: Context) : AutoCloseable {
                 currentConnection.copy(
                     lastCommand = "APP_LINK",
                     commandsSent = currentConnection.commandsSent + 1,
-                    message = "Opened TV input",
+                    message = "Launch request sent to TV.",
                     trace = currentConnection.trace,
                 ),
             )

@@ -16,11 +16,15 @@ internal data class TvKnownService(
 
 internal object TvKnownServiceCatalog {
     val services: List<TvKnownService> = listOf(
+        // Previously hardware-verified on Google TV. A sent request is not proof
+        // that an application opened; repeat device validation for this milestone.
+        TvKnownService("netflix", "Netflix", mapOf(TvProviderId.GoogleAndroidTv to "https://www.netflix.com/browse")),
+        TvKnownService("apple-tv", "Apple TV", mapOf(TvProviderId.GoogleAndroidTv to "https://tv.apple.com/")),
+        TvKnownService("hulu", "Hulu", mapOf(TvProviderId.GoogleAndroidTv to "hulu://video/")),
+        // Retain existing identifiers without offering unverified launch targets.
         TvKnownService("youtube", "YouTube"),
-        TvKnownService("netflix", "Netflix"),
         TvKnownService("prime-video", "Prime Video"),
         TvKnownService("disney-plus", "Disney+"),
-        TvKnownService("hulu", "Hulu"),
         TvKnownService("max", "Max"),
         TvKnownService("plex", "Plex"),
         TvKnownService("jellyfin", "Jellyfin"),

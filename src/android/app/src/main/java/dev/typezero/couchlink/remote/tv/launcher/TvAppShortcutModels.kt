@@ -16,6 +16,8 @@ internal data class TvAppShortcut(
     val launchTarget: String,
     val kind: TvAppShortcutKind,
     val knownServiceId: String? = null,
+    // Opaque app-managed custom icon reference; missing/unknown images render the fallback.
+    val iconReference: String? = null,
 ) {
     fun toProviderApp(): TvProviderApp =
         TvProviderApp(

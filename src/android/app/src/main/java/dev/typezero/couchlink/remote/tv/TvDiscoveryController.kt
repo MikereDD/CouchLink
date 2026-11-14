@@ -370,11 +370,13 @@ internal class TvDiscoveryController(
             _state.value = _state.value.copy(message = "No launch target is configured for $displayName.")
             return
         }
-        _state.value = _state.value.copy(message = "Launching $displayName…")
+        _state.value = _state.value.copy(message = "Sending launch request for $displayName…")
         scope.launch {
             val opened = withContext(Dispatchers.IO) { remoteClient.launchAppLink(cleanLink) }
             if (opened) {
-                _state.value = _state.value.copy(message = "Launched $displayName.")
+                _state.value = _state.value.copy(message = "Launch request sent for $displayName. Check your TV.")
+            } else {
+                _state.value = _state.value.copy(message = "Could not send launch request for $displayName. Check the TV connection.")
             }
         }
     }

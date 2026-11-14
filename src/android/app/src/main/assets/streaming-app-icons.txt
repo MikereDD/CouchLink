@@ -1,0 +1,13 @@
+Streaming Apps icon policy
+
+Known-service tiles (Netflix, Apple TV, and Hulu) use CouchLink's original generic app icon, ic_tv_app_generic. No third-party service logos or stylized wordmarks are bundled.
+
+Custom apps default to the same generic icon. Users may select their own PNG, JPEG or WebP through Android's document picker. Images are normalized and stored privately on the device; user-selected images are not bundled with CouchLink and are not granted redistribution rights by this application.
+
+Only opaque app-managed icon references are persisted. Picker URIs and external file paths are not retained. Normal icon display reads private local files without network access. Missing or invalid images use the original generic fallback.
+
+Service names identify the user-selected launch destination. Their respective trademarks remain the property of their owners; no affiliation or endorsement is implied.
+
+The icon cradle, labels, and layout are CouchLink interface elements. Launch targets and provider ownership are independent of icon presentation.
+
+No third-party icon-pack license is needed for the bundled original generic artwork. Unrelated project and dependency notices remain applicable.

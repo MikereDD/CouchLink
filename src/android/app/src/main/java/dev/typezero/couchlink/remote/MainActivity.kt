@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -46,6 +47,7 @@ import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
 import dev.typezero.couchlink.remote.tv.launcher.TvAppLauncherRuntime
+import dev.typezero.couchlink.remote.tv.launcher.TvAppLaunchResult
 import dev.typezero.couchlink.remote.tv.provider.TvCapability
 import dev.typezero.couchlink.remote.tv.provider.TvProviderRuntime
 import dev.typezero.couchlink.remote.ui.components.BottomNav
@@ -103,6 +105,7 @@ private fun CouchLinkApp() {
     }
     val tvProviderState by tvProviderRuntime.providerState.collectAsState()
     val activeTvProviderId by tvProviderRuntime.activeProviderId.collectAsState()
+    val activeTvProvider by tvProviderRuntime.activeProvider.collectAsState()
 
     val tvAppLauncherRuntime = remember(context, tvProviderRuntime) {
         TvAppLauncherRuntime(
@@ -355,6 +358,7 @@ private fun CouchLinkApp() {
                     )
 
                     AppScreen.TvRemote -> {
+                        val providerForNewShortcut = activeTvProviderId
                         val visibleShortcuts = tvAppShortcuts.filter { shortcut ->
                             shortcut.providerId == activeTvProviderId
                         }
@@ -366,18 +370,35 @@ private fun CouchLinkApp() {
                             TvAppLauncherTray(
                                 shortcuts = visibleShortcuts,
                                 enabled = appLaunchReady,
-                                providerDisplayName = tvProviderRuntime.activeProvider.value.descriptor.displayName,
+                                providerDisplayName = activeTvProvider.descriptor.displayName,
+                                providerId = activeTvProviderId,
+                                supportsAppLaunch = TvCapability.AppLaunch in tvProviderState.capabilities,
+                                connecting = tvProviderState.connection.connecting,
+                                onAddKnownService = { serviceId ->
+                                    tvAppLauncherRuntime.addKnownService(serviceId, activeTvProviderId)
+                                },
+                                onMove = { shortcut, index -> tvAppLauncherRuntime.move(shortcut.id, index) },
                                 onLaunch = { shortcut ->
                                     if (hapticsEnabled) {
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                     }
-                                    tvAppLauncherRuntime.launch(shortcut)
+                                    val feedback = when (tvAppLauncherRuntime.launch(shortcut)) {
+                                        TvAppLaunchResult.Requested -> "Launch requested for ${shortcut.displayName}. Check your TV."
+                                        TvAppLaunchResult.Disconnected -> "Connect the TV Remote before launching apps."
+                                        TvAppLaunchResult.Unsupported -> "This TV provider does not support app launching."
+                                        TvAppLaunchResult.WrongProvider -> "This shortcut belongs to another TV provider."
+                                        TvAppLaunchResult.Failed -> "Could not submit the launch request. Check the TV connection."
+                                    }
+                                    Toast.makeText(context, feedback, Toast.LENGTH_SHORT).show()
                                 },
-                                onAddCustomApp = { name, launchTarget ->
+                                iconStorage = tvAppLauncherRuntime.icons,
+                                onSetCustomIcon = { shortcut, draft -> tvAppLauncherRuntime.setCustomIcon(shortcut.id, draft) },
+                                onAddCustomApp = { name, launchTarget, icon ->
                                     tvAppLauncherRuntime.addCustomApp(
                                         displayName = name,
-                                        providerId = activeTvProviderId,
+                                        providerId = providerForNewShortcut,
                                         launchTarget = launchTarget,
+                                        iconDraft = icon,
                                     )
                                 },
                                 onRemove = { shortcut ->

@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +36,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -344,51 +350,61 @@ private fun Dpad(
     enabled: Boolean,
     onCommand: (TvRemoteCommand) -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxWidth().height(258.dp), contentAlignment = Alignment.Center) {
-        Box(
-            modifier = Modifier
-                .size(236.dp)
-                .shadow(
-                    18.dp,
-                    CircleShape,
-                    ambientColor = Color.Black.copy(alpha = 0.9f),
-                    spotColor = Accent.copy(alpha = 0.13f),
-                )
-                .background(
-                    Brush.radialGradient(
-                        listOf(Color(0xFF202830), Color(0xFF080C10), Color(0xFF030506)),
-                    ),
-                    CircleShape,
-                )
-                .border(1.25.dp, Accent.copy(alpha = 0.88f), CircleShape)
-                .padding(4.dp)
-                .border(0.65.dp, SilverDim.copy(alpha = 0.55f), CircleShape),
-        )
-
-        DirectionButton(RemoteIcon.Up, enabled, { onCommand(TvRemoteCommand.DpadUp) }, Modifier.align(Alignment.TopCenter))
-        DirectionButton(RemoteIcon.Down, enabled, { onCommand(TvRemoteCommand.DpadDown) }, Modifier.align(Alignment.BottomCenter))
-        DirectionButton(RemoteIcon.Left, enabled, { onCommand(TvRemoteCommand.DpadLeft) }, Modifier.align(Alignment.CenterStart))
-        DirectionButton(RemoteIcon.Right, enabled, { onCommand(TvRemoteCommand.DpadRight) }, Modifier.align(Alignment.CenterEnd))
-
-        Box(
-            modifier = Modifier
-                .size(96.dp)
-                .shadow(13.dp, CircleShape, spotColor = Accent.copy(alpha = 0.30f))
-                .background(
-                    Brush.radialGradient(listOf(Color(0xFF29333C), Color(0xFF090D11))),
-                    CircleShape,
-                )
-                .border(1.4.dp, Accent, CircleShape)
-                .clickable(enabled = enabled) { onCommand(TvRemoteCommand.Select) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                "OK",
-                color = if (enabled) Accent else Muted.copy(alpha = 0.55f),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(258.dp), contentAlignment = Alignment.Center) {
+        // One square owns both the ring and the controls; screen width cannot
+        // push horizontal arrows away from their vertical counterparts.
+        val diameter = minOf(236.dp, maxWidth)
+        val scale = diameter / 236.dp
+        val targetSize = maxOf(48.dp, 56.dp * scale)
+        val radialDistance = (diameter - targetSize) / 2 - 10.dp * scale
+        val okSize = minOf(96.dp * scale,
+            (radialDistance - targetSize / 2 - 2.dp * scale) * 2).coerceAtLeast(48.dp)
+        Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(diameter)
+                    .shadow(
+                        18.dp,
+                        CircleShape,
+                        ambientColor = Color.Black.copy(alpha = 0.9f),
+                        spotColor = Accent.copy(alpha = 0.13f),
+                    )
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Color(0xFF202830), Color(0xFF080C10), Color(0xFF030506)),
+                        ),
+                        CircleShape,
+                    )
+                    .border(1.25.dp, Accent.copy(alpha = 0.88f), CircleShape)
+                    .padding(4.dp)
+                    .border(0.65.dp, SilverDim.copy(alpha = 0.55f), CircleShape),
             )
+
+            DirectionButton(RemoteIcon.Up, enabled, { onCommand(TvRemoteCommand.DpadUp) }, Modifier.absoluteOffset(y = -radialDistance), targetSize)
+            DirectionButton(RemoteIcon.Down, enabled, { onCommand(TvRemoteCommand.DpadDown) }, Modifier.absoluteOffset(y = radialDistance), targetSize)
+            DirectionButton(RemoteIcon.Left, enabled, { onCommand(TvRemoteCommand.DpadLeft) }, Modifier.absoluteOffset(x = -radialDistance), targetSize)
+            DirectionButton(RemoteIcon.Right, enabled, { onCommand(TvRemoteCommand.DpadRight) }, Modifier.absoluteOffset(x = radialDistance), targetSize)
+
+            Box(
+                modifier = Modifier
+                    .size(okSize)
+                    .shadow(13.dp, CircleShape, spotColor = Accent.copy(alpha = 0.30f))
+                    .background(
+                        Brush.radialGradient(listOf(Color(0xFF29333C), Color(0xFF090D11))),
+                        CircleShape,
+                    )
+                    .border(1.4.dp, Accent, CircleShape)
+                    .clickable(enabled = enabled) { onCommand(TvRemoteCommand.Select) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "OK",
+                    color = if (enabled) Accent else Muted.copy(alpha = 0.55f),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                )
+            }
         }
     }
 }
@@ -399,11 +415,13 @@ private fun DirectionButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier,
+    targetSize: Dp,
 ) {
     Box(
         modifier = modifier
-            .size(76.dp)
-            .clickable(enabled = enabled, onClick = onClick),
+            .size(targetSize)
+            .semantics { contentDescription = "D-pad ${icon.name.lowercase()}" }
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         RemoteGlyph(
