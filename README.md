@@ -169,27 +169,53 @@ The updater never performs a silent Android install or accepts an arbitrary upda
 
 ## Screenshots
 
-A look at CouchLink on Android and Windows. Updated screenshots for the v1.4.0 Streaming Apps interface will be added separately.
+### CouchLink on Android
+
+Click any screenshot to view it at full resolution.
 
 <table>
   <tr>
-    <td align="center" valign="top">
-      <strong>Home</strong><br>
-      <img src="docs/screenshots/home.png" width="290" alt="CouchLink Home">
-    </td>
-    <td align="center" valign="top">
-      <strong>TV Remote</strong><br>
-      <img src="docs/screenshots/tv-remote.png" width="290" alt="CouchLink TV Remote">
-    </td>
+    <th>Home</th>
+    <th>TV Remote</th>
+    <th>Streaming Apps</th>
   </tr>
   <tr>
     <td align="center" valign="top">
-      <strong>Touchpad</strong><br>
-      <img src="docs/screenshots/touchpad.png" width="320" alt="CouchLink Touchpad">
+      <a href="docs/screenshots/home.png">
+        <img src="docs/screenshots/home.png" width="220" alt="CouchLink Home">
+      </a>
     </td>
     <td align="center" valign="top">
-      <strong>Keyboard</strong><br>
-      <img src="docs/screenshots/keyboard.png" width="320" alt="CouchLink Keyboard">
+      <a href="docs/screenshots/tv-remote.png">
+        <img src="docs/screenshots/tv-remote-preview.png" width="220" alt="CouchLink TV Remote">
+      </a>
+    </td>
+    <td align="center" valign="top">
+      <a href="docs/screenshots/streaming-launcher.png">
+        <img src="docs/screenshots/streaming-launcher.png" width="220" alt="Streaming Apps">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <th>Game Launchers</th>
+    <th>Touchpad</th>
+    <th>Keyboard</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top">
+      <a href="docs/screenshots/game-launcher.png">
+        <img src="docs/screenshots/game-launcher.png" width="220" alt="Game Launchers">
+      </a>
+    </td>
+    <td align="center" valign="top">
+      <a href="docs/screenshots/touchpad.png">
+        <img src="docs/screenshots/touchpad.png" width="220" alt="Touchpad">
+      </a>
+    </td>
+    <td align="center" valign="top">
+      <a href="docs/screenshots/keyboard.png">
+        <img src="docs/screenshots/keyboard.png" width="220" alt="Keyboard">
+      </a>
     </td>
   </tr>
 </table>
@@ -197,10 +223,9 @@ A look at CouchLink on Android and Windows. Updated screenshots for the v1.4.0 S
 ### Windows Host + Audio Output
 
 <p align="center">
-  <img
-    src="docs/screenshots/windows-host-audio-output.png"
-    width="100%"
-    alt="CouchLink Windows Host and Audio Output">
+  <a href="docs/screenshots/windows-host-audio-output.png">
+    <img src="docs/screenshots/windows-host-audio-output.png" width="100%" alt="CouchLink Windows Host v1.4.0">
+  </a>
 </p>
 
 ## Documentation
