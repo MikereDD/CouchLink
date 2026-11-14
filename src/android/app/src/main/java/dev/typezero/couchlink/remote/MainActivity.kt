@@ -47,6 +47,7 @@ import dev.typezero.couchlink.remote.host.LauncherHostRuntime
 import dev.typezero.couchlink.remote.model.AppScreen
 import dev.typezero.couchlink.remote.model.AudioFavoriteSlot
 import dev.typezero.couchlink.remote.tv.launcher.TvAppLauncherRuntime
+import dev.typezero.couchlink.remote.tv.launcher.TvKnownServiceIconCache
 import dev.typezero.couchlink.remote.tv.launcher.TvAppLaunchResult
 import dev.typezero.couchlink.remote.tv.provider.TvCapability
 import dev.typezero.couchlink.remote.tv.provider.TvProviderRuntime
@@ -114,6 +115,7 @@ private fun CouchLinkApp() {
         )
     }
     val tvAppShortcuts by tvAppLauncherRuntime.shortcuts.collectAsState()
+    val tvDefaultIconCache = remember(context) { TvKnownServiceIconCache(context.applicationContext) }
 
     val updateManager = remember(context) { CouchLinkUpdateManager.get(context.applicationContext) }
     val updateState by updateManager.state.collectAsState()
@@ -392,6 +394,7 @@ private fun CouchLinkApp() {
                                     Toast.makeText(context, feedback, Toast.LENGTH_SHORT).show()
                                 },
                                 iconStorage = tvAppLauncherRuntime.icons,
+                                serviceIconCache = tvDefaultIconCache,
                                 onSetCustomIcon = { shortcut, draft -> tvAppLauncherRuntime.setCustomIcon(shortcut.id, draft) },
                                 onAddCustomApp = { name, launchTarget, icon ->
                                     tvAppLauncherRuntime.addCustomApp(

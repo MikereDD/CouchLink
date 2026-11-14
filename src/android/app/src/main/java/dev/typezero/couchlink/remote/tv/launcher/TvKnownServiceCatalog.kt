@@ -6,6 +6,7 @@ internal data class TvKnownService(
     val id: String,
     val displayName: String,
     val launchTargets: Map<TvProviderId, String> = emptyMap(),
+    val defaultIconUrl: String? = null,
 ) {
     fun launchTargetFor(providerId: TvProviderId): String? =
         launchTargets[providerId]?.trim()?.takeIf(String::isNotEmpty)
@@ -18,9 +19,9 @@ internal object TvKnownServiceCatalog {
     val services: List<TvKnownService> = listOf(
         // Previously hardware-verified on Google TV. A sent request is not proof
         // that an application opened; repeat device validation for this milestone.
-        TvKnownService("netflix", "Netflix", mapOf(TvProviderId.GoogleAndroidTv to "https://www.netflix.com/browse")),
-        TvKnownService("apple-tv", "Apple TV", mapOf(TvProviderId.GoogleAndroidTv to "https://tv.apple.com/")),
-        TvKnownService("hulu", "Hulu", mapOf(TvProviderId.GoogleAndroidTv to "hulu://video/")),
+        TvKnownService("netflix", "Netflix", mapOf(TvProviderId.GoogleAndroidTv to "https://www.netflix.com/browse"), defaultIconUrl = "https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.png"),
+        TvKnownService("apple-tv", "Apple TV", mapOf(TvProviderId.GoogleAndroidTv to "https://tv.apple.com/"), defaultIconUrl = "https://tv.apple.com/assets/favicon/favicon-180.png"),
+        TvKnownService("hulu", "Hulu", mapOf(TvProviderId.GoogleAndroidTv to "hulu://video/"), defaultIconUrl = "https://www.hulu.com/static/icons/apple-touch-icon.png"),
         // Retain existing identifiers without offering unverified launch targets.
         TvKnownService("youtube", "YouTube"),
         TvKnownService("prime-video", "Prime Video"),

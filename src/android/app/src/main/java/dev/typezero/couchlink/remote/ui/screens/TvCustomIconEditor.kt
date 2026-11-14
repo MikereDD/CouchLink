@@ -40,7 +40,26 @@ internal fun rememberCustomIconBitmap(storage: TvCustomIconStorage?, reference: 
 }
 
 @Composable
-internal fun CustomIconControls(state: TvIconEditState, storage: TvCustomIconStorage?) {
+internal fun rememberKnownServiceIconBitmap(
+    cache: TvKnownServiceIconCache?,
+    serviceId: String?,
+): Bitmap? {
+    val result = remember(cache, serviceId) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(cache, serviceId) {
+        if (cache != null && serviceId != null) {
+            result.value = cache.load(serviceId)
+        }
+    }
+    return result.value
+}
+
+@Composable
+internal fun CustomIconControls(
+    state: TvIconEditState,
+    storage: TvCustomIconStorage?,
+    defaultIconRes: Int = R.drawable.ic_tv_app_generic,
+    defaultIconBitmap: Bitmap? = null,
+) {
     val scope = rememberCoroutineScope()
     val saved = rememberCustomIconBitmap(storage, state.reference)
     val preview = state.draft?.preview ?: saved
@@ -59,8 +78,8 @@ internal fun CustomIconControls(state: TvIconEditState, storage: TvCustomIconSto
         }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        StreamingIconCradle(R.drawable.ic_tv_app_generic,
-            if (preview == null) "Default icon preview" else if (state.draft != null) "Selected icon preview" else "Saved icon preview", 58, preview)
+        StreamingIconCradle(defaultIconRes,
+            if (preview == null) "Default icon preview" else if (state.draft != null) "Selected icon preview" else "Saved icon preview", 58, preview ?: defaultIconBitmap)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("APP ICON", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(if (state.loading) "Reading image…" else "PNG, JPEG or WebP. Stored locally after saving.", fontSize = 11.sp, color = Muted)
@@ -83,7 +102,7 @@ internal fun CustomIconControls(state: TvIconEditState, storage: TvCustomIconSto
 
 @Composable
 internal fun CustomAppIconDialog(shortcut: TvAppShortcut, storage: TvCustomIconStorage,
-    onDismiss: () -> Unit, onSave: (TvIconDraft?) -> Unit) {
+    onDismiss: () -> Unit, onSave: (TvIconDraft?) -> Unit, defaultIconRes: Int = R.drawable.ic_tv_app_generic, defaultIconBitmap: Bitmap? = null) {
     val state = remember(shortcut.id, shortcut.iconReference) { TvIconEditState(shortcut.iconReference) }
     val scope = rememberCoroutineScope()
     AlertDialog(
@@ -93,7 +112,7 @@ internal fun CustomAppIconDialog(shortcut: TvAppShortcut, storage: TvCustomIconS
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(shortcut.displayName, fontWeight = FontWeight.SemiBold)
                 Text("Changes only the icon. Your name, launch link and position stay unchanged.", fontSize = 12.sp, color = Muted)
-                CustomIconControls(state, storage)
+                CustomIconControls(state, storage, defaultIconRes, defaultIconBitmap)
             }
         },
         confirmButton = {

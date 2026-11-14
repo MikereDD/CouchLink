@@ -7,7 +7,7 @@ local.properties
 
 # Signing and release secrets
 signing/
-release/
+/release/
 *.jks
 *.keystore
 *.pfx

@@ -1,17 +1,28 @@
 # CouchLink release signing
 
-CouchLink 1.1 must be signed with a private release key. Never commit the keystore or passwords.
+CouchLink v1.4.0 must use the established Android release signing identity. Never commit keystores or passwords.
 
-## One-time key creation
+## Existing release signing identity
 
-From PowerShell with JDK 17 available:
+CouchLink must reuse the original Android signing identity
+for every compatible application update.
 
-```powershell
-cd .\src\android
-.\tools\New-CouchLinkKeystore.ps1
-```
+The established certificate was created July 21, 2026.
+Do not run New-CouchLinkKeystore.ps1 to sign an update.
+Generating a replacement key would break normal upgrades
+from previously published versions.
 
-Store the generated `signing\couchlink-release.jks` and both passwords in two secure backup locations. Every future CouchLink update must use this same signing identity.
+The existing release keystore uses PKCS12 format, despite
+its .jks filename. Use the same password for the keystore
+and private-key entry when signing.
+
+Keystore passwords may be changed without changing the
+certificate. Before changing passwords, create and verify
+a backup. Confirm the certificate SHA-256 fingerprint
+before and after the change.
+
+Keep signing material outside the repository and maintain
+secure, separate backups.
 
 ## Build both release applications
 
@@ -21,7 +32,7 @@ From the repository root:
 .\Build-Release.ps1
 ```
 
-The script prompts for the keystore path, keystore password, and key password. Passwords are read as secure input, passed to Gradle only through temporary environment variables, and removed after the build.
+The script prompts for the keystore path, keystore password, and key password. Passwords are prompted as secure input, then temporarily supplied through environment variables and a keystore.properties file containing Base64-encoded values. Base64 is not encryption. The build script normally removes these temporary credentials in its cleanup block. Verify cleanup after failed or interrupted builds.
 
 ## Build only the signed APK
 
@@ -48,8 +59,8 @@ Or provide the key explicitly:
 Default output:
 
 ```text
-release\CouchLink-v1.1.apk
-release\CouchLink-v1.1.apk.sha256
+release\CouchLink-v1.4.0.apk
+release\CouchLink-v1.4.0.apk.sha256
 ```
 
 ## Verify before publishing
@@ -60,7 +71,7 @@ release\CouchLink-v1.1.apk.sha256
 
 Verification must report valid APK signatures and display the signer certificate. The complete release builder performs this verification automatically unless `-SkipAndroidSignatureVerification` is explicitly supplied.
 
-## Official v1.1 signing identity
+## Established Android signing identity
 
 The stable release verifier expects this certificate SHA-256 fingerprint:
 

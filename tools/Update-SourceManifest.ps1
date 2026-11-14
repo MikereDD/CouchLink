@@ -30,6 +30,9 @@ function Test-ManifestFileExcluded {
     }
 
     $name = [System.IO.Path]::GetFileName($normalized)
+    if ($name -eq '.git') {
+        return $true
+    }
     if ($name -eq [System.IO.Path]::GetFileName($manifestPath)) {
         return $true
     }

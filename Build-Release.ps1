@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateNotNullOrEmpty()]
-    [string]$Version = '1.3.3',
+    [string]$Version = '1.4.0',
 
     [ValidateNotNullOrEmpty()]
     [string]$Runtime = 'win-x64',
@@ -93,6 +93,9 @@ function Test-SourceFileExcluded {
     }
 
     $name = [System.IO.Path]::GetFileName($normalized)
+    if ($name -eq '.git') {
+        return $true
+    }
     if ($name -in @('local.properties', 'keystore.properties', 'Build-Release-error.log', 'Thumbs.db', '.DS_Store')) {
         return $true
     }

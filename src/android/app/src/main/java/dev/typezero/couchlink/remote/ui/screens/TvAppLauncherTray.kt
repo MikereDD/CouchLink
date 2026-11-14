@@ -59,6 +59,7 @@ internal fun TvAppLauncherTray(
     onAddKnownService: (String) -> Unit,
     onMove: (TvAppShortcut, Int) -> Unit,
     iconStorage: TvCustomIconStorage? = null,
+    serviceIconCache: TvKnownServiceIconCache? = null,
     onSetCustomIcon: ((TvAppShortcut, TvIconDraft?) -> Unit)? = null,
 ) {
     var expanded by rememberSaveable(providerId) { mutableStateOf(false) }
@@ -156,11 +157,20 @@ internal fun TvAppLauncherTray(
                 shortcuts.chunked(3).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { shortcut ->
+                            val customBitmap = rememberCustomIconBitmap(iconStorage, shortcut.iconReference)
+                            val defaultBitmap = rememberKnownServiceIconBitmap(
+                                serviceIconCache,
+                                shortcut.knownServiceId.takeIf { shortcut.kind == TvAppShortcutKind.KnownService },
+                            )
                             StreamingAppTile(
                                 label = shortcut.displayName,
                                 iconRes = streamingShortcutIcon(shortcut),
-                                bitmap = rememberCustomIconBitmap(iconStorage,
-                                    shortcut.iconReference.takeIf { shortcut.kind == TvAppShortcutKind.CustomApp }),
+                                bitmap = customBitmap ?: defaultBitmap,
+                                iconDescription = when {
+                                    customBitmap != null -> "Custom app icon"
+                                    defaultBitmap != null -> "Default service icon"
+                                    else -> null
+                                },
                                 enabled = enabled || managing,
                                 modifier = Modifier.weight(1f),
                                 actionLabel = if (managing) "Manage ${shortcut.displayName}" else "Launch ${shortcut.displayName}",
@@ -176,8 +186,7 @@ internal fun TvAppLauncherTray(
                     }
                     Spacer(Modifier.height(10.dp))
                 }
-                Text("Launch requests use your existing TV connection. Check the TV to confirm the app opened.",
-                    color = Muted, fontSize = 11.sp, lineHeight = 16.sp, modifier = Modifier.padding(top = 6.dp))
+
             }
         }
     }
@@ -222,7 +231,7 @@ internal fun TvAppLauncherTray(
                     Text("Position ${index + 1} of ${shortcuts.size}", color = Muted, fontSize = 13.sp)
                     OutlinedButton(onClick = { onMove(shortcut, index - 1) }, enabled = index > 0, modifier = Modifier.fillMaxWidth()) { Text("Move earlier") }
                     OutlinedButton(onClick = { onMove(shortcut, index + 1) }, enabled = index < shortcuts.lastIndex, modifier = Modifier.fillMaxWidth()) { Text("Move later") }
-                    if (shortcut.kind == TvAppShortcutKind.CustomApp && iconStorage != null && onSetCustomIcon != null) {
+                    if (iconStorage != null && onSetCustomIcon != null) {
                         OutlinedButton(onClick = { editingIconId = shortcut.id; managedId = null }, modifier = Modifier.fillMaxWidth()) {
                             Text("EDIT ICON", fontWeight = FontWeight.Bold)
                         }
@@ -235,9 +244,13 @@ internal fun TvAppLauncherTray(
             confirmButton = { TextButton(onClick = { managedId = null }) { Text("DONE") } },
         )
     }
-    shortcuts.firstOrNull { it.id == editingIconId && it.kind == TvAppShortcutKind.CustomApp }?.let { shortcut ->
+    shortcuts.firstOrNull { it.id == editingIconId }?.let { shortcut ->
+        val defaultBitmap = rememberKnownServiceIconBitmap(
+            serviceIconCache,
+            shortcut.knownServiceId.takeIf { shortcut.kind == TvAppShortcutKind.KnownService },
+        )
         if (iconStorage != null && onSetCustomIcon != null) CustomAppIconDialog(shortcut, iconStorage,
-            onDismiss = { editingIconId = null }, onSave = { onSetCustomIcon(shortcut, it) })
+            onDismiss = { editingIconId = null }, onSave = { onSetCustomIcon(shortcut, it) }, defaultIconRes = streamingShortcutIcon(shortcut), defaultIconBitmap = defaultBitmap)
     }
 }
 
@@ -273,6 +286,7 @@ private fun StreamingAppTile(
     enabled: Boolean,
     modifier: Modifier = Modifier,
     bitmap: Bitmap? = null,
+    iconDescription: String? = null,
     actionLabel: String = label,
     onClick: () -> Unit,
 ) {
@@ -290,7 +304,7 @@ private fun StreamingAppTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        StreamingIconCradle(iconRes, if (bitmap != null) "Custom app icon" else null, 58, bitmap)
+        StreamingIconCradle(iconRes, iconDescription, 58, bitmap)
         Spacer(Modifier.height(3.dp))
         Text(label, color = TextColor.copy(alpha = 0.88f), fontSize = 11.sp, lineHeight = 13.sp,
             fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)

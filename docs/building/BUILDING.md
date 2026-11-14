@@ -1,4 +1,4 @@
-# Building CouchLink 1.1
+# Building CouchLink
 
 ## Complete signed release build
 
@@ -13,8 +13,8 @@ The script:
 1. Prompts for the Android keystore path when one was not supplied.
 2. Securely prompts for the keystore and key passwords.
 3. Builds and verifies the signed Android release APK.
-4. Publishes the Windows x64 host as a single-file executable.
-5. Verifies the expected CouchLink signing-certificate fingerprint.
+4. Publishes the Windows Host and Updater as single-file executables.
+5. Verifies the Android signing certificate, signs both Windows executables, and tests valid and tampered signatures.
 6. Regenerates and verifies the source manifest.
 7. Packages a clean source ZIP and release documentation.
 8. Generates individual SHA-256 files and one combined checksum list.
@@ -22,22 +22,30 @@ The script:
 Default output:
 
 ```text
-release\CouchLink-v1.1\
-├── CouchLink-v1.1.apk
-├── CouchLink-v1.1.apk.sha256
-├── CouchLink-Host-v1.1-win-x64.exe
-├── CouchLink-Host-v1.1-win-x64.exe.sha256
-├── CouchLink-v1.1-source.zip
-├── CouchLink-v1.1-source.zip.sha256
-├── SHA256SUMS-v1.1.txt
-├── RELEASE-INFO-v1.1.txt
-├── RELEASE-NOTES-v1.1.md
-├── INSTALLATION-v1.1.md
+release\CouchLink-v1.4.0\
+├── CouchLink-v1.4.0.apk
+├── CouchLink-v1.4.0.apk.sha256
+├── CouchLink-Host-v1.4.0-win-x64.exe
+├── CouchLink-Host-v1.4.0-win-x64.exe.sha256
+├── CouchLink-Host-v1.4.0-win-x64.exe.sig
+├── CouchLink-Host-v1.4.0-win-x64.exe.sig.sha256
+├── CouchLink-Updater-v1.4.0-win-x64.exe
+├── CouchLink-Updater-v1.4.0-win-x64.exe.sha256
+├── CouchLink-Updater-v1.4.0-win-x64.exe.sig
+├── CouchLink-Updater-v1.4.0-win-x64.exe.sig.sha256
+├── CouchLink-v1.4.0-source.zip
+├── CouchLink-v1.4.0-source.zip.sha256
+├── SHA256SUMS-v1.4.0.txt
+├── RELEASE-INFO-v1.4.0.txt
+├── RELEASE-NOTES-v1.4.0.md
+├── RELEASE-CHECKLIST-v1.4.0.md
+├── RELEASE-VALIDATION-v1.4.0.md
+├── INSTALLATION-v1.4.0.md
 ├── README.md
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── SECURITY.md
-├── SOURCE-MANIFEST-v1.1.sha256
+├── SOURCE-MANIFEST-v1.4.0.sha256
 ├── LICENSE
 ├── NOTICE
 ├── PRIVACY.md
@@ -61,6 +69,35 @@ You may supply the keystore path and alias on the command line while keeping bot
 If the target release directory already contains files, the script preserves it and creates a timestamped build directory instead.
 
 If any stage fails, the script prints a red failure summary and writes full details to `release\Build-Release-error.log`.
+
+## Release source and signing safeguards
+
+A normal `Build-Release.ps1` invocation creates a test release package
+from the current working tree. It does not require a Git tag.
+
+For an official stable release:
+
+1. Complete Android and Windows validation.
+2. Generate and verify the versioned source manifest.
+3. Commit the approved release source and confirm a clean working tree.
+4. Tag that exact commit as `v1.4.0`.
+5. Run `.\Build-Release.ps1 -RequireCleanTaggedSource`.
+6. Verify the generated artifacts, signatures, checksums, and source archive.
+7. Confirm the worktree and release tag still match the approved source.
+
+The `-RequireCleanTaggedSource` option checks that the working tree
+is clean and HEAD matches the release tag before building.
+
+Official releases require the established Android signing keystore
+and Windows ECDSA release-signing private key.
+
+Do not use `-SkipAndroidSignatureVerification` or
+`-SkipWindowsReleaseSigning` for public release artifacts.
+
+The combined release builder does not replace the complete Android
+and Windows regression test suites. Run those separately.
+
+Never commit signing keys, passwords, or other private credentials.
 
 ## Android remote
 
@@ -113,14 +150,14 @@ dotnet publish .\CouchLink.Host.Wpf\CouchLink.Host.Wpf.csproj `
   -p:PublishSingleFile=true `
   -p:DebugType=None `
   -p:DebugSymbols=false `
-  -o .\publish\CouchLink-Host-v1.1-win-x64
+  -o .\publish\CouchLink-Host-v1.4.0-win-x64
 ```
 
 Generate a checksum for the published executable:
 
 ```powershell
 Get-FileHash `
-  .\publish\CouchLink-Host-v1.1-win-x64\CouchLink.Host.exe `
+  .\publish\CouchLink-Host-v1.4.0-win-x64\CouchLink.Host.exe `
   -Algorithm SHA256
 ```
 
@@ -128,6 +165,6 @@ The root `Build-Release.ps1` script performs this publish and writes the checksu
 
 ## Release integrity
 
-Checksums must be generated from the exact APK, EXE, and source ZIP attached to the release. The combined builder creates per-file checksum files and `SHA256SUMS-v1.1.txt` from the final renamed artifacts.
+Checksums must be generated from the exact APK, EXE, and source ZIP attached to the release. The combined builder creates per-file checksum files and `SHA256SUMS-v1.4.0.txt` from the final renamed artifacts.
 
-The source archive is built from the current repository tree after `SOURCE-MANIFEST-v1.1.sha256` is regenerated and verified. Build output, signing material, IDE state, local properties, logs, and machine-specific release folders are excluded.
+The source archive is built from the current repository tree after `SOURCE-MANIFEST-v1.4.0.sha256` is regenerated and verified. Build output, signing material, IDE state, local properties, logs, and machine-specific release folders are excluded.

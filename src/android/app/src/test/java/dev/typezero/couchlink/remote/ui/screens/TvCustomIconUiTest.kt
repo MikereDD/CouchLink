@@ -70,7 +70,7 @@ class TvCustomIconUiTest {
     }
     private fun draft()=(store.icons.prepare(ByteArrayInputStream(image())) as TvIconImportResult.Ready).draft
     private fun managed()=File(context.noBackupFilesDir,"tv-shortcut-icons").listFiles()?.filter{it.extension=="png"}.orEmpty()
-    private fun show(){
+    private fun show(serviceIconCache: TvKnownServiceIconCache? = null){
         val owner=object:ActivityResultRegistryOwner{override val activityResultRegistry=registry}
         compose.setContent{
             CompositionLocalProvider(LocalActivityResultRegistryOwner provides owner){
@@ -79,7 +79,7 @@ class TvCustomIconUiTest {
                     TvAppLauncherTray(shortcuts,true,"Google TV",{},
                         {name,uri,icon->runtime.addCustomApp(name,google,uri,icon)}, {runtime.remove(it.id)},
                         providerId=google,supportsAppLaunch=true,onAddKnownService={runtime.addKnownService(it,google)},
-                        onMove={item,index->runtime.move(item.id,index)},iconStorage=store.icons,
+                        onMove={item,index->runtime.move(item.id,index)},iconStorage=store.icons,serviceIconCache=serviceIconCache,
                         onSetCustomIcon={item,icon->runtime.setCustomIcon(item.id,icon)})
                 }
             }
@@ -190,13 +190,65 @@ class TvCustomIconUiTest {
         compose.onNodeWithText("SAVE ICON").assertIsDisplayed()
         capture("d2-edit-large-text-host")
     }
-    @Test fun knownServicesNeverExposeUserIconManagementAndMissingCustomIconFallsBack(){
+    @Test fun knownServiceDefaultOverrideAndResetRestoresCachedDefault(){
+        val known=runtime.addKnownService("netflix",google)
+        File(context.cacheDir,"tv-known-service-icons/netflix.png").delete()
+
+        var downloads=0
+        val cache=TvKnownServiceIconCache(context){
+            downloads++
+            image(Color.GREEN)
+        }
+
+        show(cache)
+        awaitDescription("Default service icon")
+        assertEquals(1,downloads)
+
+        edit("Netflix")
+        select(image(Color.RED))
+        compose.onNodeWithText("SAVE ICON").performClick()
+        compose.waitUntil(15_000){
+            store.shortcuts.value.single().iconReference!=null
+        }
+        settle()
+
+        awaitDescription("Custom app icon")
+        assertEquals(
+            known,
+            store.shortcuts.value.single().copy(iconReference=null)
+        )
+
+        edit("Netflix")
+        awaitDescription("Saved icon preview")
+        compose.onNodeWithText("RESET ICON").performClick()
+        awaitDescription("Default icon preview")
+        compose.onNodeWithText("SAVE ICON").performClick()
+
+        compose.waitUntil(15_000){
+            store.shortcuts.value.single().iconReference==null
+        }
+        settle()
+
+        awaitDescription("Default service icon")
+        assertEquals(known,store.shortcuts.value.single())
+        assertEquals(known,TvAppShortcutStore(context).shortcuts.value.single())
+        assertEquals(1,downloads)
+    }
+    @Test fun knownServicesExposeIconEditorAndMissingCustomIconFallsBack(){
         runtime.addKnownService("netflix",google)
         val saved=runtime.addCustomApp("Personal Player",google,"personal-player://working")
         store.update(saved.copy(iconReference="tvicon:0123456789abcdef0123456789abcdef"))
-        show();compose.onNodeWithContentDescription("Launch Personal Player").assertIsDisplayed()
+
+        show()
+        compose.onNodeWithContentDescription("Launch Personal Player").assertIsDisplayed()
         compose.onNodeWithContentDescription("Custom app icon").assertDoesNotExist()
-        compose.onNodeWithText("MANAGE").performClick();compose.onNodeWithContentDescription("Manage Netflix").performClick()
-        compose.onNodeWithText("EDIT ICON").assertDoesNotExist();compose.onNodeWithText("ADD ICON").assertDoesNotExist()
+
+        compose.onNodeWithText("MANAGE").performClick()
+        compose.onNodeWithContentDescription("Manage Netflix").performClick()
+        compose.onNodeWithText("EDIT ICON").assertIsDisplayed().performClick()
+        settle()
+
+        compose.onNodeWithText("ADD ICON").assertIsDisplayed()
+        compose.onNodeWithText("RESET ICON").assertIsNotEnabled()
     }
 }

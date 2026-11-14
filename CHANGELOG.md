@@ -1,5 +1,29 @@
 # Unreleased
 
+## CouchLink v1.4.0 — Release preparation
+
+### New features
+- Add the Google TV Streaming Apps launcher using the existing secure TV Remote v2 connection.
+- Add shortcuts for Netflix, Apple TV, Hulu, and user-configured apps.
+- Support custom launch URIs and persistent shortcut ordering.
+- Add custom PNG, JPEG, and WebP icon import, preview, replacement, and reset.
+- Store normalized custom icons privately on the Android device.
+- Use CouchLink-original generic artwork rather than bundled third-party service logos.
+
+### Improvements
+- Correct the TV Remote D-pad layout with symmetric directional controls around OK.
+- Preserve existing TV pairing, navigation, media controls, and Windows Host functionality.
+- Maintain shared launcher protocol version 1.
+
+### Versioning
+- Android: 1.4.0 (versionCode 163).
+- Windows Launcher Host: 1.4.0.
+
+### Release validation
+- Streaming Apps and custom-icon workflows previously passed real-device functional testing.
+- Updated D-pad geometry passed host tests; final device validation remains pending.
+- Keyboard-visible dialog reachability and broader large-text layout review remain open.
+
 # CouchLink v1.3.3
 
 - Add the Android **Launcher Tray** with dedicated controls for Steam, GOG Galaxy, Xbox, EA app, Ubisoft Connect, Rockstar Games Launcher, Epic Games Launcher, and Amazon Games.

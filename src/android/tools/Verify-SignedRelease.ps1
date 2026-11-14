@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$ApkPath = (Join-Path $PSScriptRoot '..\release\CouchLink-v1.1.apk'),
+    [string]$ApkPath = (Join-Path $PSScriptRoot '..\release\CouchLink-v1.4.0.apk'),
 
     [ValidatePattern('^[0-9a-fA-F]{64}$')]
     [string]$ExpectedCertificateSha256 = 'a3d6a2b2a81c3ee0c96c911f31b3e46be663e5cf81ebfe1d5deccfc39d5b96bb'

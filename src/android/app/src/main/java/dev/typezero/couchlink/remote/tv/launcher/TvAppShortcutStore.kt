@@ -117,7 +117,11 @@ internal class TvAppShortcutStore(
     fun setCustomIcon(id: String, draft: TvIconDraft?) = synchronized(TvCustomIconStorage.LOCK) {
         val current = _shortcuts.value
         val index = current.indexOfFirst { it.id == id }
-        require(index >= 0 && current[index].kind == TvAppShortcutKind.CustomApp) { "Choose a saved custom app." }
+        require(index >= 0 && (
+            current[index].kind == TvAppShortcutKind.CustomApp ||
+            (current[index].kind == TvAppShortcutKind.KnownService &&
+                current[index].knownServiceId?.let(TvKnownServiceCatalog::find) != null)
+        )) { "Choose a saved app with an editable icon." }
         val reference = draft?.let(icons::write)
         try {
             persist(current.toMutableList().apply { this[index] = this[index].copy(iconReference = reference) })

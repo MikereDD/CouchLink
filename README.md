@@ -59,6 +59,13 @@ The Android remote remains useful when the optional Windows host is closed or un
 
 - Secure Google TV Remote v2 certificate pairing.
 - D-pad, OK, Home, Back, and Settings controls.
+- **Streaming Apps launcher** accessible directly from the TV Remote screen.
+- Built-in shortcuts for Netflix, Apple TV, and Hulu, using CouchLink-original generic artwork.
+- Custom app shortcuts with user-configured launch URIs.
+- Add, manage, reorder, and remove persistent TV app shortcuts.
+- Import PNG, JPEG, or WebP images as custom shortcut icons, with preview, replacement, and reset.
+- Store normalized custom icons privately on the Android device, without cloud storage.
+- Symmetric D-pad layout with directional controls arranged around the central OK button.
 - Volume, mute, channel, playback, and one-minute skip controls.
 - Google TV **Live** tab navigation without opening the antenna tuner.
 - Power-off through the secure remote connection.
@@ -152,6 +159,8 @@ See [BUILDING.md](docs/building/BUILDING.md) for complete build and publish comm
 
 CouchLink 1.3.3 is the current stable unified Android and Windows release. It adds the Android Launcher Tray, requires the paired Windows Launcher Host for launcher actions, and persists the selected Host network interface across restarts with safe automatic fallback while preserving the complete 1.3.2 feature set.
 
+> **v1.4.0 in preparation:** CouchLink is being updated with the Google TV Streaming Apps launcher, custom shortcuts and icons, and corrected D-pad geometry. Android versionCode is 163 and the Windows Host version is 1.4.0. The Streaming Apps functionality was previously tested on real hardware, but the corrected D-pad layout still requires final device validation. Version 1.3.3 remains the latest published stable release.
+
 ## Self-updating releases
 
 CouchLink 1.3.3 includes secure in-app updates for installations distributed outside app stores. Android and Windows check the official [`MikereDD/CouchLink`](https://github.com/MikereDD/CouchLink) GitHub Releases feed, keep Stable and Test channels separate, require exact official asset names, and verify release integrity before installation. Android additionally verifies the APK package name, newer version code, and signing certificate. Windows verifies SHA-256 plus a detached ECDSA release signature against the pinned CouchLink release key, then uses a separate updater executable so the running Host can close, be replaced safely, rolled back if needed, and restarted.
@@ -160,7 +169,7 @@ The updater never performs a silent Android install or accepts an arbitrary upda
 
 ## Screenshots
 
-A quick look at CouchLink on Android and Windows.
+A look at CouchLink on Android and Windows. Updated screenshots for the v1.4.0 Streaming Apps interface will be added separately.
 
 <table>
   <tr>
@@ -203,6 +212,9 @@ A quick look at CouchLink on Android and Windows.
 - [Wake PC setup and validation](docs/building/WAKE-PC.md)
 - [Android signing](docs/release/ANDROID-SIGNING.md)
 - [TV Remote roadmap](docs/tv-remote/ROADMAP.md)
+- [Release notes for 1.4.0 — preparation](docs/release/RELEASE-NOTES-v1.4.0.md)
+- [Release checklist for 1.4.0](docs/release/RELEASE-CHECKLIST-v1.4.0.md)
+- [Release validation for 1.4.0](docs/release/RELEASE-VALIDATION-v1.4.0.md)
 - [Release notes for 1.3.3](docs/release/RELEASE-NOTES-v1.3.3.md)
 - [Release checklist for 1.3.3](docs/release/RELEASE-CHECKLIST-v1.3.3.md)
 - [Release validation for 1.3.3](docs/release/RELEASE-VALIDATION-v1.3.3.md)

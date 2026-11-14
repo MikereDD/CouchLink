@@ -159,11 +159,29 @@ class TvCustomIconStorageTest {
         assertEquals(1,root().listFiles()!!.count{it.name.matches(Regex("[a-f0-9]{32}\\.png"))})
     }
 
-    @Test fun builtInIconOverrideIsRejectedAndInvalidAddDoesNotLeakDraftFile() {
-        val store=store();val runtime=TvAppLauncherRuntime(store){RecordingTvProvider()}
+    @Test fun knownServiceIconOverridePersistsAndResetPreservesShortcut() {
+        val store=store()
+        val runtime=TvAppLauncherRuntime(store){RecordingTvProvider()}
         val known=runtime.addKnownService("netflix",TvProviderId.GoogleAndroidTv)
-        assertThrows(IllegalArgumentException::class.java){store.setCustomIcon(known.id,draft())}
-        assertThrows(IllegalArgumentException::class.java){store.add("Invalid",TvProviderId.GoogleAndroidTv,"not a uri",TvAppShortcutKind.CustomApp,iconDraft=draft())}
-        assertTrue(root().listFiles().isNullOrEmpty());assertNull(store.shortcuts.value.single().iconReference)
+
+        store.setCustomIcon(known.id,draft())
+        val customized=store.shortcuts.value.single()
+        val reference=requireNotNull(customized.iconReference)
+
+        assertEquals(known,customized.copy(iconReference=null))
+        assertNotNull(store.icons.load(reference))
+        assertEquals(customized,TvAppShortcutStore(context).shortcuts.value.single())
+
+        val filesBefore=root().listFiles().orEmpty().count { it.extension=="png" }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.add("Invalid",TvProviderId.GoogleAndroidTv,"not a uri",
+                TvAppShortcutKind.CustomApp,iconDraft=draft())
+        }
+        assertEquals(filesBefore,root().listFiles().orEmpty().count { it.extension=="png" })
+
+        store.setCustomIcon(known.id,null)
+        assertEquals(known,store.shortcuts.value.single())
+        assertEquals(known,TvAppShortcutStore(context).shortcuts.value.single())
+        assertFalse(file(reference).exists())
     }
 }
