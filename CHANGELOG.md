@@ -1,6 +1,6 @@
-# Unreleased
+# CouchLink v1.4.0 — Stable release
 
-## CouchLink v1.4.0 — Release preparation
+## Features and fixes
 
 ### New features
 - Add the Google TV Streaming Apps launcher using the existing secure TV Remote v2 connection.
@@ -8,7 +8,7 @@
 - Support custom launch URIs and persistent shortcut ordering.
 - Add custom PNG, JPEG, and WebP icon import, preview, replacement, and reset.
 - Store normalized custom icons privately on the Android device.
-- Use CouchLink-original generic artwork rather than bundled third-party service logos.
+- Retrieve and cache publisher-hosted service icons with generic fallback and custom overrides.
 
 ### Improvements
 - Correct the TV Remote D-pad layout with symmetric directional controls around OK.

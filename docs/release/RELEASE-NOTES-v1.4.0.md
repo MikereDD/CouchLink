@@ -1,6 +1,6 @@
 # CouchLink v1.4.0 — Release Notes
 
-Status: Release preparation. Not yet published.
+Status: Published stable release.
 
 ## Highlights
 
@@ -14,7 +14,7 @@ Status: Release preparation. Not yet published.
 - Import PNG, JPEG, and WebP images as custom shortcut icons.
 - Preview, replace, and reset custom icons.
 - Store normalized custom artwork privately on the Android device.
-- Use CouchLink-original generic artwork rather than third-party service logos.
+- Automatically retrieve and cache publisher-hosted service icons, with generic fallback and custom overrides.
 
 ### TV Remote improvements
 
@@ -50,21 +50,21 @@ Local v1.4.0 release-candidate validation:
 - Windows Host and corrected v1.4.0 Updater built successfully.
 - Windows versioning and updater safety tests passed.
 - Both Windows detached signatures passed authenticity and tamper tests.
-- Source manifest verified 444 files, excluding Git metadata.
+- Source manifest verified 446 files, excluding Git metadata.
 
-Still required:
-- Physical testing of the final corrected D-pad.
-- Keyboard-visible dialog and large-text layout reviews.
-- Final committed/tagged-source rebuild and signing.
-- Final source ZIP, checksums, and package inspection.
-- Android and Windows in-place upgrade testing.
-- Explicit owner approval before publication.
+Final release checks:
+- Android v1.3.3 to v1.4.0 in-place installation succeeded.
+- Windows Host v1.4.0 connected to the updated Android remote.
+- Isolated Windows updater replacement and rollback-backup checks passed.
+- All six release artifacts passed checksum verification.
+- All 446 source archive files passed integrity verification.
 
+Follow-up: Final D-pad physical-layout verification and keyboard-visible/large-text UI reviews remain separately unconfirmed.
 Three inherited Android Bluetooth permission lint errors remain
 documented; they have not been resolved by this release preparation.
 
 ## Release status
 
-Version 1.3.3 remains the latest published stable release until v1.4.0 completes validation and is explicitly approved for publication.
+CouchLink v1.4.0 is the latest published stable release.
 
 Updated screenshots will be prepared separately.
